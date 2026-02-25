@@ -1,4 +1,3 @@
-import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -11,27 +10,33 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 1000 * 60 * 5,
       retry: 1,
+      refetchOnWindowFocus: false,
+      gcTime: 1000 * 60 * 30,
     },
   },
 })
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <App />
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#1e293b',
-              color: '#f8fafc',
-              borderRadius: '8px',
-            },
-          }}
-        />
-      </BrowserRouter>
-    </QueryClientProvider>
-  </React.StrictMode>
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
+      <App />
+      <Toaster
+        position="top-center"
+        gutter={20}
+        containerClassName="!top-4 sm:!top-6"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#1e293b',
+            color: '#f8fafc',
+            borderRadius: '8px',
+            fontSize: '14px',
+            maxWidth: '90vw',
+            padding: '12px 16px',
+            marginTop: 'env(safe-area-inset-top, 0)',
+          },
+        }}
+      />
+    </BrowserRouter>
+  </QueryClientProvider>
 )

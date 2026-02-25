@@ -95,7 +95,7 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 bg-bg-primary">
+    <div className="h-full overflow-y-auto p-4 sm:p-6 bg-bg-primary">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-text-primary">

@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="AI智能客服系统API",
+    description="JeikChat智能客服系统API",
     lifespan=lifespan,
 )
 

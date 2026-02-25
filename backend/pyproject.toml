@@ -1,7 +1,7 @@
 [project]
 name = "aichat"
 version = "0.1.0"
-description = "AI 智能客服系统 - 后端"
+description = "JeikChat 智能客服系统 - 后端"
 requires-python = ">=3.11"
 
 dependencies = [

@@ -45,10 +45,10 @@ const ChatContainer = () => {
             </div>
           </div>
           
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-primary via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
-            AI 智能客服
+          <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2 text-center">
+            JeikChat-多模型智能体bot
           </h2>
-          <p className="text-text-tertiary mb-10">有什么可以帮助您的？</p>
+          <p className="text-text-tertiary mb-6 sm:mb-10 text-center text-sm sm:text-base px-4">有什么可以帮助您的？</p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl w-full">
             {PROMPTS.map((prompt, index) => (

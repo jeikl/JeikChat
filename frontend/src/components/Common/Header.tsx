@@ -34,7 +34,7 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
         </button>
 
         <h1 className="text-lg font-semibold text-text-primary hidden sm:block">
-          AI 智能客服
+          JeikChat
         </h1>
       </div>
 

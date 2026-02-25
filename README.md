@@ -1,14 +1,10 @@
-# AI智能客服系统 (AI Customer Service)
+# JeikChat 智能客服系统
 
 ## 项目概述
 
-**功能还在开发中 !!!**
+**功能完善，已上线！**
 
-**预计3月中旬开发完毕**!
-
-
-
-本项目是一个功能完善的AI智能客服系统，采用现代化的微前端架构设计，支持实时语音对话、RAG知识库检索、多模型切换等核心功能。UI设计参考主流AI产品（豆包、ChatGPT、通义千问等），适配电脑和手机端。
+本项目是一个功能完善的JeikChat智能客服系统，采用现代化的微前端架构设计，支持实时语音对话、RAG知识库检索、多模型切换等核心功能。UI设计参考主流AI产品（豆包、ChatGPT、通义千问等），适配电脑和手机端。
 
 ## 技术架构
 
@@ -38,12 +34,11 @@
 | LangChain-Community | 0.0.x | 社区组件 |
 | ChromaDB | 0.4.x | 向量数据库 |
 | sentence-transformers | 2.x | 文本向量 |
-| python-multipart | 0.0.x | 文件上传 |
 
 ### 支持的大模型
 
 - **OpenAI**: GPT-4, GPT-3.5 Turbo
-- ** Anthropic**: Claude 3 Opus, Claude 3 Sonnet
+- **Anthropic**: Claude 3 Opus, Claude 3 Sonnet
 - **Google**: Gemini Pro
 - **阿里云**: 通义千问 (Qwen)
 - **字节跳动**: 豆包
@@ -64,140 +59,185 @@ aichat/
 ├── frontend/                    # 前端项目
 │   ├── src/
 │   │   ├── components/          # UI组件
-│   │   │   ├── Chat/           # 聊天相关组件
-│   │   │   │   ├── ChatContainer.tsx
-│   │   │   │   ├── MessageList.tsx
-│   │   │   │   ├── MessageItem.tsx
-│   │   │   │   ├── InputArea.tsx
-│   │   │   │   └── VoiceControl.tsx
-│   │   │   ├── KnowledgeBase/  # 知识库组件
-│   │   │   │   ├── KnowledgeList.tsx
-│   │   │   │   ├── FileUploader.tsx
-│   │   │   │   └── VectorConfig.tsx
-│   │   │   ├── Settings/       # 设置组件
-│   │   │   │   ├── ModelConfig.tsx
-│   │   │   │   └── SystemPrompt.tsx
-│   │   │   └── Common/         # 通用组件
-│   │   │       ├── Sidebar.tsx
-│   │   │       ├── Header.tsx
-│   │   │       └── Modal.tsx
-│   │   ├── pages/              # 页面
-│   │   │   ├── ChatPage.tsx
-│   │   │   ├── KnowledgePage.tsx
-│   │   │   └── SettingsPage.tsx
-│   │   ├── hooks/              # 自定义Hooks
-│   │   │   ├── useChat.ts
-│   │   │   ├── useKnowledge.ts
-│   │   │   └── useVoice.ts
-│   │   ├── services/           # API服务
-│   │   │   ├── api.ts
-│   │   │   ├── chat.ts
-│   │   │   ├── knowledge.ts
-│   │   │   └── tts.ts
-│   │   ├── stores/             # 状态管理
-│   │   │   ├── chatStore.ts
-│   │   │   ├── knowledgeStore.ts
-│   │   │   └── settingsStore.ts
-│   │   ├── types/              # TypeScript类型
-│   │   │   ├── chat.ts
-│   │   │   ├── knowledge.ts
-│   │   │   └── config.ts
-│   │   ├── utils/              # 工具函数
-│   │   │   ├── format.ts
-│   │   │   └── storage.ts
-│   │   └── assets/styles/      # 样式文件
-│   │       └── globals.css
-│   ├── package.json
-│   ├── vite.config.ts
-│   ├── tailwind.config.js
-│   └── tsconfig.json
+│   │   ├── pages/               # 页面
+│   │   ├── services/            # API服务
+│   │   ├── stores/              # 状态管理
+│   │   └── types/               # TypeScript类型
+│   ├── dist/                    # 构建产物
+│   ├── nginx.conf               # Nginx配置
+│   └── package.json
 │
 ├── backend/                     # 后端项目
-│   ├── api/                    # API路由
-│   │   ├── chat.py            # 聊天API
-│   │   ├── knowledge.py       # 知识库API
-│   │   ├── model.py           # 模型配置API
-│   │   └── voice.py           # 语音API
-│   ├── models/                 # 数据模型
-│   │   ├── database.py        # 数据库连接
-│   │   ├── knowledge.py       # 知识库模型
-│   │   └── chat.py            # 聊天记录模型
-│   ├── services/               # 业务逻辑
-│   │   ├── chat_service.py    # 聊天服务
-│   │   ├── llm_service.py      # 大模型服务
-│   │   ├── asr_service.py      # 语音识别服务
-│   │   └── tts_service.py      # 语音合成服务
-│   ├── rag/                    # RAG核心
-│   │   ├── loader.py           # 文档加载器
-│   │   ├── splitter.py        # 文本分割器
-│   │   ├── embeddings.py      # 向量化
-│   │   └── retriever.py        # 检索器
-│   ├── core/                   # 核心配置
-│   │   ├── config.py           # 配置文件
-│   │   └── security.py         # 安全配置
-│   ├── uploads/                # 上传文件目录
-│   ├── vector_store/           # 向量存储目录
-│   ├── main.py                # 应用入口
-│   └── requirements.txt        # 依赖
+│   ├── api/                     # API路由
+│   ├── services/                # 业务逻辑
+│   ├── core/                    # 核心配置
+│   ├── uploads/                 # 上传文件目录
+│   ├── vector_store/            # 向量存储目录
+│   ├── main.py                  # 应用入口
+│   └── pyproject.toml           # Python配置
 │
 └── README.md
 ```
 
-## 核心功能
-
-### 1. 智能对话
-
-- [x] 多模型支持切换
-- [x] 流式输出 (SSE)
-- [x] Markdown渲染
-- [x] 代码高亮
-- [x] 复制功能
-- [x] 打字机效果
-
-### 2. RAG知识库
-
-- [x] 支持文件类型: PDF, Excel, CSV, Word, TXT, Markdown
-- [x] 向量存储 (ChromaDB)
-- [x] 相似度检索
-- [x] 多知识库管理
-- [x] 自定义System Prompt
-- [x] 知识库命名/重命名
-
-### 3. 语音功能 (1.0版本预留)
-
-- [ ] ASR语音识别
-- [ ] TTS语音合成
-- [ ] 实时语音对话 (WebRTC)
-
-### 4. 高级功能
-
-- [x] 对话历史管理
-- [x] 知识库引用展示
-- [x] 模型参数配置 (Temperature, TopP)
-- [x] API Key管理
-- [x] 响应速度优化
-
 ## 快速开始
 
-### 前端启动
+### 1. 安装依赖
+
+```bash
+# 前端依赖
+cd frontend
+npm install
+
+# 后端依赖 (会自动安装)
+```
+
+### 2. 启动开发模式
+
+```bash
+# 使用 CLI 启动前后端
+jeikchat run all -t
+
+# 或者分别启动
+jeikchat run front    # 前端 http://localhost:5173
+jeikchat run back     # 后端 http://localhost:8000
+```
+
+### 3. 访问系统
+
+- 前端: http://localhost:5173
+- 后端API: http://localhost:8000
+- API文档: http://localhost:8000/docs
+
+## CLI 命令详解
+
+```bash
+# 启动所有服务
+jeikchat run all -t
+
+# 启动前端
+jeikchat run front
+
+# 启动后端
+jeikchat run back -t
+
+# 指定主机和端口
+jeikchat run all -t --host :: -p 9000
+
+# 参数说明
+# -t, --test    测试模式（使用模拟数据）
+# -h, --host   指定监听地址（默认 127.0.0.1）
+# -p, --port   指定端口
+```
+
+## 部署教学
+
+### 方式一：开发模式部署
+
+适合本地测试和开发：
+
+```bash
+jeikchat run all -t --host :: -p 9000
+```
+
+访问：http://localhost:9000
+
+### 方式二：Nginx + 后端部署
+
+适合生产环境，支持 IPv4/IPv6 双栈：
+
+#### 1. 构建前端
 
 ```bash
 cd frontend
-npm install
-npm run dev
+npm run build
 ```
 
-访问: http://localhost:5173
+#### 2. 配置 Nginx
 
-### 后端启动
+将以下文件复制到 Nginx 安装目录：
+
+```
+nginx/
+├── conf/
+│   └── nginx.conf      # 复制 frontend/nginx.conf
+├── html/
+│   └── dist/           # 复制 frontend/dist 整个文件夹
+└── nginx.exe
+```
+
+#### 3. 启动服务
 
 ```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+# 启动后端
+jeikchat run back -t
+
+# 启动 Nginx
+cd nginx目录
+nginx.exe
 ```
 
-API文档: http://localhost:8000/docs
+#### 4. 访问方式
+
+- IPv4: http://你的IP
+- IPv6: http://[你的IPv6地址]
+
+### 方式三：Docker 部署
+
+#### 1. 创建 Dockerfile (后端)
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY backend/requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY backend/ .
+
+EXPOSE 8000
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+#### 2. 创建 docker-compose.yml
+
+```yaml
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./vector_store:/app/vector_store
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+```
+
+#### 3. 启动
+
+```bash
+docker-compose up -d
+```
+
+### 方式四：公网部署注意事项
+
+1. **防火墙开放端口**：80, 8000
+2. **域名解析**：配置 A 记录和 AAAA 记录
+3. **HTTPS**：建议使用 Let's Encrypt 或 Cloudflare
+4. **安全组**：云服务器需开放对应端口
 
 ## 环境变量配置
 
@@ -226,8 +266,40 @@ UPLOAD_DIR=./uploads
 MAX_FILE_SIZE=100MB
 
 # CORS
-CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+CORS_ORIGINS=*
 ```
+
+## 核心功能
+
+### 1. 智能对话
+
+- [x] 多模型支持切换
+- [x] 流式输出 (SSE)
+- [x] Markdown渲染
+- [x] 代码高亮
+- [x] 复制功能
+- [x] 打字机效果
+
+### 2. RAG知识库
+
+- [x] 支持文件类型: PDF, Excel, CSV, Word, TXT, Markdown
+- [x] 向量存储 (ChromaDB)
+- [x] 相似度检索
+- [x] 多知识库管理
+- [x] 自定义System Prompt
+- [x] 知识库命名/重命名
+
+### 3. Agent Tools
+
+- [x] 工具扩展系统
+- [x] 动态启用/禁用工具
+- [x] 知识库查询集成
+
+### 4. 系统设置
+
+- [x] 模型参数配置 (Temperature, TopP)
+- [x] API Key管理
+- [x] 多模型切换
 
 ## API接口文档
 
@@ -257,6 +329,14 @@ CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 | POST | /api/models/config | 配置模型参数 |
 | GET | /api/models/test | 测试连接 |
 
+### Agent Tools API
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| GET | /tools/ | 获取可用工具 |
+| POST | /tools/enable | 启用工具 |
+| POST | /tools/disable | 禁用工具 |
+
 ## 版本更新
 
 ### v3.0 (当前版本)
@@ -265,7 +345,9 @@ CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 - 支持PDF/Excel/CSV/Word文件上传
 - 多知识库管理
 - 自定义System Prompt
-- 微信聊天数据清洗与模型训练
+- Agent Tools 扩展系统
+- Nginx 部署配置
+- IPv4/IPv6 双栈支持
 
 ### v2.0
 
@@ -277,6 +359,26 @@ CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 
 - 基础聊天功能
 - 语音对话预留
+
+## 常见问题
+
+### Q: 前端加载慢怎么办？
+
+1. 使用 Nginx 部署并开启 Gzip 压缩
+2. 配置静态资源缓存
+3. 使用 CDN 加速
+
+### Q: 模型调用失败？
+
+1. 检查 API Key 是否正确
+2. 检查网络是否能访问目标 API
+3. 查看后端日志
+
+### Q: 知识库检索不到内容？
+
+1. 检查文件是否上传成功
+2. 确认向量是否生成成功
+3. 调整相似度阈值
 
 ## 许可证
 

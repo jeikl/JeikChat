@@ -66,7 +66,7 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
             </div>
             {isOpen && (
               <span className="font-semibold text-text-primary truncate">
-                AI 客服
+                JeikChat
               </span>
             )}
           </div>

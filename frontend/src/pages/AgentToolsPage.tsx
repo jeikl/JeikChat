@@ -1,33 +1,58 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { Wrench, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { knowledgeApi } from '@/services/knowledge';
 
+const showToastOnce = (() => {
+  const shown = new Set<string>();
+  return (key: string, callback: () => void) => {
+    if (!shown.has(key)) {
+      shown.add(key);
+      callback();
+    }
+  };
+})();
+
 const AgentToolsPage = () => {
   const { tools, selectedToolIds, toggleTool, setTools } = useSettingsStore();
+  const loadedRef = useRef(false);
   
-  useEffect(() => {
-    if (tools.length === 0) {
-      knowledgeApi.listTools().then((result) => {
-        if (result.status === 1 && result.tools.length > 0) {
-          setTools(result.tools.map(t => ({ ...t, enabled: selectedToolIds.includes(t.id) })));
+  const loadTools = useCallback(async () => {
+    if (loadedRef.current) return;
+    loadedRef.current = true;
+    
+    try {
+      const result = await knowledgeApi.listTools();
+      if (result.status === 1 && result.tools.length > 0) {
+        setTools(result.tools.map(t => ({ ...t, enabled: selectedToolIds.includes(t.id) })));
+        showToastOnce('tools-success', () => {
           toast.success(result.msg || `已加载 ${result.tools.length} 个 Agent Tools`);
-        } else if (result.status === 0) {
+        });
+      } else if (result.status === 0 || result.tools.length === 0) {
+        setTools([]);
+        showToastOnce('tools-error', () => {
           toast.error(result.msg || '未获取到任何 Agent Tool，请检查后台配置');
-        }
-      }).catch((error) => {
-        console.error('加载工具失败:', error);
+        });
+      }
+    } catch (error) {
+      loadedRef.current = false;
+      console.error('加载工具失败:', error);
+      showToastOnce('tools-fail', () => {
         toast.error('加载 Agent Tools 失败，请检查后台配置');
       });
     }
-  }, [tools.length, selectedToolIds, setTools]);
+  }, [setTools, selectedToolIds]);
+  
+  useEffect(() => {
+    loadTools();
+  }, [loadTools]);
 
   return (
-    <div className="h-full overflow-y-auto p-6 bg-bg-primary">
+    <div className="h-full overflow-y-auto p-4 sm:p-6 bg-bg-primary">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-text-primary">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
             Agent Tools
           </h1>
           <p className="text-sm text-text-tertiary mt-1">

@@ -1,10 +1,22 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Plus, Upload, FileText, Trash2, RefreshCw, Loader2, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useKnowledgeStore } from '@/stores/knowledgeStore';
 import { knowledgeApi } from '@/services/knowledge';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+
+const showToastOnce = (() => {
+  const shown = new Set<string>();
+  return (key: string, callback: () => void) => {
+    if (!shown.has(key)) {
+      shown.add(key);
+      callback();
+    }
+  };
+})();
 
 const ALLOWED_FILE_TYPES = [
   { type: 'application/pdf', label: 'PDF', icon: '📄' },
@@ -34,14 +46,31 @@ const KnowledgePage = () => {
   const [newKnowledgeDescription, setNewKnowledgeDescription] = useState('');
   const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<string | null>(null);
   const [uploadDragging, setUploadDragging] = useState(false);
+  const knowledgeList = useKnowledgeStore(state => state.knowledgeBases);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    // 如果 URL 参数是 'tools'，则重定向到知识库页面
     if (tabParam === 'tools') {
       setSearchParams({ tab: 'knowledge' });
     }
   }, [searchParams]);
+
+  useQuery({
+    queryKey: ['knowledgeBases'],
+    queryFn: async () => {
+      const bases = await knowledgeApi.list();
+      useKnowledgeStore.getState().setKnowledgeBases(bases);
+      return bases;
+    },
+  });
+
+  useEffect(() => {
+    if (knowledgeList && knowledgeList.length > 0) {
+      showToastOnce('kb-loaded', () => {
+        toast.success(`已加载 ${knowledgeList.length} 个知识库`);
+      });
+    }
+  }, [knowledgeList]);
 
   const handleCreateKnowledge = async () => {
     if (!newKnowledgeName.trim()) return;
@@ -55,8 +84,10 @@ const KnowledgePage = () => {
       setShowCreateModal(false);
       setNewKnowledgeName('');
       setNewKnowledgeDescription('');
+      toast.success('知识库创建成功');
     } catch (error) {
       console.error('创建知识库失败:', error);
+      toast.error('创建知识库失败');
     }
   };
 
@@ -66,14 +97,16 @@ const KnowledgePage = () => {
     try {
       await knowledgeApi.delete(id);
       removeKnowledgeBase(id);
+      toast.success('知识库已删除');
     } catch (error) {
       console.error('删除知识库失败:', error);
+      toast.error('删除知识库失败');
     }
   };
 
   const handleFileUpload = useCallback(async (files: FileList | File[]) => {
     if (!selectedKnowledgeId) {
-      alert('请先选择一个知识库');
+      toast.error('请先选择一个知识库');
       return;
     }
 
@@ -88,10 +121,10 @@ const KnowledgePage = () => {
           setUploadProgress(Math.round(((i + progress / 100) / fileArray.length) * 100));
         });
       }
-      alert('文件上传成功');
+      toast.success(`成功上传 ${fileArray.length} 个文件，正在处理向量...`);
     } catch (error) {
       console.error('上传文件失败:', error);
-      alert('文件上传失败，请重试');
+      toast.error('文件上传失败，请重试');
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -131,16 +164,16 @@ const KnowledgePage = () => {
         
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+          className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
         >
-          <Plus className="w-5 h-5" />
-          创建知识库
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="text-sm sm:text-base">创建知识库</span>
         </button>
       </div>
 
       <div className="flex gap-2 mb-6">
         <button
-          className={`px-4 py-2 rounded-lg transition-all duration-200 bg-primary text-white`}
+          className={`px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 bg-primary text-white whitespace-nowrap text-sm sm:text-base`}
         >
           <FileText className="w-4 h-4 inline-block mr-2" />
           知识库

@@ -1,5 +1,5 @@
 """
-AI 智能客服系统 CLI 命令行工具
+JeikChat CLI 命令行工具
 """
 import argparse
 import subprocess
@@ -265,7 +265,7 @@ def run_all(test_mode: bool = False, backend_host: str = "0.0.0.0", backend_port
 
 def main():
     parser = argparse.ArgumentParser(
-        description=f"{GREEN}AI 智能客服系统 CLI{RESET}",
+        description=f"{GREEN}JeikChat CLI{RESET}",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=f"""
 {GREEN}使用示例:{RESET}

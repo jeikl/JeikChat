@@ -1,6 +1,6 @@
 /**
  * ============================================================
- * AI 智能客服系统 - API 统一管理文件
+ * JeikChat 智能客服系统 - API 统一管理文件
  * ============================================================
  * 
  * 本文件整合了所有前端API接口，提供了完整的类型定义和中文注释说明
@@ -438,11 +438,12 @@ export const knowledgeApi = {
    */
   listTools: async (): Promise<{ tools: Tool[]; msg: string; status: number }> => {
     const response = await apiClient.get<ApiResponse<Tool[]>>('/tools');
-    const tools = response.data.data || [];
+    const tools = response.data?.data || [];
+    const status = response.data?.status;
     return {
       tools: tools,
-      msg: response.data.msg || '',
-      status: response.data.status || 0
+      msg: response.data?.msg || (status === 1 ? '获取成功' : '获取失败'),
+      status: status || 0
     };
   },
 };
