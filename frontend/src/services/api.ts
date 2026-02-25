@@ -502,9 +502,35 @@ export const toolsApi = {
 // 默认导出
 // ============================================================
 
+// ============================================================
+// 模型服务 API (Model Management)
+// ============================================================
+
+/**
+ * 模型相关API - 用于获取模型列表和管理模型
+ * 触发位置：Header组件 - 模型选择下拉框
+ */
+export const modelApi = {
+  /**
+   * 获取模型提供商列表
+   * @请求方式 GET /api/models/list
+   * @触发位置 Header.tsx - 下拉框展开时
+   * @返回 { status: 1, data: { providers: {...}, embedding_models: [...] }, msg: "获取成功" }
+   */
+  list: async (): Promise<any> => {
+    const response = await apiClient.get<ApiResponse<any>>('/models/list');
+    return response.data;
+  },
+};
+
+// ============================================================
+// 默认导出
+// ============================================================
+
 export default {
   chatApi,
   knowledgeApi,
   configApi,
   toolsApi,
+  modelApi,
 };

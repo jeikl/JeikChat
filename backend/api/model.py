@@ -3,9 +3,11 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 from utils.result import success
+from core.config import get_settings
 
 router = APIRouter()
 
+settings = get_settings()
 
 class ModelConfig(BaseModel):
     id: str
@@ -19,37 +21,69 @@ class ModelConfig(BaseModel):
     top_p: float = 0.9
     enabled: bool = True
 
+def get_dynamic_model_options():
+    """根据配置文件动态生成模型选项"""
+    model_options = {}
+    
+    # 检查并添加各提供商的模型
+    providers = [
+        ("openai", "OpenAI", settings.OPENAI_MODEL, settings.OPENAI_DISPLAY_NAME),
+        ("anthropic", "Anthropic", settings.ANTHROPIC_MODEL, settings.ANTHROPIC_DISPLAY_NAME),
+        ("google", "Google", settings.GOOGLE_MODEL, settings.GOOGLE_DISPLAY_NAME),
+        ("qwen", "阿里云通义千问", settings.QWEN_MODEL, settings.QWEN_DISPLAY_NAME),
+        ("doubao", "字节跳动豆包", settings.DOUBAO_MODEL, settings.DOUBAO_DISPLAY_NAME),
+        ("moonshot", "月之暗面Kimi", settings.MOONSHOT_MODEL, settings.MOONSHOT_DISPLAY_NAME),
+        ("zhipu", "智谱AI", settings.ZHIPU_MODEL, settings.ZHIPU_DISPLAY_NAME),
+        ("baidu", "百度文心一言", settings.BAIDU_MODEL, settings.BAIDU_DISPLAY_NAME),
+        ("xfyun", "讯飞星火", settings.XFYUN_MODEL, settings.XFYUN_DISPLAY_NAME),
+        ("ollama", "Ollama (本地)", settings.OLLAMA_MODEL, settings.OLLAMA_DISPLAY_NAME),
+    ]
+    
+    for provider_key, provider_name, model_config, display_name in providers:
+        # 获取API密钥（判断是否有配置）
+        api_key = getattr(settings, f"{provider_key.upper()}_API_KEY", None)
+        
+        # 如果有API密钥或配置了模型，则添加到选项中
+        if api_key or model_config:
+            # 处理多个模型（用 | 分隔）
+            models = []
+            if model_config:
+                models = [m.strip() for m in model_config.split('|') if m.strip()]
+            else:
+                models = []  # 如果没有配置模型，则为空列表
+            
+            # 如果没有模型但有API密钥，则使用默认模型
+            if not models and api_key:
+                # 根据提供商使用默认模型
+                if provider_key == "openai":
+                    models = ["gpt-4o-mini"]
+                elif provider_key == "anthropic":
+                    models = ["claude-3-5-sonnet-20241022"]
+                elif provider_key == "google":
+                    models = ["gemini-2.0-flash"]
+                elif provider_key == "qwen":
+                    models = ["qwen-max"]
+                elif provider_key == "doubao":
+                    models = ["doubao-pro"]
+                elif provider_key == "moonshot":
+                    models = ["moonshot-v1-8k"]
+                elif provider_key == "zhipu":
+                    models = ["glm-4-air"]
+                elif provider_key == "baidu":
+                    models = ["ernie-bot-4.5"]
+                elif provider_key == "xfyun":
+                    models = ["spark-4.5-ultra"]
+                elif provider_key == "ollama":
+                    models = ["qwen2:7b"]
+            
+            if models:
+                model_options[provider_key] = {
+                    "name": provider_name,
+                    "models": models,
+                }
+    
+    return model_options
 
-MODEL_OPTIONS = {
-    "openai": {
-        "name": "OpenAI",
-        "models": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
-    },
-    "anthropic": {
-        "name": "Anthropic",
-        "models": ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"],
-    },
-    "google": {
-        "name": "Google",
-        "models": ["gemini-pro", "gemini-pro-vision"],
-    },
-    "qwen": {
-        "name": "阿里云通义千问",
-        "models": ["qwen-turbo", "qwen-plus", "qwen-max"],
-    },
-    "doubao": {
-        "name": "字节跳动豆包",
-        "models": ["doubao-pro-32k", "doubao-pro-4k"],
-    },
-    "moonshot": {
-        "name": "月之暗面Kimi",
-        "models": ["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"],
-    },
-    "ollama": {
-        "name": "Ollama (本地)",
-        "models": ["llama2", "mistral", "qwen", "codellama"],
-    },
-}
 
 EMBEDDING_MODELS = [
     {"id": "all-MiniLM-L6-v2", "name": "all-MiniLM-L6-v2", "description": "轻量级快速模型"},
@@ -63,9 +97,26 @@ EMBEDDING_MODELS = [
 @router.get("/models/list")
 async def list_models():
     """获取模型提供商列表"""
+    model_options = get_dynamic_model_options()
+    
+    # 如果没有任何模型配置，则返回测试模型
+    if not model_options:
+        test_providers = {
+            "test": {
+                "name": "测试模型",
+                "models": ["gpt4(测)", "deepseek(测)", "claude3(测)", "gemini(测)"]
+            }
+        }
+        return success(data={
+            "providers": test_providers,
+            "embedding_models": EMBEDDING_MODELS,
+            "has_configured_models": False
+        }, msg="服务器未配置模型，此处展示测试模型")
+    
     return success(data={
-        "providers": MODEL_OPTIONS,
+        "providers": model_options,
         "embedding_models": EMBEDDING_MODELS,
+        "has_configured_models": True
     }, msg="获取成功")
 
 

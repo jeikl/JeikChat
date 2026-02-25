@@ -20,6 +20,7 @@ interface SettingsState {
   updateConfig: (id: string, updates: Partial<LLMConfig>) => void;
   removeConfig: (id: string) => void;
   setActiveConfig: (id: string | null) => void;
+  setConfigs: (configs: LLMConfig[]) => void;
   setDefaultSystemPrompt: (prompt: string) => void;
   setTools: (tools: Tool[]) => void;
   toggleTool: (toolId: string) => void;
@@ -77,6 +78,7 @@ export const useSettingsStore = create<SettingsState>()(
         })),
 
       setActiveConfig: (id) => set({ activeConfigId: id }),
+      setConfigs: (configs) => set({ configs }),
       setDefaultSystemPrompt: (prompt) => set({ defaultSystemPrompt: prompt }),
       setTools: (tools) => set({ tools }),
       toggleTool: (toolId) =>

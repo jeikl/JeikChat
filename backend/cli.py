@@ -263,12 +263,53 @@ def run_all(test_mode: bool = False, backend_host: str = "0.0.0.0", backend_port
         print(f"{GREEN}已停止{RESET}")
 
 
+def run_all_simple():
+    """简化版全栈启动 - 使用 StartConfig 配置"""
+    from core.start_config import StartConfig
+    
+    config = StartConfig.from_env()
+    config.print_config()
+    
+    print_header(f"🌐 启动全栈服务 (简化模式)")
+    
+    backend_proc = start_backend(test_mode=False, host=config.backend_host, port=config.backend_port)
+    time.sleep(5)
+    
+    frontend_proc = start_frontend(host=config.frontend_host, port=config.frontend_port)
+    if frontend_proc is None:
+        print(f"{YELLOW}前端启动失败{RESET}")
+        backend_proc.terminate()
+        backend_proc.wait()
+        return
+    
+    time.sleep(8)
+    
+    # 打开前端页面
+    open_browser(f"http://localhost:{config.frontend_port}")
+    
+    print(f"\n{GREEN}✅ 全栈服务已启动!{RESET}")
+    print(f"前端地址: {BLUE}http://localhost:{config.frontend_port}{RESET}")
+    print(f"后端地址: {BLUE}http://localhost:{config.backend_port}/docs{RESET}")
+    print(f"API 文档: {BLUE}{config.api_docs_url}{RESET}")
+    print(f"\n按 {YELLOW}Ctrl+C{RESET} 停止\n")
+    
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print(f"\n{YELLOW}停止服务...{RESET}")
+        frontend_proc.terminate()
+        backend_proc.terminate()
+        print(f"{GREEN}已停止{RESET}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=f"{GREEN}JeikChat CLI{RESET}",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=f"""
 {GREEN}使用示例:{RESET}
+  {YELLOW}jeikchat run a{RESET}                        简化启动全栈 (推荐)
   {YELLOW}jeikchat run back -t{RESET}                   后端测试模式
   {YELLOW}jeikchat run back --host :: --port 8080{RESET}        后端IPv6模式，端口8080
   {YELLOW}jeikchat run front --host 192.168.1.100 --port 3000{RESET} 前端指定IP和端口
@@ -279,12 +320,13 @@ def main():
     )
     
     parser.add_argument("action", nargs="?", help="要执行的操作")
-    parser.add_argument("target", nargs="?", help="目标 (back/front/all)")
+    parser.add_argument("target", nargs="?", help="目标 (a/back/front/all)")
     parser.add_argument("-t", "--test", action="store_true", help="测试模式")
     parser.add_argument("--host", default=None, help="指定主机地址 (如: 0.0.0.0, ::, 192.168.1.100)")
     parser.add_argument("--port", type=int, default=None, help="指定前端端口号")
     parser.add_argument("--backend-port", type=int, default=None, help="指定后端端口号")
     parser.add_argument("--frontend-port", type=int, default=None, help="指定前端端口号")
+    parser.add_argument("--mode", choices=["dev", "local"], default="dev", help="环境模式 (dev/local)")
     
     args = parser.parse_args()
     
@@ -294,23 +336,29 @@ def main():
     frontend_host = args.host if args.host else "localhost"
     frontend_port = args.frontend_port if args.frontend_port else (args.port if args.port else 5173)
     
+    # 设置环境模式
+    os.environ["AICHAT_ENVIRONMENT"] = args.mode
+    
     if args.action == "run" and args.target:
         target = args.target.lower()
-        if target == "back":
+        if target in ["a", "all"]:  # 支持简化的 'a' 命令
+            if target == "a":
+                run_all_simple()
+            else:
+                run_all(
+                    test_mode=args.test,
+                    backend_host=backend_host,
+                    backend_port=backend_port,
+                    frontend_host=frontend_host,
+                    frontend_port=frontend_port
+                )
+        elif target == "back":
             if args.test:
                 run_back_test(host=backend_host, port=backend_port)
             else:
                 run_back(host=backend_host, port=backend_port)
         elif target == "front":
             run_front(host=frontend_host, port=frontend_port)
-        elif target == "all":
-            run_all(
-                test_mode=args.test,
-                backend_host=backend_host,
-                backend_port=backend_port,
-                frontend_host=frontend_host,
-                frontend_port=frontend_port
-            )
         else:
             print(f"{YELLOW}未知目标: {target}{RESET}")
     elif args.action == "install":

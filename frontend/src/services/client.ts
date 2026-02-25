@@ -9,7 +9,22 @@ import toast from 'react-hot-toast';
 // 支持本地开发和 nginx 反向代理
 // 开发环境：使用 vite 代理（相对路径 /api）
 // 生产环境：使用 nginx 代理（相对路径 /api）
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || '/api';
+// 支持动态端口配置
+const getApiBaseUrl = (): string => {
+  // 优先使用环境变量配置
+  const envUrl = (import.meta as any).env?.VITE_API_URL;
+  if (envUrl) return envUrl;
+  
+  // 开发环境：使用 vite 代理
+  if ((import.meta as any).env?.DEV) {
+    return '/api';
+  }
+  
+  // 生产环境：使用 nginx 代理
+  return '/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,

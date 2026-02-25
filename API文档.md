@@ -2,10 +2,77 @@
 
 ## 目录
 
+- [启动配置说明](#启动配置说明)
 - [基础配置 API (Config)](#基础配置-api-config)
+- [模型服务 API (Model)](#模型服务-api-model)
 - [聊天服务 API (Chat)](#聊天服务-api-chat)
 - [知识库服务 API (Knowledge)](#知识库服务-api-knowledge)
 - [工具服务 API (Tools)](#工具服务-api-tools)
+
+---
+
+## 启动配置说明
+
+### 简化启动命令
+
+```bash
+# 推荐：简化启动全栈服务
+jeikchat run a
+
+# 传统启动方式（仍支持）
+jeikchat run all
+jeikchat run back
+jeikchat run front
+```
+
+### 环境变量配置
+
+支持通过环境变量动态配置启动参数：
+
+| 环境变量 | 默认值 | 说明 |
+|----------|--------|------|
+| `JEIKCHAT_BACKEND_HOST` | `0.0.0.0` | 后端服务监听地址 |
+| `JEIKCHAT_BACKEND_PORT` | `8000` | 后端服务端口 |
+| `JEIKCHAT_FRONTEND_HOST` | `0.0.0.0` | 前端服务监听地址 |
+| `JEIKCHAT_FRONTEND_PORT` | `5173` | 前端服务端口 |
+| `JEIKCHAT_API_DOCS_HOST` | `localhost` | API文档访问地址 |
+| `JEIKCHAT_API_DOCS_PORT` | `8000` | API文档端口 |
+| `JEIKCHAT_DEV_MODE` | `true` | 开发模式开关 |
+| `JEIKCHAT_ENVIRONMENT` | `dev` | 环境模式 (dev/local) |
+
+### 端口访问说明
+
+| 服务 | 默认端口 | 访问地址 | 说明 |
+|------|----------|----------|------|
+| 前端服务 | 5173 | `http://localhost:5173` | 用户界面 |
+| 后端服务 | 8000 | `http://localhost:8000` | API服务 |
+| API文档 | 8000 | `http://localhost:8000/docs` | 接口文档 |
+
+### 双栈网络支持
+
+支持 IPv4/IPv6 双栈访问：
+
+```bash
+# IPv4 访问
+http://127.0.0.1:5173
+http://192.168.1.100:5173
+
+# IPv6 访问  
+http://[::1]:5173
+http://[fe80::1]:5173
+
+# 双栈模式（监听所有接口）
+jeikchat run a --host 0.0.0.0
+jeikchat run a --host ::
+```
+
+### 配置文件位置
+
+| 文件 | 路径 | 说明 |
+|------|------|------|
+| 启动配置 | [core/start_config.py](file:///f:/code/aichat/backend/core/start_config.py) | 统一启动配置管理 |
+| CLI工具 | [cli.py](file:///f:/code/aichat/backend/cli.py) | 命令行接口 |
+| 前端API配置 | [services/client.ts](file:///f:/code/aichat/frontend/src/services/client.ts) | 动态端口配置 |
 
 ---
 
@@ -151,6 +218,69 @@
   "status": 1,
   "data": null,
   "msg": "设置成功"
+}
+```
+
+---
+
+## 模型服务 API (Model)
+
+### 1. 获取模型提供商列表
+
+| 项目 | 内容 |
+|------|------|
+| 请求方式 | `GET /api/models/list` |
+| 触发位置 | [components/Common/Header.tsx](file:///f:/code/aichat/frontend/src/components/Common/Header.tsx) - 模型选择下拉框 |
+| 按钮/操作 | 页面加载时自动触发（有缓存则使用缓存） |
+
+**功能说明**：
+- 根据 `.env` 或 `.env.local` 配置文件动态生成模型列表
+- 支持同一提供商配置多个模型（用 `|` 分隔，如 `QWEN_MODEL=qwen3.5-plus|qwen3-max`）
+- 无配置时返回测试模型列表
+
+**返回示例** ✅ 有配置模型
+
+```json
+{
+  "status": 1,
+  "data": {
+    "providers": {
+      "openai": {
+        "name": "OpenAI",
+        "models": ["gpt-4o-mini"]
+      },
+      "qwen": {
+        "name": "阿里云通义千问",
+        "models": ["qwen3.5-plus", "qwen3-max"]
+      }
+    },
+    "embedding_models": [
+      {"id": "all-MiniLM-L6-v2", "name": "all-MiniLM-L6-v2", "description": "轻量级快速模型"}
+    ],
+    "has_configured_models": true
+  },
+  "msg": "获取成功"
+}
+```
+
+**返回示例** ⚠️ 无配置模型（测试模型）
+
+```json
+{
+  "status": 1,
+  "data": {
+    "providers": {
+      "test": {
+        "name": "测试模型",
+        "models": ["gpt4(测)", "deepseek(测)", "claude3(测)", "gemini(测)"]
+      }
+    },
+    "embedding_models": [
+      {"id": "all-MiniLM-L6-v2", "name": "all-MiniLM-L6-v2", "description": "轻量级快速模型"}
+    ],
+    "has_configured_models": false
+  },
+  "msg": "服务器未配置模型，此处展示测试模型"
 }
 ```
 
@@ -672,6 +802,8 @@ data: [DONE]
 | 后端聊天API | [api/chat.py](file:///f:/code/aichat/backend/api/chat.py) |
 | 后端知识库API | [api/knowledge.py](file:///f:/code/aichat/backend/api/knowledge.py) |
 | 后端模型API | [api/model.py](file:///f:/code/aichat/backend/api/model.py) |
+| 后端配置 | [core/config.py](file:///f:/code/aichat/backend/core/config.py) |
+| 环境配置 | [.env](file:///f:/code/aichat/backend/.env) / [.env.local](file:///f:/code/aichat/backend/.env.local) |
 
 ---
 

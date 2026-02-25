@@ -18,6 +18,10 @@ export type LLMProvider =
   | 'qwen' 
   | 'doubao' 
   | 'moonshot' 
+  | 'zhipu'
+  | 'baidu'
+  | 'xfyun'
+  | 'test'
   | 'ollama';
 
 export interface ModelInfo {
@@ -36,6 +40,10 @@ export const PROVIDER_LABELS: Record<LLMProvider, string> = {
   qwen: '阿里云通义千问',
   doubao: '字节跳动豆包',
   moonshot: '月之暗面Kimi',
+  zhipu: '智谱AI',
+  baidu: '百度文心一言',
+  xfyun: '讯飞星火',
+  test: '测试模型',
   ollama: 'Ollama (本地)',
 };
 
