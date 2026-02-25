@@ -3,11 +3,10 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 from utils.result import success
-from settings import get_settings
+from settings import get_settings, reload_settings
 
 router = APIRouter()
 
-settings = get_settings()
 
 class ModelConfig(BaseModel):
     id: str
@@ -23,6 +22,7 @@ class ModelConfig(BaseModel):
 
 def get_dynamic_model_options():
     """根据配置文件动态生成模型选项"""
+    settings = reload_settings()
     model_options = {}
     
     # 检查并添加各提供商的模型

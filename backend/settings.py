@@ -211,6 +211,11 @@ def get_settings() -> Settings:
     """获取应用配置（缓存）"""
     return Settings()
 
+def reload_settings() -> Settings:
+    """重新加载应用配置（清除缓存）"""
+    get_settings.cache_clear()
+    return get_settings()
+
 
 # 全局配置实例
 start_config = StartConfig.from_env()

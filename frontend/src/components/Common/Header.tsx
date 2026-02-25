@@ -16,7 +16,7 @@ interface HeaderProps {
 }
 
 const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
-  const { configs, activeConfigId, setConfigs, clearConfigs } = useSettingsStore();
+  const { configs, activeConfigId } = useSettingsStore();
   const { knowledgeBases, selectedKnowledgeIds, toggleKnowledgeSelection } = useKnowledgeStore();
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [showKnowledgeSelector, setShowKnowledgeSelector] = useState(false);
@@ -26,12 +26,10 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
 
   // 获取模型列表
   const fetchModels = async () => {
-    // 直接从后端获取，不使用缓存
     setIsLoading(true);
     try {
       const result = await modelApi.list();
       if (result.status === 1) {
-        // 生成配置列表
         const newConfigs: LLMConfig[] = [];
         let configId = 1;
         
@@ -51,19 +49,14 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
           }
         }
         
-        // 先清空再设置，确保触发更新
-        clearConfigs();
-        setConfigs([...newConfigs]);
+        // 直接设置新配置，绕过 persist 缓存问题
+        useSettingsStore.setState({ 
+          configs: newConfigs, 
+          activeConfigId: newConfigs.length > 0 ? newConfigs[0].id : null 
+        });
         
-        // 显示成功提示
         const totalModels = Object.values(result.data.providers).reduce((sum: number, p: any) => sum + (p.models?.length || 0), 0);
         showToast(`获取到 ${totalModels} 个模型`, 'success');
-        
-        // 如果当前选中的模型不在新列表中，重置为第一个
-        const currentActiveId = useSettingsStore.getState().activeConfigId;
-        if (currentActiveId && !newConfigs.find(c => c.id === currentActiveId)) {
-          useSettingsStore.getState().setActiveConfig(newConfigs[0]?.id || null);
-        }
       } else {
         showToast('获取模型列表失败，请稍后重试', 'error');
       }
