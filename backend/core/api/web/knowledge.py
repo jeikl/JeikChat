@@ -1,8 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, Form
 from typing import List, Optional
 
-from services.rag_service import knowledge_service, rag_service
-from models.result import success
+from core.services.rag_service import knowledge_service, rag_service
+from core.api.result import success
 
 router = APIRouter()
 

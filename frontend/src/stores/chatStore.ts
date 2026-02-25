@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { chatApi } from '@/services/chat';
+import { useSettingsStore } from './settingsStore';
 import type { ChatSession, Message } from '@/types/chat';
 
 interface ChatState {
@@ -85,6 +86,10 @@ export const useChatStore = create<ChatState>()(
       sendMessage: async (content, toolIds = []) => {
         set({ isLoading: true });
         try {
+          // 获取当前选中的模型配置
+          const activeConfig = useSettingsStore.getState().getActiveConfig();
+          const model = activeConfig?.model;
+
           // 如果没有当前会话，则创建一个新的
           let sessionId = useChatStore.getState().currentSessionId;
           if (!sessionId) {
@@ -108,11 +113,12 @@ export const useChatStore = create<ChatState>()(
           };
           useChatStore.getState().addMessage(sessionId, userMessage);
 
-          // 发送请求到后端
+          // 发送请求到后端，传递模型名称
           const response = await chatApi.sendMessage({
             content,
             sessionId,
-            knowledgeBaseIds: toolIds, // 使用工具ID作为知识库ID（这里可能是命名错误）
+            model, // 传递当前选中的模型名称
+            knowledgeBaseIds: toolIds,
           });
 
           // 添加助手回复

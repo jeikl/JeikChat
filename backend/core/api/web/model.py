@@ -2,8 +2,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import List, Optional
 
-from models.result import success
-from settings import reload_settings
+from core.api.result import success
+from init import reload_settings
 
 router = APIRouter()
 

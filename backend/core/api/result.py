@@ -1,10 +1,10 @@
 """
-统一响应结果工具
+统一响应结果函数
 
-使用 models/schemas.py 中定义的 ResultResponse 类
+使用 schemas.py 中定义的 ResultResponse 类
 """
 
-from models.schemas import ResultResponse
+from core.api.schemas import ResultResponse
 import json
 
 

@@ -1,13 +1,14 @@
 from fastapi import APIRouter
 
-from models.schemas import (
+
+from core.api.schemas import (
     ChatSessionResponse,
     SendMessageRequest,
     SendMessageResponse,
     MessageResponse,
 )
-from services.chat_service import ChatService
-from models.result import success, sse_format, sse_done
+from core.services.chat_service import ChatService
+from core.api.result import success, sse_format, sse_done
 
 router = APIRouter()
 chat_service = ChatService()

@@ -25,6 +25,7 @@ interface SettingsState {
   setDefaultSystemPrompt: (prompt: string) => void;
   setTools: (tools: Tool[]) => void;
   toggleTool: (toolId: string) => void;
+  getActiveConfig: () => LLMConfig | null;
 }
 
 const DEFAULT_CONFIGS: LLMConfig[] = [
@@ -89,6 +90,10 @@ export const useSettingsStore = create<SettingsState>()(
             ? state.selectedToolIds.filter((id) => id !== toolId)
             : [...state.selectedToolIds, toolId],
         })),
+      getActiveConfig: (): LLMConfig | null => {
+        const state = useSettingsStore.getState();
+        return state.configs.find((c) => c.id === state.activeConfigId) || null;
+      },
     }),
     {
       name: 'settings-storage',

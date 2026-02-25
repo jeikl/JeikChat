@@ -270,7 +270,7 @@ def run_all(test_mode: bool = False, backend_host: str = "0.0.0.0", backend_port
 
 def run_all_simple(test_mode: bool = False):
     """简化版全栈启动 - 使用 StartConfig 配置"""
-    from settings import StartConfig
+    from init import StartConfig
     
     config = StartConfig.from_env()
     config.print_config()

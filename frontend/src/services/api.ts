@@ -42,7 +42,7 @@ export interface ApiResponse<T> {
 export interface SendMessageRequest {
   content: string;
   sessionId?: string;
-  modelId?: string;
+  model?: string;
   knowledgeBaseIds?: string[];
   stream?: boolean;
 }
@@ -164,7 +164,7 @@ export const chatApi = {
   sendMessage: async (data: SendMessageRequest): Promise<SendMessageResponse> => {
     const response = await apiClient.post<ApiResponse<SendMessageResponse>>('/chat/send', {
       ...data,
-      stream: false,
+      stream: true,
     });
     return response.data.data;
   },

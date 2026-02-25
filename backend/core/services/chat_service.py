@@ -1,11 +1,10 @@
 from typing import List, Dict, Optional, Any
 from uuid import uuid4
 from datetime import datetime
-import json
 
-from settings import get_settings
-from services.llm_service import LLMService
-from services.rag_service import RAGService
+from init import get_settings
+from core.services.llm_service import LLMService
+from core.services.rag_service import RAGService
 
 settings = get_settings()
 

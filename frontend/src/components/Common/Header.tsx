@@ -38,7 +38,7 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
           for (const model of provider.models) {
             newConfigs.push({
               id: `config_${configId++}`,
-              name: `${provider.name}-${model}`,
+              name: model,
               provider: toLLMProvider(providerKey),
               model: model,
               temperature: 0.7,

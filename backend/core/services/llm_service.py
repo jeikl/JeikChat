@@ -2,7 +2,7 @@ from typing import List, Dict, Optional, Any
 import os
 import json
 
-from settings import get_settings
+from init import get_settings
 
 settings = get_settings()
 
