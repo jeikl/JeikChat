@@ -9,6 +9,13 @@ from api import chat, knowledge, model
 
 settings = get_settings()
 
+TEST_MODE = os.environ.get("AICHAT_TEST_MODE", "0") == "1"
+
+if TEST_MODE:
+    print("\n" + "=" * 50)
+    print("🔧 测试模式已启用 - 将返回模拟数据")
+    print("=" * 50 + "\n")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -23,6 +30,14 @@ app = FastAPI(
     description="AI智能客服系统API",
     lifespan=lifespan,
 )
+
+app.state.TEST_MODE = TEST_MODE
+
+if TEST_MODE:
+    from api import test as test_router
+    app.include_router(test_router.router, tags=["测试模式"])
+    print("📦 测试路由已注册")
+
 
 origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",")]
 
@@ -44,10 +59,11 @@ async def root():
     return {
         "name": settings.APP_NAME,
         "version": settings.APP_VERSION,
-        "status": "running"
+        "status": "running",
+        "test_mode": TEST_MODE
     }
 
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy", "test_mode": TEST_MODE}

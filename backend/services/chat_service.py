@@ -106,3 +106,67 @@ class ChatService:
 
     async def clear_all_sessions(self):
         self.sessions.clear()
+
+    async def rename_session(self, session_id: str, title: str):
+        """重命名会话"""
+        if session_id in self.sessions:
+            self.sessions[session_id]["title"] = title
+            self.sessions[session_id]["updated_at"] = int(datetime.now().timestamp() * 1000)
+
+    async def send_message_stream(self, content: str, session_id: str = None, model_id: str = None, knowledge_base_ids: List[str] = None):
+        """流式发送消息"""
+        if not session_id or session_id not in self.sessions:
+            session_id = str(uuid4())
+            self.sessions[session_id] = {
+                "id": session_id,
+                "title": content[:30] + "..." if len(content) > 30 else content,
+                "messages": [],
+                "created_at": int(datetime.now().timestamp() * 1000),
+                "updated_at": int(datetime.now().timestamp() * 1000),
+                "model_id": model_id,
+                "knowledge_base_ids": knowledge_base_ids or [],
+            }
+
+        user_message = {
+            "id": str(uuid4()),
+            "role": "user",
+            "content": content,
+            "timestamp": int(datetime.now().timestamp() * 1000),
+        }
+        self.sessions[session_id]["messages"].append(user_message)
+
+        references = []
+        context = ""
+        
+        if knowledge_base_ids:
+            context = await self.rag_service.retrieve_context(
+                knowledge_base_ids, content
+            )
+            if context:
+                references = context.get("references", [])
+
+        system_prompt = self._build_system_prompt(context)
+
+        messages = [{"role": "system", "content": system_prompt}]
+        for msg in self.sessions[session_id]["messages"][-10:]:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+
+        yield {"session_id": session_id}
+
+        async for chunk in self.llm_service.generate_stream(messages=messages, model_id=model_id):
+            if chunk:
+                yield {"content": chunk}
+
+        assistant_message = {
+            "id": str(uuid4()),
+            "role": "assistant",
+            "content": "",
+            "timestamp": int(datetime.now().timestamp() * 1000),
+            "references": references if references else None,
+        }
+        
+        if references:
+            yield {"references": references}
+
+        self.sessions[session_id]["messages"].append(assistant_message)
+        self.sessions[session_id]["updated_at"] = int(datetime.now().timestamp() * 1000)

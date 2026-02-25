@@ -1,19 +1,27 @@
 import { useEffect } from 'react';
 import { Wrench, Check } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { knowledgeApi } from '@/services/knowledge';
 
 const AgentToolsPage = () => {
-  const { tools, selectedToolIds, toggleTool } = useSettingsStore();
+  const { tools, selectedToolIds, toggleTool, setTools } = useSettingsStore();
   
   useEffect(() => {
-    // 初始化工具列表
     if (tools.length === 0) {
-      knowledgeApi.listTools().then((backendTools) => {
-        useSettingsStore.getState().setTools(backendTools.map(t => ({ ...t, enabled: selectedToolIds.includes(t.id) })));
-      }).catch(console.error);
+      knowledgeApi.listTools().then((result) => {
+        if (result.status === 1 && result.tools.length > 0) {
+          setTools(result.tools.map(t => ({ ...t, enabled: selectedToolIds.includes(t.id) })));
+          toast.success(result.msg || `已加载 ${result.tools.length} 个 Agent Tools`);
+        } else if (result.status === 0) {
+          toast.error(result.msg || '未获取到任何 Agent Tool，请检查后台配置');
+        }
+      }).catch((error) => {
+        console.error('加载工具失败:', error);
+        toast.error('加载 Agent Tools 失败，请检查后台配置');
+      });
     }
-  }, [tools.length, selectedToolIds]);
+  }, [tools.length, selectedToolIds, setTools]);
 
   return (
     <div className="h-full overflow-y-auto p-6 bg-bg-primary">
