@@ -1,0 +1,46 @@
+[project]
+name = "aichat"
+version = "0.1.0"
+description = "AI 智能客服系统 - 后端"
+requires-python = ">=3.11"
+
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy",
+    "pydantic",
+    "pydantic-settings",
+    "python-multipart",
+    "python-jose[cryptography]",
+    "passlib[bcrypt]",
+    "langchain",
+    "langchain-community",
+    "langchain-openai",
+    "chromadb",
+    "sentence-transformers",
+    "pypdf",
+    "python-docx",
+    "openpyxl",
+    "pandas",
+    "python-magic",
+    "aiofiles",
+    "httpx",
+    "tenacity",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.24.0",
+]
+
+[project.scripts]
+jeikchat = "cli:main"
+
+[tool.setuptools]
+py-modules = ["cli"]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"

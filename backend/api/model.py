@@ -145,7 +145,7 @@ async def set_active_config(config_id: str):
 TOOLS = {}
 
 
-@router.get("/knowledge/tools")
+@router.get("/tools")
 async def list_tools():
     """获取所有可用的Agent工具列表"""
     tools = [

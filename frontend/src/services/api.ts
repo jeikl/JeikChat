@@ -432,14 +432,15 @@ export const knowledgeApi = {
 
   /**
    * 获取所有可用的Agent工具列表
-   * @请求方式 GET /api/knowledge/tools
+   * @请求方式 GET /api/tools
    * @触发位置 AgentToolsPage.tsx - 页面加载时
    * @返回 { status: 1, data: [...], msg: "获取成功" } 或 { status: 0, data: [], msg: "未获取到任何 Agent Tool" }
    */
   listTools: async (): Promise<{ tools: Tool[]; msg: string; status: number }> => {
-    const response = await apiClient.get<ApiResponse<Tool[]>>('/knowledge/tools');
+    const response = await apiClient.get<ApiResponse<Tool[]>>('/tools');
+    const tools = response.data.data || [];
     return {
-      tools: response.data.data || [],
+      tools: tools,
       msg: response.data.msg || '',
       status: response.data.status || 0
     };
@@ -457,11 +458,11 @@ export const knowledgeApi = {
 export const toolsApi = {
   /**
    * 获取所有可用工具
-   * @请求方式 GET /api/knowledge/tools
+   * @请求方式 GET /api/tools
    * @触发位置 AgentToolsPage.tsx - 页面加载时
    * @返回 { status: 1, data: [...], msg: "获取成功" }
    */
-  list: async (): Promise<Tool[]> => {
+  list: async (): Promise<{ tools: Tool[]; msg: string; status: number }> => {
     return knowledgeApi.listTools();
   },
 
