@@ -21,48 +21,48 @@ class LLMService:
     async def generate(
         self,
         messages: List[Dict[str, str]],
-        model_id: Optional[str] = None,
+        model: Optional[str] = None,
         **kwargs,
     ) -> str:
-        provider = self._get_provider(model_id)
+        provider = self._get_provider(model)
         
         if provider in self.providers:
-            return await self.providers[provider](messages, model_id, **kwargs)
+            return await self.providers[provider](messages, model, **kwargs)
         
-        return await self._openai_chat(messages, model_id, **kwargs)
+        return await self._openai_chat(messages, model, **kwargs)
 
     async def generate_stream(
         self,
         messages: List[Dict[str, str]],
-        model_id: Optional[str] = None,
+        model: Optional[str] = None,
         **kwargs,
     ):
         """流式生成内容"""
-        provider = self._get_provider(model_id)
+        provider = self._get_provider(model)
         
         if provider == "openai":
-            async for chunk in self._openai_chat_stream(messages, model_id, **kwargs):
+            async for chunk in self._openai_chat_stream(messages, model, **kwargs):
                 yield chunk
         else:
-            content = await self.generate(messages, model_id, **kwargs)
+            content = await self.generate(messages, model, **kwargs)
             for char in content:
                 yield char
 
-    def _get_provider(self, model_id: Optional[str]) -> str:
-        if not model_id:
+    def _get_provider(self, model: Optional[str]) -> str:
+        if not model:
             return settings.DEFAULT_LLM_PROVIDER
         
-        if "gpt" in model_id.lower():
+        if "gpt" in model.lower():
             return "openai"
-        elif "claude" in model_id.lower():
+        elif "claude" in model.lower():
             return "anthropic"
-        elif "qwen" in model_id.lower():
+        elif "qwen" in model.lower():
             return "qwen"
-        elif "doubao" in model_id.lower():
+        elif "doubao" in model.lower():
             return "doubao"
-        elif "moonshot" in model_id.lower() or "kim" in model_id.lower():
+        elif "moonshot" in model.lower() or "kim" in model.lower():
             return "moonshot"
-        elif "llama" in model_id.lower() or "mistral" in model_id.lower():
+        elif "llama" in model.lower() or "mistral" in model.lower():
             return "ollama"
         
         return settings.DEFAULT_LLM_PROVIDER
@@ -70,7 +70,7 @@ class LLMService:
     async def _openai_chat(
         self,
         messages: List[Dict[str, str]],
-        model_id: Optional[str] = None,
+        model: Optional[str] = None,
         **kwargs,
     ) -> str:
         try:
@@ -82,7 +82,7 @@ class LLMService:
             )
             
             response = await client.chat.completions.create(
-                model=model_id or "gpt-3.5-turbo",
+                model=model or "gpt-3.5-turbo",
                 messages=messages,
                 temperature=kwargs.get("temperature", 0.7),
                 max_tokens=kwargs.get("max_tokens", 4096),
@@ -95,7 +95,7 @@ class LLMService:
     async def _openai_chat_stream(
         self,
         messages: List[Dict[str, str]],
-        model_id: Optional[str] = None,
+        model: Optional[str] = None,
         **kwargs,
     ):
         """OpenAI 流式响应"""
@@ -108,7 +108,7 @@ class LLMService:
             )
             
             stream = await client.chat.completions.create(
-                model=model_id or "gpt-3.5-turbo",
+                model=model or "gpt-3.5-turbo",
                 messages=messages,
                 temperature=kwargs.get("temperature", 0.7),
                 max_tokens=kwargs.get("max_tokens", 4096),
@@ -124,7 +124,7 @@ class LLMService:
     async def _anthropic_chat(
         self,
         messages: List[Dict[str, str]],
-        model_id: Optional[str] = None,
+        model: Optional[str] = None,
         **kwargs,
     ) -> str:
         return "Anthropic API not configured. Please add ANTHROPIC_API_KEY to .env"
@@ -132,7 +132,7 @@ class LLMService:
     async def _qwen_chat(
         self,
         messages: List[Dict[str, str]],
-        model_id: Optional[str] = None,
+        model: Optional[str] = None,
         **kwargs,
     ) -> str:
         return "Qwen API not configured. Please add QWEN_API_KEY to .env"
@@ -140,7 +140,7 @@ class LLMService:
     async def _doubao_chat(
         self,
         messages: List[Dict[str, str]],
-        model_id: Optional[str] = None,
+        model: Optional[str] = None,
         **kwargs,
     ) -> str:
         return "Doubao API not configured. Please add DOUBAO_API_KEY to .env"
@@ -148,7 +148,7 @@ class LLMService:
     async def _moonshot_chat(
         self,
         messages: List[Dict[str, str]],
-        model_id: Optional[str] = None,
+        model: Optional[str] = None,
         **kwargs,
     ) -> str:
         return "Moonshot API not configured. Please add MOONSHOT_API_KEY to .env"
@@ -156,7 +156,7 @@ class LLMService:
     async def _ollama_chat(
         self,
         messages: List[Dict[str, str]],
-        model_id: Optional[str] = None,
+        model: Optional[str] = None,
         **kwargs,
     ) -> str:
         try:
@@ -166,7 +166,7 @@ class LLMService:
                 response = await client.post(
                     f"{settings.OLLAMA_BASE_URL}/api/chat",
                     json={
-                        "model": model_id or "llama2",
+                        "model": model or "llama2",
                         "messages": messages,
                         "stream": False,
                     },

@@ -1,17 +1,13 @@
-from fastapi import APIRouter, HTTPException
-from typing import List, Optional
-from uuid import uuid4
-import json
+from fastapi import APIRouter
 
 from models.schemas import (
-    ChatSessionCreate,
     ChatSessionResponse,
     SendMessageRequest,
     SendMessageResponse,
     MessageResponse,
 )
 from services.chat_service import ChatService
-from utils.result import success, sse_format, sse_done
+from models.result import success, sse_format, sse_done
 
 router = APIRouter()
 chat_service = ChatService()
@@ -32,7 +28,7 @@ async def send_message(request: SendMessageRequest):
             async for chunk in chat_service.send_message_stream(
                 content=request.content,
                 session_id=request.session_id,
-                model_id=request.model_id,
+                model=request.model,
                 knowledge_base_ids=request.knowledge_base_ids,
             ):
                 if chunk.get("session_id") and not session_id:
@@ -60,7 +56,7 @@ async def send_message(request: SendMessageRequest):
         session_id, message = await chat_service.send_message(
             content=request.content,
             session_id=request.session_id,
-            model_id=request.model_id,
+            model=request.model,
             knowledge_base_ids=request.knowledge_base_ids,
             stream=False,
         )

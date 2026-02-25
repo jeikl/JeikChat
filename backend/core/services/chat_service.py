@@ -20,7 +20,7 @@ class ChatService:
         self,
         content: str,
         session_id: Optional[str] = None,
-        model_id: Optional[str] = None,
+        model: Optional[str] = None,
         knowledge_base_ids: Optional[List[str]] = None,
         stream: bool = False,
     ) -> tuple[str, Dict[str, Any]]:
@@ -32,7 +32,7 @@ class ChatService:
                 "messages": [],
                 "created_at": int(datetime.now().timestamp() * 1000),
                 "updated_at": int(datetime.now().timestamp() * 1000),
-                "model_id": model_id,
+                "model": model,
                 "knowledge_base_ids": knowledge_base_ids or [],
             }
 
@@ -62,7 +62,7 @@ class ChatService:
 
         response_content = await self.llm_service.generate(
             messages=messages,
-            model_id=model_id,
+            model=model,
         )
 
         assistant_message = {
@@ -113,7 +113,7 @@ class ChatService:
             self.sessions[session_id]["title"] = title
             self.sessions[session_id]["updated_at"] = int(datetime.now().timestamp() * 1000)
 
-    async def send_message_stream(self, content: str, session_id: str = None, model_id: str = None, knowledge_base_ids: List[str] = None):
+    async def send_message_stream(self, content: str, session_id: str = None, model: str = None, knowledge_base_ids: List[str] = None):
         """流式发送消息"""
         if not session_id or session_id not in self.sessions:
             session_id = str(uuid4())
@@ -123,7 +123,7 @@ class ChatService:
                 "messages": [],
                 "created_at": int(datetime.now().timestamp() * 1000),
                 "updated_at": int(datetime.now().timestamp() * 1000),
-                "model_id": model_id,
+                "model": model,
                 "knowledge_base_ids": knowledge_base_ids or [],
             }
 
@@ -153,7 +153,7 @@ class ChatService:
 
         yield {"session_id": session_id}
 
-        async for chunk in self.llm_service.generate_stream(messages=messages, model_id=model_id):
+        async for chunk in self.llm_service.generate_stream(messages=messages, model=model):
             if chunk:
                 yield {"content": chunk}
 

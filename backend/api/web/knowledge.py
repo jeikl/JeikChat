@@ -1,8 +1,8 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, UploadFile, File, Form
 from typing import List, Optional
 
 from services.rag_service import knowledge_service, rag_service
-from utils.result import success
+from models.result import success
 
 router = APIRouter()
 
