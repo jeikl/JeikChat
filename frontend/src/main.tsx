@@ -35,6 +35,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             padding: '12px 16px',
             marginTop: 'env(safe-area-inset-top, 0)',
           },
+          success: {
+            iconTheme: { primary: '#22c55e', secondary: '#fff' },
+          },
+          error: {
+            iconTheme: { primary: '#ef4444', secondary: '#fff' },
+          },
         }}
       />
     </BrowserRouter>

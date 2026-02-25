@@ -299,10 +299,15 @@ export const knowledgeApi = {
    * @请求方式 GET /api/knowledge/list
    * @触发位置 KnowledgePage.tsx - 页面加载时
    * @返回 { status: 1, data: [...], msg: "获取成功" }
+   *         { status: 0, data: [], msg: "未获取到知识库" }
    */
-  list: async (): Promise<KnowledgeBase[]> => {
+  list: async (): Promise<{ data: KnowledgeBase[]; msg: string; status: number }> => {
     const response = await apiClient.get<ApiResponse<KnowledgeBase[]>>('/knowledge/list');
-    return response.data.data || [];
+    return {
+      data: response.data.data || [],
+      msg: response.data.msg || '',
+      status: response.data.status || 1
+    };
   },
 
   /**

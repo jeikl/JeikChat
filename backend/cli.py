@@ -12,6 +12,10 @@ PROJECT_ROOT = Path(__file__).parent.parent
 BACKEND_DIR = PROJECT_ROOT / "backend"
 FRONTEND_DIR = PROJECT_ROOT / "frontend"
 
+# 将 backend 目录添加到 Python 路径
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
 BLUE = "\033[94m"
@@ -80,9 +84,10 @@ def start_backend(test_mode: bool = False, host: str = "0.0.0.0", port: int = 80
     return process
 
 
-def start_frontend(host: str = "localhost", port: int = 5173):
+def start_frontend(host: str = "::", port: int = 5173):
     """启动前端"""
-    print(f"\n{BLUE}启动前端 - {host}:{port}{RESET}")
+    vite_host = "::" if host in ["0.0.0.0", "::"] else host
+    print(f"\n{BLUE}启动前端 - {vite_host}:{port}{RESET}")
     
     node_modules = FRONTEND_DIR / "node_modules"
     if not node_modules.exists():
@@ -94,12 +99,12 @@ def start_frontend(host: str = "localhost", port: int = 5173):
     
     # 设置前端主机和端口
     env = os.environ.copy()
-    env["HOST"] = host
+    env["HOST"] = vite_host
     env["PORT"] = str(port)
     
     # 直接运行并显示输出
     process = subprocess.Popen(
-        f"npm run dev -- --host {host} --port {port}",
+        f"npm run dev -- --host {vite_host} --port {port}",
         cwd=str(FRONTEND_DIR),
         env=env,
         stdout=None,
@@ -263,16 +268,17 @@ def run_all(test_mode: bool = False, backend_host: str = "0.0.0.0", backend_port
         print(f"{GREEN}已停止{RESET}")
 
 
-def run_all_simple():
+def run_all_simple(test_mode: bool = False):
     """简化版全栈启动 - 使用 StartConfig 配置"""
-    from core.start_config import StartConfig
+    from settings import StartConfig
     
     config = StartConfig.from_env()
     config.print_config()
     
-    print_header(f"🌐 启动全栈服务 (简化模式)")
+    mode_str = "测试模式" if test_mode else "正常模式"
+    print_header(f"🌐 启动全栈服务 ({mode_str})")
     
-    backend_proc = start_backend(test_mode=False, host=config.backend_host, port=config.backend_port)
+    backend_proc = start_backend(test_mode=test_mode, host=config.backend_host, port=config.backend_port)
     time.sleep(5)
     
     frontend_proc = start_frontend(host=config.frontend_host, port=config.frontend_port)
@@ -343,7 +349,7 @@ def main():
         target = args.target.lower()
         if target in ["a", "all"]:  # 支持简化的 'a' 命令
             if target == "a":
-                run_all_simple()
+                run_all_simple(test_mode=args.test)
             else:
                 run_all(
                     test_mode=args.test,

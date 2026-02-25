@@ -2,11 +2,13 @@ import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Upload, FileText, Trash2, RefreshCw, Loader2, X } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showToast } from '@/utils/toast';
 import { useKnowledgeStore } from '@/stores/knowledgeStore';
 import { knowledgeApi } from '@/services/knowledge';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+
+const toast = (message: string, options?: any) => showToast(message, options === 'success' ? 'success' : options === 'error' ? 'error' : 'empty');
 
 const showToastOnce = (() => {
   const shown = new Set<string>();
@@ -58,16 +60,29 @@ const KnowledgePage = () => {
   useQuery({
     queryKey: ['knowledgeBases'],
     queryFn: async () => {
-      const bases = await knowledgeApi.list();
-      useKnowledgeStore.getState().setKnowledgeBases(bases);
-      return bases;
+      const result = await knowledgeApi.list();
+      useKnowledgeStore.getState().setKnowledgeBases(result.data);
+      if (result.status === 0) {
+        showToastOnce('kb-empty', () => {
+          showToast(result.msg || '未获取到知识库', 'empty');
+        });
+      }
+      return result.data;
     },
   });
 
   useEffect(() => {
     if (knowledgeList && knowledgeList.length > 0) {
       showToastOnce('kb-loaded', () => {
-        toast.success(`已加载 ${knowledgeList.length} 个知识库`);
+        showToast(`已加载 ${knowledgeList.length} 个知识库`, 'success');
+      });
+    }
+  }, [knowledgeList]);
+
+  useEffect(() => {
+    if (knowledgeList && knowledgeList.length === 0) {
+      showToastOnce('kb-empty-page', () => {
+        showToast('暂无知识库，请先创建', 'empty');
       });
     }
   }, [knowledgeList]);
@@ -84,10 +99,10 @@ const KnowledgePage = () => {
       setShowCreateModal(false);
       setNewKnowledgeName('');
       setNewKnowledgeDescription('');
-      toast.success('知识库创建成功');
+      showToast('知识库创建成功', 'success');
     } catch (error) {
       console.error('创建知识库失败:', error);
-      toast.error('创建知识库失败');
+      showToast('创建知识库失败', 'error');
     }
   };
 
@@ -97,16 +112,16 @@ const KnowledgePage = () => {
     try {
       await knowledgeApi.delete(id);
       removeKnowledgeBase(id);
-      toast.success('知识库已删除');
+      showToast('知识库已删除', 'success');
     } catch (error) {
       console.error('删除知识库失败:', error);
-      toast.error('删除知识库失败');
+      showToast('删除知识库失败', 'error');
     }
   };
 
   const handleFileUpload = useCallback(async (files: FileList | File[]) => {
     if (!selectedKnowledgeId) {
-      toast.error('请先选择一个知识库');
+      showToast('请先选择一个知识库', 'error');
       return;
     }
 
@@ -121,10 +136,10 @@ const KnowledgePage = () => {
           setUploadProgress(Math.round(((i + progress / 100) / fileArray.length) * 100));
         });
       }
-      toast.success(`成功上传 ${fileArray.length} 个文件，正在处理向量...`);
+      showToast(`成功上传 ${fileArray.length} 个文件，正在处理向量...`, 'success');
     } catch (error) {
       console.error('上传文件失败:', error);
-      toast.error('文件上传失败，请重试');
+      showToast('文件上传失败，请重试', 'error');
     } finally {
       setUploading(false);
       setUploadProgress(0);

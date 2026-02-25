@@ -4,7 +4,7 @@
  */
 
 import axios from 'axios';
-import toast from 'react-hot-toast';
+import { showToast } from '@/utils/toast';
 
 // 支持本地开发和 nginx 反向代理
 // 开发环境：使用 vite 代理（相对路径 /api）
@@ -71,7 +71,7 @@ axiosInstance.interceptors.response.use(
       errorMsg = '网络连接失败，请检查网络';
     }
     
-    toast.error(errorMsg);
+    showToast(errorMsg, 'error');
     return Promise.reject(error);
   }
 );

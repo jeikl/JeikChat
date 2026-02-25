@@ -1,0 +1,45 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "启动测试模式 (Debug)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/cli.py",
+            "args": ["run", "a", "-t"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/backend"
+            }
+        },
+        {
+            "name": "启动后端测试模式 (Debug)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/main.py",
+            "args": [],
+            "console": "integratedTerminal",
+            "env": {
+                "AICHAT_TEST_MODE": "1",
+                "PYTHONPATH": "${workspaceFolder}/backend"
+            }
+        },
+        {
+            "name": "启动前端 (Debug)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/frontend/node_modules/vite/bin/vite.js",
+            "args": ["dev", "--host", "::", "--port", "5173"],
+            "cwd": "${workspaceFolder}/frontend",
+            "console": "integratedTerminal"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "启动全栈测试模式 (Debug)",
+            "configurations": ["启动后端测试模式 (Debug)", "启动前端 (Debug)"],
+            "stopAll": true
+        }
+    ]
+}

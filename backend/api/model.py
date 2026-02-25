@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 from utils.result import success
-from core.config import get_settings
+from settings import get_settings
 
 router = APIRouter()
 

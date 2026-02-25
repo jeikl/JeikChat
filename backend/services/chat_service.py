@@ -3,7 +3,7 @@ from uuid import uuid4
 from datetime import datetime
 import json
 
-from core.config import get_settings
+from settings import get_settings
 from services.llm_service import LLMService
 from services.rag_service import RAGService
 

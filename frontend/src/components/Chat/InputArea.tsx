@@ -36,23 +36,23 @@ const InputArea = ({ onSend, disabled }: InputAreaProps) => {
   return (
     <div className="w-full max-w-4xl mx-auto px-4 pb-6 pt-2">
       {/* 功能按钮栏 */}
-      <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-1">
+      <div className="flex items-center justify-between mb-3 px-1 gap-2">
+        <div className="flex items-center gap-1 flex-wrap sm:flex-nowrap">
           <button
             onClick={() => setIsWebSearch(!isWebSearch)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full transition-all duration-200 ${
+            className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs rounded-full transition-all duration-200 whitespace-nowrap ${
               isWebSearch 
                 ? 'bg-primary text-white' 
                 : 'bg-bg-tertiary text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
             }`}
           >
             <Globe className="w-3.5 h-3.5" />
-            <span>联网搜索</span>
+            <span className="hidden sm:inline">联网搜索</span>
           </button>
           
           <button
             onClick={() => setIsRecording(!isRecording)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full transition-all duration-200 ${
+            className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs rounded-full transition-all duration-200 whitespace-nowrap ${
               isRecording 
                 ? 'bg-error text-white' 
                 : 'bg-bg-tertiary text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
@@ -61,21 +61,21 @@ const InputArea = ({ onSend, disabled }: InputAreaProps) => {
             {isRecording ? (
               <>
                 <MicOff className="w-3.5 h-3.5" />
-                <span>关闭麦克风</span>
+                <span className="hidden sm:inline">关闭</span>
               </>
             ) : (
               <>
                 <Mic className="w-3.5 h-3.5" />
-                <span>语音输入</span>
+                <span className="hidden sm:inline">语音</span>
               </>
             )}
           </button>
 
           <button
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full bg-bg-tertiary text-text-secondary hover:bg-bg-secondary hover:text-text-primary transition-all duration-200"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs rounded-full bg-bg-tertiary text-text-secondary hover:bg-bg-secondary hover:text-text-primary transition-all duration-200 whitespace-nowrap"
           >
             <Paperclip className="w-3.5 h-3.5" />
-            <span>附件</span>
+            <span className="hidden sm:inline">附件</span>
           </button>
         </div>
       </div>

@@ -2,7 +2,7 @@ from typing import List, Dict, Optional, Any
 import os
 import json
 
-from core.config import get_settings
+from settings import get_settings
 
 settings = get_settings()
 

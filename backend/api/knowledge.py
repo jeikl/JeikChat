@@ -11,6 +11,8 @@ router = APIRouter()
 async def list_knowledge_bases():
     """获取所有知识库列表"""
     knowledge_bases = await knowledge_service.list_knowledge_bases()
+    if not knowledge_bases:
+        return success(data=[], msg="未获取到知识库", code=0)
     return success(data=knowledge_bases, msg="获取成功")
 
 

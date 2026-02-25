@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
 
-from core.config import get_settings
+from settings import get_settings
 from api import chat, knowledge, model
 
 
@@ -35,7 +35,7 @@ app.state.TEST_MODE = TEST_MODE
 
 if TEST_MODE:
     from api import test as test_router
-    app.include_router(test_router.router, tags=["测试模式"])
+    app.include_router(test_router.router, prefix="/api", tags=["测试模式"])
     print("📦 测试路由已注册")
 
 
@@ -49,9 +49,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(chat.router, prefix="/api", tags=["聊天"])
-app.include_router(knowledge.router, prefix="/api", tags=["知识库"])
-app.include_router(model.router, prefix="/api", tags=["模型配置"])
+if not TEST_MODE:
+    app.include_router(chat.router, prefix="/api", tags=["聊天"])
+    app.include_router(knowledge.router, prefix="/api", tags=["知识库"])
+    app.include_router(model.router, prefix="/api", tags=["模型配置"])
 
 
 @app.get("/")

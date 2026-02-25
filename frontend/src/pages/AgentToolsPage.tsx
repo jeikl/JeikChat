@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { Wrench, Check } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showToast } from '@/utils/toast';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { knowledgeApi } from '@/services/knowledge';
 
@@ -27,19 +27,19 @@ const AgentToolsPage = () => {
       if (result.status === 1 && result.tools.length > 0) {
         setTools(result.tools.map(t => ({ ...t, enabled: selectedToolIds.includes(t.id) })));
         showToastOnce('tools-success', () => {
-          toast.success(result.msg || `已加载 ${result.tools.length} 个 Agent Tools`);
+          showToast(result.msg || `已加载 ${result.tools.length} 个 Agent Tools`, 'success');
         });
       } else if (result.status === 0 || result.tools.length === 0) {
         setTools([]);
         showToastOnce('tools-error', () => {
-          toast.error(result.msg || '未获取到任何 Agent Tool，请检查后台配置');
+          showToast(result.msg || '未获取到任何 Agent Tool，请检查后台配置', 'empty');
         });
       }
     } catch (error) {
       loadedRef.current = false;
       console.error('加载工具失败:', error);
       showToastOnce('tools-fail', () => {
-        toast.error('加载 Agent Tools 失败，请检查后台配置');
+        showToast('加载 Agent Tools 失败，请检查后台配置', 'error');
       });
     }
   }, [setTools, selectedToolIds]);
