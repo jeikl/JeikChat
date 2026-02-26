@@ -1,6 +1,8 @@
 import os
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
+from langchain_openai import ChatOpenAI
+from dotenv import load_dotenv
 
 # 关键：使用相对路径向上4级（从demo到backend）
 env_path = os.path.abspath(

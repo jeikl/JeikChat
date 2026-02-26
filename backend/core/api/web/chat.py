@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
-
-
+from langchain.messages import SystemMessage, HumanMessage, AIMessage
 
 from core.api.schemas import (
     ChatSessionResponse,
@@ -23,53 +22,45 @@ async def send_message(request: SendMessageRequest):
     - 非流式: 返回统一格式 {status, data, msg}
     - 流式: SSE格式，保持原样不包装
     """
-    if request.stream:
-        async def stream_generator():
-            session_id = None
-            content = ""
-            
-            async for chunk in chat_service.send_message_stream(
-                content=request.content,
-                session_id=request.session_id,
-                model=request.model,
-                knowledge_base_ids=request.knowledge_base_ids,
-            ):
-                if chunk.get("session_id") and not session_id:
-                    session_id = chunk["session_id"]
-                
-                if chunk.get("content"):
-                    content += chunk["content"]
-                    yield sse_format({"sessionId": session_id, "content": chunk["content"]})
-                
-                if chunk.get("references"):
-                    yield sse_format({"references": chunk["references"]})
-            
-            yield sse_done()
-        
-        return StreamingResponse(
-            stream_generator(),
-            media_type="text/event-stream",
-            headers={
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-                "X-Accel-Buffering": "no",
-            }
-        )
-    else:
-        session_id, message = await chat_service.send_message(
+
+    async def stream_generator():
+        session_id = None
+        content = ""
+        print("收到请求")
+        async for chunk in chat_service.send_message_stream(
             content=request.content,
             session_id=request.session_id,
             model=request.model,
             knowledge_base_ids=request.knowledge_base_ids,
-            stream=False,
-        )
-        return success(
-            data=SendMessageResponse(
-                session_id=session_id,
-                message=MessageResponse(**message),
-            ).model_dump(),
-            msg="发送成功"
-        )
+        ):
+            if chunk.get("session_id") and not session_id:
+                session_id = chunk["session_id"]
+            
+            if chunk.get("content"):
+                content += chunk["content"]
+                yield sse_format({"sessionId": session_id, "content": chunk["content"]})
+            
+            if chunk.get("references"):
+                yield sse_format({"references": chunk["references"]})
+        
+        yield sse_done()
+    
+    return StreamingResponse(
+        stream_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
+    return success(
+        data=SendMessageResponse(
+            session_id=session_id,
+            message=MessageResponse(**message),
+        ).model_dump(),
+        msg="发送成功"
+    )
 
 
 @router.get("/chat/history")

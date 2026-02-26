@@ -49,10 +49,30 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
           }
         }
         
+        // 获取当前选中的模型名称
+        const currentActiveConfig = configs.find(c => c.id === activeConfigId);
+        const currentModelName = currentActiveConfig?.model;
+        
+        // 保留当前选中的模型，如果新模型列表中有该模型则保持选中，否则选择第一个
+        let newActiveConfigId = activeConfigId;
+        
+        // 尝试找到之前选中的模型
+        if (currentModelName) {
+          const foundConfig = newConfigs.find(c => c.model === currentModelName);
+          if (foundConfig) {
+            newActiveConfigId = foundConfig.id;
+          }
+        }
+        
+        // 如果没有找到之前选中的模型，或者没有选中任何模型，则选择第一个
+        if (!newActiveConfigId || !newConfigs.find(c => c.id === newActiveConfigId)) {
+          newActiveConfigId = newConfigs.length > 0 ? newConfigs[0].id : null;
+        }
+        
         // 直接设置新配置，绕过 persist 缓存问题
         useSettingsStore.setState({ 
           configs: newConfigs, 
-          activeConfigId: newConfigs.length > 0 ? newConfigs[0].id : null 
+          activeConfigId: newActiveConfigId
         });
         
         const totalModels = Object.values(result.data.providers).reduce((sum: number, p: any) => sum + (p.models?.length || 0), 0);
