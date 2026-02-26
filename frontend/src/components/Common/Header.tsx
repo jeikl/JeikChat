@@ -103,7 +103,7 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
   };
 
   return (
-    <header className="h-16 px-4 flex items-center justify-between border-b border-border/50 bg-bg-primary/80 backdrop-blur-sm">
+    <header className="h-16 px-4 flex items-center justify-between border-b border-border/50 bg-bg-primary/80 backdrop-blur-sm relative z-10">
       <div className="flex items-center gap-3 pl-2">
         <button
           onClick={onToggleMobileSidebar}
@@ -155,7 +155,7 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
           </div>
 
           {showModelSelector && (
-            <div className="absolute right-0 mt-2 w-72 bg-bg-secondary rounded-xl shadow-xl border border-border/50 py-1 z-50 overflow-y-auto max-h-64">
+            <div className="absolute right-0 mt-2 w-72 bg-bg-secondary rounded-xl shadow-xl border border-border/50 py-1 z-[9999] overflow-y-auto max-h-64">
               {configs.length === 0 ? (
                 <div className="px-4 py-3 text-sm text-text-tertiary text-center">
                   {isLoading ? '加载中...' : '暂无模型，请刷新'}
@@ -203,7 +203,7 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
           </button>
 
           {showKnowledgeSelector && (
-            <div className="absolute right-0 mt-2 w-60 bg-bg-secondary rounded-xl shadow-xl border border-border/50 py-1 z-50 max-h-64 overflow-y-auto">
+            <div className="absolute right-0 mt-2 w-60 bg-bg-secondary rounded-xl shadow-xl border border-border/50 py-1 z-[9999] max-h-64 overflow-y-auto">
               {knowledgeBases.length === 0 ? (
                 <div className="px-4 py-3 text-sm text-text-tertiary">
                   暂无知识库，请先创建

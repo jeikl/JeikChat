@@ -44,7 +44,7 @@ const CodeBlock = ({ language, children }: { language: string; children: string 
         style={oneDark as any}
         language={language}
         PreTag="div"
-        customStyle={{ margin: '0.5rem 0', borderRadius: '0.5rem' }}
+        customStyle={{ margin: '0.5rem 0', borderRadius: '0.5rem', position: 'relative', zIndex: 0 }}
       />
     </div>
   );
