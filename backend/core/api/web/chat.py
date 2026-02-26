@@ -17,13 +17,15 @@ chat_service = ChatService()
 
 
 @router.post("/chat/send")
-async def send_message(request: SendMessageRequest):
+def send_message(request: SendMessageRequest):
     """
     发送消息
     - 非流式: 返回统一格式 {status, data, msg}
     - 流式: SSE格式，保持原样不包装
     """
-    if request.stream:
+
+    print("11123456")
+    """ if request.stream:
         async def stream_generator():
             session_id = None
             content = ""
@@ -69,7 +71,7 @@ async def send_message(request: SendMessageRequest):
                 message=MessageResponse(**message),
             ).model_dump(),
             msg="发送成功"
-        )
+        ) """
 
 
 @router.get("/chat/history")
