@@ -105,31 +105,58 @@ export const useChatStore = create<ChatState>()(
           }
 
           // 添加用户消息
+          const userMessageId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
           const userMessage: Message = {
-            id: Date.now().toString(),
+            id: userMessageId,
             role: 'user',
             content,
             timestamp: Date.now(),
           };
           useChatStore.getState().addMessage(sessionId, userMessage);
 
-          // 发送请求到后端，传递模型名称
-          const response = await chatApi.sendMessage({
-            content,
-            sessionId,
-            model, // 传递当前选中的模型名称
-            knowledgeBaseIds: toolIds,
-          });
+          // 先添加一个空的助手消息占位
+          const assistantMessageId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+          const assistantMessage: Message = {
+            id: assistantMessageId,
+            role: 'assistant',
+            content: '',
+            timestamp: Date.now(),
+          };
+          useChatStore.getState().addMessage(sessionId, assistantMessage);
 
-          // 添加助手回复
-          useChatStore.getState().addMessage(sessionId, response.message);
+          // 使用流式发送消息
+          const response = await chatApi.sendMessageStream(
+            {
+              content,
+              sessionId,
+              model,
+              knowledgeBaseIds: toolIds,
+            },
+            (chunkContent, references) => {
+              // 更新助手消息内容
+              const currentMessages = useChatStore.getState().sessions
+                .find(s => s.id === sessionId)?.messages || [];
+              const lastMessage = currentMessages[currentMessages.length - 1];
+              if (lastMessage && lastMessage.role === 'assistant') {
+                useChatStore.getState().updateMessage(sessionId, assistantMessageId, {
+                  content: lastMessage.content + chunkContent,
+                  references,
+                });
+              }
+            }
+          );
+
+          // 更新助手消息（包含完整的 references）
+          if (response?.message) {
+            useChatStore.getState().updateMessage(sessionId, assistantMessageId, response.message);
+          }
         } catch (error) {
           console.error('发送消息失败:', error);
           // 添加错误消息
           let sessionId = useChatStore.getState().currentSessionId;
           if (sessionId) {
             const errorMessage: Message = {
-              id: Date.now().toString(),
+              id: `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
               role: 'assistant',
               content: '抱歉，发送消息时出现错误，请稍后再试。',
               timestamp: Date.now(),

@@ -49,10 +49,28 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
           }
         }
         
-        // 直接设置新配置，绕过 persist 缓存问题
+        const currentActiveConfig = useSettingsStore.getState().activeConfigId;
+        const currentActiveModel = useSettingsStore.getState().configs.find(c => c.id === currentActiveConfig)?.model;
+        
+        let newActiveConfigId = currentActiveConfig;
+        if (currentActiveModel) {
+          const matchedConfig = newConfigs.find(c => c.model === currentActiveModel);
+          if (matchedConfig) {
+            newActiveConfigId = matchedConfig.id;
+          } else if (newConfigs.length > 0) {
+            newActiveConfigId = newConfigs[0].id;
+          } else {
+            newActiveConfigId = null;
+          }
+        } else if (newConfigs.length > 0) {
+          newActiveConfigId = newConfigs[0].id;
+        } else {
+          newActiveConfigId = null;
+        }
+        
         useSettingsStore.setState({ 
           configs: newConfigs, 
-          activeConfigId: newConfigs.length > 0 ? newConfigs[0].id : null 
+          activeConfigId: newActiveConfigId
         });
         
         const totalModels = Object.values(result.data.providers).reduce((sum: number, p: any) => sum + (p.models?.length || 0), 0);
