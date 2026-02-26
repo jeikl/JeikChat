@@ -69,21 +69,6 @@ const ChatContainer = () => {
             {messages.map((message) => (
               <MessageItem key={message.id} message={message} />
             ))}
-            
-            {isLoading && (
-              <div className="flex items-start gap-4 px-4 md:px-12 py-4">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-5 h-5 text-white" />
-                </div>
-                <div className="bg-bg-secondary border border-border rounded-2xl rounded-tl-sm px-4 py-3 mt-0.5">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                </div>
-              </div>
-            )}
             <div ref={messagesEndRef} />
           </div>
         </div>

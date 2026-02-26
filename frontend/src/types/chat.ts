@@ -5,6 +5,7 @@ export interface Message {
   timestamp: number;
   references?: KnowledgeReference[];
   isStreaming?: boolean;
+  thinking?: boolean;
 }
 
 export interface ChatSession {

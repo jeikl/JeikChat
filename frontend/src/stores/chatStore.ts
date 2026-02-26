@@ -1,21 +1,22 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { chatApi } from '@/services/chat';
+import { Message, ChatSession } from '@/types/chat';
 import { useSettingsStore } from './settingsStore';
-import type { ChatSession, Message } from '@/types/chat';
 
-interface ChatState {
+interface ChatStore {
   sessions: ChatSession[];
   currentSessionId: string | null;
   isLoading: boolean;
   isStreaming: boolean;
   
   addSession: (session: ChatSession) => void;
-  updateSession: (sessionId: string, updates: Partial<ChatSession>) => void;
-  deleteSession: (sessionId: string) => void;
+  removeSession: (sessionId: string) => void;
   setCurrentSession: (sessionId: string | null) => void;
   addMessage: (sessionId: string, message: Message) => void;
   updateMessage: (sessionId: string, messageId: string, updates: Partial<Message>) => void;
+  deleteMessage: (sessionId: string, messageId: string) => void;
+  deleteSession: (sessionId: string) => void;
+  updateSession: (sessionId: string, updates: Partial<ChatSession>) => void;
   setLoading: (loading: boolean) => void;
   setStreaming: (streaming: boolean) => void;
   clearAllSessions: () => void;
@@ -23,9 +24,9 @@ interface ChatState {
   stopGenerating: () => void;
 }
 
-export const useChatStore = create<ChatState>()(
+export const useChatStore = create<ChatStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       sessions: [],
       currentSessionId: null,
       isLoading: false,
@@ -37,20 +38,25 @@ export const useChatStore = create<ChatState>()(
           currentSessionId: session.id,
         })),
 
-      updateSession: (sessionId, updates) =>
+      removeSession: (sessionId) =>
         set((state) => ({
-          sessions: state.sessions.map((s) =>
-            s.id === sessionId ? { ...s, ...updates, updatedAt: Date.now() } : s
-          ),
+          sessions: state.sessions.filter((s) => s.id !== sessionId),
+          currentSessionId:
+            state.currentSessionId === sessionId ? null : state.currentSessionId,
         })),
 
       deleteSession: (sessionId) =>
         set((state) => ({
           sessions: state.sessions.filter((s) => s.id !== sessionId),
           currentSessionId:
-            state.currentSessionId === sessionId
-              ? state.sessions[0]?.id || null
-              : state.currentSessionId,
+            state.currentSessionId === sessionId ? null : state.currentSessionId,
+        })),
+
+      updateSession: (sessionId, updates) =>
+        set((state) => ({
+          sessions: state.sessions.map((s) =>
+            s.id === sessionId ? { ...s, ...updates } : s
+          ),
         })),
 
       setCurrentSession: (sessionId) => set({ currentSessionId: sessionId }),
@@ -78,6 +84,15 @@ export const useChatStore = create<ChatState>()(
           ),
         })),
 
+      deleteMessage: (sessionId, messageId) =>
+        set((state) => ({
+          sessions: state.sessions.map((s) =>
+            s.id === sessionId
+              ? { ...s, messages: s.messages.filter((m) => m.id !== messageId) }
+              : s
+          ),
+        })),
+
       setLoading: (loading) => set({ isLoading: loading }),
       setStreaming: (streaming) => set({ isStreaming: streaming }),
 
@@ -85,88 +100,132 @@ export const useChatStore = create<ChatState>()(
 
       sendMessage: async (content, toolIds = []) => {
         set({ isLoading: true });
+        
+        const activeConfig = useSettingsStore.getState().getActiveConfig();
+        const model = activeConfig?.model;
+
+        let sessionId = get().currentSessionId;
+        
+        if (!sessionId) {
+          const newSessionId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+          const newSession: ChatSession = {
+            id: newSessionId,
+            title: content.substring(0, 30) + (content.length > 30 ? '...' : ''),
+            messages: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+          get().addSession(newSession);
+          sessionId = newSessionId;
+        }
+
+        const userMessageId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        const userMessage: Message = {
+          id: userMessageId,
+          role: 'user',
+          content,
+          timestamp: Date.now(),
+        };
+        get().addMessage(sessionId, userMessage);
+
+        const assistantMessageId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        const assistantMessage: Message = {
+          id: assistantMessageId,
+          role: 'assistant',
+          content: '',
+          timestamp: Date.now(),
+          thinking: true,
+        };
+        get().addMessage(sessionId, assistantMessage);
+
+        let hasContent = false;
+
         try {
-          // 获取当前选中的模型配置
-          const activeConfig = useSettingsStore.getState().getActiveConfig();
-          const model = activeConfig?.model;
-
-          // 如果没有当前会话，则创建一个新的
-          let sessionId = useChatStore.getState().currentSessionId;
-          if (!sessionId) {
-            const newSession: ChatSession = {
-              id: Date.now().toString(),
-              title: content.substring(0, 30) + (content.length > 30 ? '...' : ''),
-              messages: [],
-              createdAt: Date.now(),
-              updatedAt: Date.now(),
-            };
-            useChatStore.getState().addSession(newSession);
-            sessionId = newSession.id;
-          }
-
-          // 添加用户消息
-          const userMessageId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-          const userMessage: Message = {
-            id: userMessageId,
-            role: 'user',
-            content,
-            timestamp: Date.now(),
-          };
-          useChatStore.getState().addMessage(sessionId, userMessage);
-
-          // 先添加一个空的助手消息占位
-          const assistantMessageId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-          const assistantMessage: Message = {
-            id: assistantMessageId,
-            role: 'assistant',
-            content: '',
-            timestamp: Date.now(),
-          };
-          useChatStore.getState().addMessage(sessionId, assistantMessage);
-
-          // 使用流式发送消息
-          const response = await chatApi.sendMessageStream(
-            {
+          const response = await fetch('/api/chat/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
               content,
               sessionId,
               model,
               knowledgeBaseIds: toolIds,
-            },
-            (chunkContent, references) => {
-              // 更新助手消息内容
-              const currentMessages = useChatStore.getState().sessions
-                .find(s => s.id === sessionId)?.messages || [];
-              const lastMessage = currentMessages[currentMessages.length - 1];
-              if (lastMessage && lastMessage.role === 'assistant') {
-                useChatStore.getState().updateMessage(sessionId, assistantMessageId, {
-                  content: lastMessage.content + chunkContent,
-                  references,
-                });
+              stream: true,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const reader = response.body?.getReader();
+          const decoder = new TextDecoder();
+          
+          if (!reader) {
+            throw new Error('Response body is null');
+          }
+
+          let fullContent = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            
+            if (done) break;
+            
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+            
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                
+                if (data === '[DONE]') {
+                  break;
+                }
+                
+                try {
+                  const parsed = JSON.parse(data);
+                  
+                  if (parsed.content) {
+                    if (!hasContent) {
+                      hasContent = true;
+                      get().updateMessage(sessionId, assistantMessageId, {
+                        thinking: false,
+                      });
+                    }
+                    fullContent += parsed.content;
+                    get().updateMessage(sessionId, assistantMessageId, {
+                      content: fullContent,
+                    });
+                  }
+                  
+                  if (parsed.done) {
+                    break;
+                  }
+                  
+                  if (parsed.error) {
+                    throw new Error(parsed.error);
+                  }
+                } catch (e) {
+                  // 跳过无效 JSON
+                }
               }
             }
-          );
-
-          // 更新助手消息（包含完整的 references）
-          if (response?.message) {
-            useChatStore.getState().updateMessage(sessionId, assistantMessageId, response.message);
           }
         } catch (error) {
           console.error('发送消息失败:', error);
-          // 添加错误消息
-          let sessionId = useChatStore.getState().currentSessionId;
-          if (sessionId) {
-            const errorMessage: Message = {
-              id: `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-              role: 'assistant',
-              content: '抱歉，发送消息时出现错误，请稍后再试。',
-              timestamp: Date.now(),
-            };
-            useChatStore.getState().addMessage(sessionId, errorMessage);
-          }
+          const errorMessage: Message = {
+            id: `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            role: 'assistant',
+            content: '抱歉，发送消息时出现错误，请稍后再试。',
+            timestamp: Date.now(),
+          };
+          get().addMessage(sessionId!, errorMessage);
         } finally {
-           set({ isLoading: false });
-         }
-       },
+          set({ isLoading: false });
+        }
+      },
 
       stopGenerating: () => {
         set({ isLoading: false });
