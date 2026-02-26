@@ -20,6 +20,17 @@ def get_env_file_path():
     return str(PROJECT_ROOT / ".env")
 
 
+# 模块级别加载环境变量，确保所有导入此模块的地方都能读取到环境变量
+def _init_env():
+    """模块初始化时加载环境变量"""
+    from dotenv import load_dotenv
+    env_file = get_env_file_path()
+    if os.path.exists(env_file):
+        load_dotenv(env_file)
+
+_init_env()
+
+
 def load_env_file():
     """加载环境变量文件"""
     env_file = get_env_file_path()

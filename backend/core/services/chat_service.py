@@ -1,7 +1,17 @@
+import os
+import sys
 from typing import List, Dict, Optional, Any
 from uuid import uuid4
 from datetime import datetime
 
+# 添加项目根目录到 Python 路径
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from backend.core.agents.chat import get_configuration
+from backend.core.base.llm.llms import get_llm, qwen
+from backend.core.base.promt import system_prompt
 from init import get_settings
 from core.services.llm_service import LLMService
 from core.services.rag_service import RAGService
@@ -76,11 +86,11 @@ class ChatService:
 
         return session_id, assistant_message
 
-    def _build_system_prompt(self, context: str = "") -> str:
-        base_prompt = "你是一个专业的AI客服助手，请用友好、专业的方式回答用户的问题。"
-        
-        if context:
-            base_prompt += f"\n\n以下是相关的知识库内容，请参考：\n\n{context}\n\n请基于以上内容回答用户的问题。"
+    def _build_system_prompt(self, ragcontext: str = "") -> str:
+        base_prompt = system_prompt
+    
+        if ragcontext: 
+            base_prompt += f"\n\n以下是相关的知识库内容，请参考：\n\n{ragcontext}\n\n请基于以上内容仔细查阅资料并回答用户的问题。"
         
         return base_prompt
 
@@ -125,18 +135,26 @@ class ChatService:
                 "model": model,
                 "knowledge_base_ids": knowledge_base_ids or [],
             }
+        '''以上是历史记录'''
 
         user_message = {
-            "id": str(uuid4()),
             "role": "user",
-            "content": content,
-            "timestamp": int(datetime.now().timestamp() * 1000),
+            "content": content
         }
+
+
+        config={
+            "configurable": {"thread_id": str(uuid4())}}
+
+
         self.sessions[session_id]["messages"].append(user_message)
 
         references = []
         context = ""
-        
+        qwen0=get_llm(model)
+        #qwen0.invoke(content,get_configuration(session_id) )
+
+
         if knowledge_base_ids:
             context = await self.rag_service.retrieve_context(
                 knowledge_base_ids, content
@@ -147,6 +165,13 @@ class ChatService:
         system_prompt = self._build_system_prompt(context)
 
         messages = [{"role": "system", "content": system_prompt}]
+
+
+        print(qwen0.invoke(user_message,content,get_configuration(session_id) ))
+
+
+
+
         for msg in self.sessions[session_id]["messages"][-10:]:
             messages.append({"role": msg["role"], "content": msg["content"]})
 
