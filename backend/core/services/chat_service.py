@@ -76,11 +76,11 @@ class ChatService:
 
         return session_id, assistant_message
 
-    def _build_system_prompt(self, context: str = "") -> str:
+    def _build_system_prompt(self, ragcontext: str = "") -> str:
         base_prompt = "你是一个专业的AI客服助手，请用友好、专业的方式回答用户的问题。"
         
-        if context:
-            base_prompt += f"\n\n以下是相关的知识库内容，请参考：\n\n{context}\n\n请基于以上内容回答用户的问题。"
+        if ragcontext: 
+            base_prompt += f"\n\n以下是相关的知识库内容，请参考：\n\n{ragcontext}\n\n请基于以上内容回答用户的问题。"
         
         return base_prompt
 
