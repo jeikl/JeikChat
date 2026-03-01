@@ -1,4 +1,5 @@
 from langchain_openai import ChatOpenAI
+from langchain_deepseek import ChatDeepSeek
 import os
 import sys
 from dotenv import load_dotenv
@@ -9,7 +10,7 @@ env_path = os.path.abspath(os.path.join(current_dir, "..", "..", ".env"))
 load_dotenv(dotenv_path=env_path, override=True)
 
 
-def model_name(text: str):
+def model_name(text: str):#根据模型名称解析对应的模型
     dash_index = text.find("-")
     if dash_index == -1:
         s = text
@@ -19,17 +20,22 @@ def model_name(text: str):
     return ''.join(letters).upper()
 
 
-def create_client(llm: str):
+def create_client(llm: str): #根据模型名称直接获取对应的客户端
     api_key = os.getenv(f"{model_name(llm)}_API_KEY")
     base_url = os.getenv(f"{model_name(llm)}_BASE_URL")
-    
-    return ChatOpenAI(
+    return ChatDeepSeek(
         model=llm,
         api_key=api_key,
-        base_url=base_url,
+        api_base=base_url,
         temperature=0.7,
         streaming=True,
+        timeout=1800,
+        extra_body={
+            "extra_body"={"enable_thinking":True},
+            "thinking":{​"type":"disabled"​}
+        },
     )
+
 
 
 def llm_sendmsg(llm: str, msg: str):
