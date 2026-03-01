@@ -8,7 +8,7 @@
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional, List, Generic, TypeVar
+from typing import Optional, List, Generic, TypeVar, Literal
 from datetime import datetime
 
 
@@ -94,12 +94,14 @@ class SendMessageRequest(BaseModel):
     - session_id: 会话 ID（可选，新会话可为空）
     - model: 模型名称（可选，如 gpt-4o、qwen3.5-plus）
     - knowledge_base_ids: 知识库 ID 列表（可选，用于 RAG）
+    - reasoning: 深度思考模式（auto/true/false）
     - stream: 是否使用流式响应
     """
     content: str
     session_id: Optional[str] = None
     model: Optional[str] = None
     knowledge_base_ids: Optional[List[str]] = None
+    reasoning: Optional[Literal["auto", "true", "false"]] = 'auto'
     stream: bool = True
 
 

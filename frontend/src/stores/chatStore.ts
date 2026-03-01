@@ -8,6 +8,7 @@ interface ChatStore {
   currentSessionId: string | null;
   isLoading: boolean;
   isStreaming: boolean;
+  abortController: AbortController | null;
   
   addSession: (session: ChatSession) => void;
   removeSession: (sessionId: string) => void;
@@ -20,7 +21,7 @@ interface ChatStore {
   setLoading: (loading: boolean) => void;
   setStreaming: (streaming: boolean) => void;
   clearAllSessions: () => void;
-  sendMessage: (content: string, toolIds?: string[]) => Promise<void>;
+  sendMessage: (content: string, toolIds?: string[], reasoning?: 'auto' | boolean) => Promise<void>;
   stopGenerating: () => void;
 }
 
@@ -31,6 +32,7 @@ export const useChatStore = create<ChatStore>()(
       currentSessionId: null,
       isLoading: false,
       isStreaming: false,
+      abortController: null,
 
       addSession: (session) =>
         set((state) => ({
@@ -98,7 +100,7 @@ export const useChatStore = create<ChatStore>()(
 
       clearAllSessions: () => set({ sessions: [], currentSessionId: null }),
 
-      sendMessage: async (content, toolIds = []) => {
+      sendMessage: async (content, toolIds = [], reasoning: 'auto' | boolean = 'auto') => {
         set({ isLoading: true });
         
         const activeConfig = useSettingsStore.getState().getActiveConfig();
@@ -135,10 +137,15 @@ export const useChatStore = create<ChatStore>()(
           content: '',
           timestamp: Date.now(),
           thinking: true,
+          reasoning: '',
+          hasReasoning: false,
+          reasoningExpanded: true,
         };
         get().addMessage(sessionId, assistantMessage);
 
         let hasContent = false;
+        const abortController = new AbortController();
+        set({ abortController });
 
         try {
           const response = await fetch('/api/chat/send', {
@@ -151,8 +158,10 @@ export const useChatStore = create<ChatStore>()(
               sessionId,
               model,
               knowledgeBaseIds: toolIds,
+              reasoning: (reasoning === true ? 'true' : reasoning === false ? 'false' : 'auto'),
               stream: true,
             }),
+            signal: abortController.signal,
           });
 
           if (!response.ok) {
@@ -167,6 +176,7 @@ export const useChatStore = create<ChatStore>()(
           }
 
           let fullContent = '';
+          let fullReasoning = '';
 
           while (true) {
             const { done, value } = await reader.read();
@@ -187,6 +197,17 @@ export const useChatStore = create<ChatStore>()(
                 try {
                   const parsed = JSON.parse(data);
                   
+                  // 处理推理内容
+                  if (parsed.reasoning !== undefined) {
+                    fullReasoning += parsed.reasoning;
+                    get().updateMessage(sessionId, assistantMessageId, {
+                      reasoning: fullReasoning,
+                      hasReasoning: true,
+                      thinking: false,
+                    });
+                  }
+                  
+                  // 处理标准内容
                   if (parsed.content) {
                     if (!hasContent) {
                       hasContent = true;
@@ -213,7 +234,11 @@ export const useChatStore = create<ChatStore>()(
               }
             }
           }
-        } catch (error) {
+        } catch (error: any) {
+          if (error.name === 'AbortError') {
+            console.log('请求已取消');
+            return;
+          }
           console.error('发送消息失败:', error);
           const errorMessage: Message = {
             id: `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
@@ -223,12 +248,16 @@ export const useChatStore = create<ChatStore>()(
           };
           get().addMessage(sessionId!, errorMessage);
         } finally {
-          set({ isLoading: false });
+          set({ isLoading: false, abortController: null });
         }
       },
 
       stopGenerating: () => {
-        set({ isLoading: false });
+        const { abortController } = get();
+        if (abortController) {
+          abortController.abort();
+        }
+        set({ isLoading: false, abortController: null });
       },
     }),
     {

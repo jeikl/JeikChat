@@ -6,6 +6,9 @@ export interface Message {
   references?: KnowledgeReference[];
   isStreaming?: boolean;
   thinking?: boolean;
+  reasoning?: string;
+  hasReasoning?: boolean;
+  reasoningExpanded?: boolean;
 }
 
 export interface ChatSession {

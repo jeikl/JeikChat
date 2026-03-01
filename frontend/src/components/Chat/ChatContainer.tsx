@@ -13,7 +13,7 @@ const PROMPTS = [
 ];
 
 const ChatContainer = () => {
-  const { sessions, currentSessionId, isLoading, sendMessage } = useChatStore();
+  const { sessions, currentSessionId, isLoading, sendMessage, stopGenerating } = useChatStore();
   const { selectedToolIds } = useSettingsStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -28,14 +28,18 @@ const ChatContainer = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = async (content: string) => {
-    await sendMessage(content, selectedToolIds);
+  const handleSend = async (content: string, reasoning?: 'auto' | boolean) => {
+    await sendMessage(content, selectedToolIds, reasoning);
+  };
+
+  const handleStop = () => {
+    stopGenerating();
   };
 
   return (
     <div className="h-full flex flex-col bg-bg-primary">
       {messages.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center px-4">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 pt-10 pb-32 md:pb-10">
           <div className="relative mb-4 sm:mb-6">
             <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-br from-primary via-purple-500 to-pink-500 flex items-center justify-center shadow-2xl shadow-purple-500/20 animate-pulse">
               <Bot className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
@@ -64,7 +68,7 @@ const ChatContainer = () => {
           </div>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-20 md:pb-4">
           <div className="pb-4">
             {messages.map((message) => (
               <MessageItem key={message.id} message={message} />
@@ -74,10 +78,14 @@ const ChatContainer = () => {
         </div>
       )}
 
-      <InputArea 
-        onSend={handleSend}
-        disabled={isLoading}
-      />
+      <div className="fixed bottom-0 left-0 right-0 md:relative md:sticky md:bottom-auto">
+        <InputArea 
+          onSend={handleSend}
+          onStop={handleStop}
+          disabled={isLoading}
+          isGenerating={isLoading}
+        />
+      </div>
     </div>
   );
 };

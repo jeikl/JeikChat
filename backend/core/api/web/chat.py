@@ -4,6 +4,7 @@ from typing import Optional, List
 import json
 import uuid
 import asyncio
+import logging
 from datetime import datetime
 
 from core.api.schemas import (
@@ -13,9 +14,10 @@ from core.api.schemas import (
     MessageResponse,
 )
 from core.api.result import success, sse_format, sse_done
-from llm.langchain import llm_sendmsg_stream, model_name
+from llm.langchaint import llm_sendmsg_stream, model_name
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # 内存会话存储（生产环境建议用数据库）
 sessions: dict = {}
@@ -90,11 +92,17 @@ async def stream_llm_response(model: str, content: str):
         yield chunk
 
 
+def format_sse_data(data: dict) -> str:
+    """格式化 SSE 数据"""
+    return f"data: {json.dumps(data)}\n\n"
+
+
 @router.post("/chat/send")
 async def send_message(request: SendMessageRequest):
     """
     发送消息 - 流式返回
     使用 langchain.py 的 llm_sendmsg_stream 进行流式输出
+    支持推理内容 (reasoning) 的流式返回
     """
     
     session_id = get_session(
@@ -109,25 +117,38 @@ async def send_message(request: SendMessageRequest):
     
     # 获取模型名称，默认 qwen3.5-plus
     model = request.model or "qwen3.5-plus"
+    reasoning = request.reasoning or 'auto'
     
     async def stream_generator():
         full_content = ""
+        full_reasoning = ""
+        has_reasoning = False
         
         try:
-            # 直接在事件循环中迭代（ChatOpenAI.stream 是同步的但可以在 async 中迭代）
-            for chunk in llm_sendmsg_stream(model, request.content):
-                if chunk:
-                    full_content += chunk
-                    yield sse_format({"content": chunk})
+            for chunk in llm_sendmsg_stream(model, request.content, reasoning):
+                full_reasoning += chunk.get("reasoning", "")
+                full_content += chunk.get("content", "")
+                
+                if chunk.get("reasoning"):
+                    has_reasoning = True
+                    yield sse_format({"reasoning": chunk["reasoning"]})
+                
+                if chunk.get("content"):
+                    yield sse_format({"content": chunk["content"]})
             
-            # 保存助手消息
             if full_content:
                 save_message(session_id, "assistant", full_content)
             
-            # 发送完成信号
-            yield sse_format({"sessionId": session_id, "done": True})
+            yield sse_format({
+                "sessionId": session_id, 
+                "done": True,
+                "hasReasoning": has_reasoning
+            })
             yield sse_done()
             
+        except GeneratorExit:
+            logger.info(f"客户端断开连接，停止生成 - session: {session_id}")
+            raise
         except Exception as e:
             error_content = f"抱歉，发生了错误：{str(e)}"
             yield sse_format({"error": error_content})
