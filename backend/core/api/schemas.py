@@ -95,12 +95,14 @@ class SendMessageRequest(BaseModel):
     - model: 模型名称（可选，如 gpt-4o、qwen3.5-plus）
     - knowledge_base_ids: 知识库 ID 列表（可选，用于 RAG）
     - stream: 是否使用流式响应
+    - thinking: 思考模式 (auto/deep/false)
     """
     content: str
     session_id: Optional[str] = None
     model: Optional[str] = None
     knowledge_base_ids: Optional[List[str]] = None
     stream: bool = True
+    thinking: Optional[str] = "auto"
 
 
 class SendMessageResponse(BaseModel):

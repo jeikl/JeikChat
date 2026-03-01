@@ -8,6 +8,7 @@ interface ChatStore {
   currentSessionId: string | null;
   isLoading: boolean;
   isStreaming: boolean;
+  thinkingMode: 'auto' | 'deep' | 'false';
   
   addSession: (session: ChatSession) => void;
   removeSession: (sessionId: string) => void;
@@ -19,6 +20,7 @@ interface ChatStore {
   updateSession: (sessionId: string, updates: Partial<ChatSession>) => void;
   setLoading: (loading: boolean) => void;
   setStreaming: (streaming: boolean) => void;
+  setThinkingMode: (mode: 'auto' | 'deep' | 'false') => void;
   clearAllSessions: () => void;
   sendMessage: (content: string, toolIds?: string[]) => Promise<void>;
   stopGenerating: () => void;
@@ -31,6 +33,9 @@ export const useChatStore = create<ChatStore>()(
       currentSessionId: null,
       isLoading: false,
       isStreaming: false,
+      thinkingMode: 'auto',
+
+      setThinkingMode: (mode) => set({ thinkingMode: mode }),
 
       addSession: (session) =>
         set((state) => ({
@@ -141,6 +146,8 @@ export const useChatStore = create<ChatStore>()(
         let hasContent = false;
 
         try {
+          console.log('发送请求:', { content, sessionId, model, thinking: get().thinkingMode });
+          
           const response = await fetch('/api/chat/send', {
             method: 'POST',
             headers: {
@@ -152,14 +159,20 @@ export const useChatStore = create<ChatStore>()(
               model,
               knowledgeBaseIds: toolIds,
               stream: true,
+              thinking: get().thinkingMode,
             }),
           });
+
+          console.log('收到响应:', response.status, response.statusText);
+          console.log('响应类型:', response.type);
 
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
 
           const reader = response.body?.getReader();
+          console.log('Reader:', reader);
+          
           const decoder = new TextDecoder();
           
           if (!reader) {
@@ -167,9 +180,12 @@ export const useChatStore = create<ChatStore>()(
           }
 
           let fullContent = '';
+          console.log('开始读取流...');
 
           while (true) {
+            console.log('读取中...');
             const { done, value } = await reader.read();
+            console.log('读取结果:', done, value?.length);
             
             if (done) break;
             

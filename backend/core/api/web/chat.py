@@ -96,6 +96,11 @@ async def send_message(request: SendMessageRequest):
     发送消息 - 流式返回
     使用 langchain.py 的 llm_sendmsg_stream 进行流式输出
     """
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"收到消息: content={request.content[:50]}..., thinking={request.thinking}")
     
     session_id = get_session(
         request.session_id, 
@@ -109,13 +114,16 @@ async def send_message(request: SendMessageRequest):
     
     # 获取模型名称，默认 qwen3.5-plus
     model = request.model or "qwen3.5-plus"
+    # 获取思考模式，默认 auto
+    thinking = request.thinking or "auto"
+    logger.info(f"使用模型: {model}, 思考模式: {thinking}")
     
     async def stream_generator():
         full_content = ""
         
         try:
             # 直接在事件循环中迭代（ChatOpenAI.stream 是同步的但可以在 async 中迭代）
-            for chunk in llm_sendmsg_stream(model, request.content):
+            for chunk in llm_sendmsg_stream(model, request.content, thinking):
                 if chunk:
                     full_content += chunk
                     yield sse_format({"content": chunk})

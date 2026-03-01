@@ -20,9 +20,26 @@ def model_name(text: str):#根据模型名称解析对应的模型
     return ''.join(letters).upper()
 
 
-def create_client(llm: str): #根据模型名称直接获取对应的客户端
+def create_client(llm: str, thinking: str = "auto"): #根据模型名称直接获取对应的客户端
     api_key = os.getenv(f"{model_name(llm)}_API_KEY")
     base_url = os.getenv(f"{model_name(llm)}_BASE_URL")
+    
+    if thinking == "false" or thinking == False:
+        extra_body = {
+            "enable_thinking": False,
+            "thinking": {"type": "disabled"},
+        }
+    elif thinking == "deep":
+        extra_body = {
+            "enable_thinking": True,
+            "thinking": {"type": "enabled"},
+        }
+    else:
+        extra_body = {
+            "enable_thinking": None,
+            "thinking": {"type": "auto"},
+        }
+    
     return ChatDeepSeek(
         model=llm,
         api_key=api_key,
@@ -30,10 +47,7 @@ def create_client(llm: str): #根据模型名称直接获取对应的客户端
         temperature=0.7,
         streaming=True,
         timeout=1800,
-        extra_body={
-            "extra_body"={"enable_thinking":True},
-            "thinking":{​"type":"disabled"​}
-        },
+        extra_body=extra_body,
     )
 
 
@@ -45,9 +59,9 @@ def llm_sendmsg(llm: str, msg: str):
         print(chunk, end="", flush=True)
 
 
-def llm_sendmsg_stream(llm: str, msg: str):
+def llm_sendmsg_stream(llm: str, msg: str, thinking: str = "auto"):
     """流式调用 - 生成器版本"""
-    client = create_client(llm)
+    client = create_client(llm, thinking)
     for chunk in client.stream(msg):
         if chunk.content:
             yield chunk.content

@@ -71,11 +71,11 @@ const MessageItem = ({ message }: MessageItemProps) => {
     <div className={`flex gap-4 px-4 md:px-12 py-3 items-center ${isUser ? 'flex-row-reverse' : ''}`}>
       <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
         isUser 
-          ? 'bg-primary/20' 
+          ? 'bg-gradient-to-r from-primary to-purple-500' 
           : 'bg-gradient-to-br from-primary to-purple-500'
       }`}>
         {isUser ? (
-          <User className="w-5 h-5 text-primary" />
+          <User className="w-5 h-5 text-white" />
         ) : (
           <Bot className="w-5 h-5 text-white" />
         )}
