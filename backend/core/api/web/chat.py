@@ -4,7 +4,10 @@ from typing import Optional, List
 import json
 import uuid
 import asyncio
+import logging
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 from core.api.schemas import (
     ChatSessionResponse,
@@ -96,10 +99,6 @@ async def send_message(request: SendMessageRequest):
     发送消息 - 流式返回
     使用 langchain.py 的 llm_sendmsg_stream 进行流式输出
     """
-    import logging
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
-    
     logger.info(f"收到消息: content={request.content[:50]}..., thinking={request.thinking}")
     
     session_id = get_session(

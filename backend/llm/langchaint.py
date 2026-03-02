@@ -35,9 +35,9 @@ def create_client(llm: str, thinking: str = "auto"):
             if time.time() - cached_time < _CACHE_TTL:
                 return cached_client
     
-    api_key = "6246ef67-931a-4f19-9409-89b42fc04a91"
-    base_url = "https://ark.cn-beijing.volces.com/api/v3"
-    
+    api_key = os.getenv(f"{model_name(llm)}_API_KEY")
+    base_url = os.getenv(f"{model_name(llm)}_BASE_URL")
+
     extra_parms = {}
     if thinking == "false":
         extra_parms = {
