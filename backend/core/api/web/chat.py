@@ -13,7 +13,7 @@ from core.api.schemas import (
     MessageResponse,
 )
 from core.api.result import success, sse_format, sse_done
-from llm.langchain import llm_sendmsg_stream, model_name
+from llm.langchaint import llm_sendmsg_stream, model_name
 
 router = APIRouter()
 
@@ -120,20 +120,27 @@ async def send_message(request: SendMessageRequest):
     
     async def stream_generator():
         full_content = ""
+        full_reasoning = ""
+        has_reasoning = False
         
         try:
             # 直接在事件循环中迭代（ChatOpenAI.stream 是同步的但可以在 async 中迭代）
             for chunk in llm_sendmsg_stream(model, request.content, thinking):
-                if chunk:
-                    full_content += chunk
-                    yield sse_format({"content": chunk})
+                # chunk 是字典，包含 content 和 reasoning
+                if chunk.get("reasoning"):
+                    full_reasoning += chunk["reasoning"]
+                    yield sse_format({"reasoning": chunk["reasoning"]})
+                
+                if chunk.get("content"):
+                    full_content += chunk["content"]
+                    yield sse_format({"content": chunk["content"]})
             
             # 保存助手消息
             if full_content:
                 save_message(session_id, "assistant", full_content)
             
             # 发送完成信号
-            yield sse_format({"sessionId": session_id, "done": True})
+            yield sse_format({"sessionId": session_id, "done": True, "hasReasoning": bool(full_reasoning)})
             yield sse_done()
             
         except Exception as e:

@@ -9,6 +9,7 @@ interface ChatStore {
   isLoading: boolean;
   isStreaming: boolean;
   thinkingMode: 'auto' | 'deep' | 'false';
+  abortController: AbortController | null;
   
   addSession: (session: ChatSession) => void;
   removeSession: (sessionId: string) => void;
@@ -34,6 +35,7 @@ export const useChatStore = create<ChatStore>()(
       isLoading: false,
       isStreaming: false,
       thinkingMode: 'auto',
+      abortController: null,
 
       setThinkingMode: (mode) => set({ thinkingMode: mode }),
 
@@ -104,7 +106,7 @@ export const useChatStore = create<ChatStore>()(
       clearAllSessions: () => set({ sessions: [], currentSessionId: null }),
 
       sendMessage: async (content, toolIds = []) => {
-        set({ isLoading: true });
+        set({ isLoading: true, isStreaming: true });
         
         const activeConfig = useSettingsStore.getState().getActiveConfig();
         const model = activeConfig?.model;
@@ -144,6 +146,8 @@ export const useChatStore = create<ChatStore>()(
         get().addMessage(sessionId, assistantMessage);
 
         let hasContent = false;
+        const abortController = new AbortController();
+        set({ abortController });
 
         try {
           console.log('发送请求:', { content, sessionId, model, thinking: get().thinkingMode });
@@ -153,6 +157,7 @@ export const useChatStore = create<ChatStore>()(
             headers: {
               'Content-Type': 'application/json',
             },
+            signal: abortController.signal,
             body: JSON.stringify({
               content,
               sessionId,
@@ -180,6 +185,7 @@ export const useChatStore = create<ChatStore>()(
           }
 
           let fullContent = '';
+          let fullReasoning = '';
           console.log('开始读取流...');
 
           while (true) {
@@ -202,6 +208,19 @@ export const useChatStore = create<ChatStore>()(
                 
                 try {
                   const parsed = JSON.parse(data);
+                  
+                  if (parsed.reasoning) {
+                    if (!hasContent) {
+                      hasContent = true;
+                      get().updateMessage(sessionId, assistantMessageId, {
+                        thinking: false,
+                      });
+                    }
+                    fullReasoning += parsed.reasoning;
+                    get().updateMessage(sessionId, assistantMessageId, {
+                      reasoning: fullReasoning,
+                    });
+                  }
                   
                   if (parsed.content) {
                     if (!hasContent) {
@@ -239,12 +258,16 @@ export const useChatStore = create<ChatStore>()(
           };
           get().addMessage(sessionId!, errorMessage);
         } finally {
-          set({ isLoading: false });
+          set({ isLoading: false, isStreaming: false, abortController: null });
         }
       },
 
       stopGenerating: () => {
-        set({ isLoading: false });
+        const { abortController } = get();
+        if (abortController) {
+          abortController.abort();
+        }
+        set({ isLoading: false, isStreaming: false, abortController: null });
       },
     }),
     {

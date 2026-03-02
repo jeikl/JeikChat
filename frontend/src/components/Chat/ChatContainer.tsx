@@ -13,7 +13,7 @@ const PROMPTS = [
 ];
 
 const ChatContainer = () => {
-  const { sessions, currentSessionId, isLoading, sendMessage } = useChatStore();
+  const { sessions, currentSessionId, isLoading, isStreaming, sendMessage, stopGenerating } = useChatStore();
   const { selectedToolIds } = useSettingsStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -76,7 +76,8 @@ const ChatContainer = () => {
 
       <InputArea 
         onSend={handleSend}
-        disabled={isLoading}
+        onStop={stopGenerating}
+        isStreaming={isStreaming}
       />
     </div>
   );

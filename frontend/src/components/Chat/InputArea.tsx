@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Mic, MicOff, Paperclip, Globe, Sparkles, ChevronDown, Zap, Ban } from 'lucide-react';
+import { Send, Mic, MicOff, Paperclip, Globe, Sparkles, ChevronDown, Zap, Ban, Square } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 
 interface InputAreaProps {
   onSend: (content: string) => void;
+  onStop?: () => void;
   disabled?: boolean;
+  isStreaming?: boolean;
 }
 
 const thinkingOptions = [
@@ -13,7 +15,7 @@ const thinkingOptions = [
   { value: 'false', label: '关闭思考', icon: Ban },
 ] as const;
 
-const InputArea = ({ onSend, disabled }: InputAreaProps) => {
+const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) => {
   const [content, setContent] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isWebSearch, setIsWebSearch] = useState(false);
@@ -150,22 +152,24 @@ const InputArea = ({ onSend, disabled }: InputAreaProps) => {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="发送消息..."
+            placeholder={isStreaming ? "正在生成回答..." : "发送消息..."}
             disabled={disabled}
             className="w-full resize-none bg-transparent py-3.5 pl-4 pr-12 focus:outline-none text-[15px] leading-relaxed text-text-primary placeholder-text-quaternary max-h-40"
             rows={1}
           />
           
           <button
-            onClick={handleSubmit}
-            disabled={!content.trim() || disabled}
+            onClick={isStreaming ? onStop : handleSubmit}
+            disabled={isStreaming ? false : (!content.trim() || disabled)}
             className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all duration-200 ${
-              content.trim() && !disabled
-                ? 'bg-primary text-white hover:bg-primary-hover' 
-                : 'bg-bg-tertiary text-text-quaternary'
+              isStreaming 
+                ? 'bg-error text-white hover:bg-red-600' 
+                : (content.trim() && !disabled
+                  ? 'bg-primary text-white hover:bg-primary-hover' 
+                  : 'bg-bg-tertiary text-text-quaternary')
             }`}
           >
-            <Send className="w-4 h-4" />
+            {isStreaming ? <Square className="w-4 h-4" /> : <Send className="w-4 h-4" />}
           </button>
         </div>
       </div>
