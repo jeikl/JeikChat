@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Mic, MicOff, Paperclip, Globe, Sparkles, ChevronDown, Zap, Ban, Square } from 'lucide-react';
+import { Send, Mic, MicOff, Paperclip, Globe, Sparkles, ChevronDown, Zap, Ban, Square, Plus } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 
 interface InputAreaProps {
@@ -61,122 +61,128 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 pb-6 pt-2">
-      {/* 功能按钮栏 */}
-      <div className="flex items-center justify-between mb-3 px-1 gap-2">
-        <div className="flex items-center gap-1 flex-wrap sm:flex-nowrap">
-          <button
-            onClick={() => setIsWebSearch(!isWebSearch)}
-            className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs rounded-full transition-all duration-200 whitespace-nowrap ${
-              isWebSearch 
-                ? 'bg-primary text-white' 
-                : 'bg-bg-tertiary text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
-            }`}
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">联网搜索</span>
-          </button>
-          
-          <button
-            onClick={() => setIsRecording(!isRecording)}
-            className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs rounded-full transition-all duration-200 whitespace-nowrap ${
-              isRecording 
-                ? 'bg-error text-white' 
-                : 'bg-bg-tertiary text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
-            }`}
-          >
-            {isRecording ? (
-              <>
-                <MicOff className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">关闭</span>
-              </>
-            ) : (
-              <>
-                <Mic className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">语音</span>
-              </>
-            )}
-          </button>
+    <div className="w-full max-w-[1300px] relative px-6">
+      {/* 输入框主体 - 极致纤长且扁平的“指挥棒”感 */}
+      <div className="relative group gemini-aura">
+        <div className={`
+          relative flex flex-col w-full
+          bg-[#1E1E1E] transition-all duration-500
+          rounded-[20px] overflow-visible
+          ${isStreaming ? 'ring-[0.5px] ring-primary/20' : ''}
+        `}>
+          {/* 文本输入区 - 纵向极致压缩 50% */}
+          <div className="flex flex-col px-5 pt-2 pb-0.5">
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask anything..."
+              className="w-full bg-transparent border-none focus:border-none focus:ring-0 focus:outline-none resize-none p-0 text-text-primary placeholder:text-text-quaternary text-[15px] max-h-[160px] leading-relaxed scrollbar-none min-h-[32px] selection:bg-primary/30"
+              style={{ boxShadow: 'none', border: 'none', outline: 'none' }}
+            />
+          </div>
 
-          <button
-            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs rounded-full bg-bg-tertiary text-text-secondary hover:bg-bg-secondary hover:text-text-primary transition-all duration-200 whitespace-nowrap"
-          >
-            <Paperclip className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">附件</span>
-          </button>
-        </div>
-
-        {/* 思考模式选择器 */}
-        <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setShowThinkingDropdown(!showThinkingDropdown)}
-            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs rounded-full bg-bg-tertiary text-text-secondary hover:bg-bg-secondary hover:text-text-primary transition-all duration-200 whitespace-nowrap"
-          >
-            <CurrentIcon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{currentOption.label}</span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${showThinkingDropdown ? 'rotate-180' : ''}`} />
-          </button>
-          
-          {showThinkingDropdown && (
-            <div className="absolute right-0 top-full mt-1 py-1 bg-bg-secondary border border-border rounded-lg shadow-lg z-50 min-w-[120px]">
-              {thinkingOptions.map((option) => {
-                const Icon = option.icon;
-                return (
+          {/* 底部操作区 - 纵向极度紧凑 */}
+          <div className="flex items-center justify-between px-4 pb-2">
+            <div className="flex items-center gap-2">
+              {/* 左侧附件按钮 - 极小化 */}
+              <button className="p-1.5 rounded-lg hover:bg-white/5 text-text-tertiary hover:text-text-primary transition-all active:scale-90">
+                <Plus className="w-4 h-4" />
+              </button>
+              
+              {/* 思考模式与搜索 - 极简扁平 */}
+              <div className="flex items-center gap-2">
+                <div className="relative" ref={dropdownRef}>
                   <button
-                    key={option.value}
-                    onClick={() => {
-                      setThinkingMode(option.value);
-                      setShowThinkingDropdown(false);
-                    }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${
-                      thinkingMode === option.value
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
+                    onClick={() => setShowThinkingDropdown(!showThinkingDropdown)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 ${
+                      thinkingMode === 'deep' 
+                        ? 'bg-primary/10 text-primary' 
+                        : 'text-text-quaternary hover:bg-white/5 hover:text-text-primary'
                     }`}
                   >
-                    <Icon className="w-3.5 h-3.5" />
-                    {option.label}
+                    <CurrentIcon className={`w-4 h-4 ${thinkingMode === 'deep' ? 'animate-pulse' : ''}`} />
+                    <span>{currentOption.label}</span>
                   </button>
-                );
-              })}
+                  
+                  {showThinkingDropdown && (
+                    <div className="absolute bottom-full left-0 mb-4 w-48 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-[100]">
+                      {thinkingOptions.map((option) => {
+                        const Icon = option.icon;
+                        return (
+                          <button
+                            key={option.value}
+                            onClick={() => {
+                              setThinkingMode(option.value);
+                              setShowThinkingDropdown(false);
+                            }}
+                            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-all duration-200 ${
+                              thinkingMode === option.value
+                                ? 'bg-white/10 text-white font-bold'
+                                : 'text-text-tertiary hover:bg-white/5 hover:text-text-primary'
+                            }`}
+                          >
+                            <Icon className="w-4 h-4" />
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setIsWebSearch(!isWebSearch)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 ${
+                    isWebSearch 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'text-text-quaternary hover:bg-white/5 hover:text-text-primary'
+                  }`}
+                >
+                  <Globe className="w-4 h-4" />
+                  <span>Search</span>
+                </button>
+              </div>
             </div>
-          )}
+
+            {/* 右侧发送与语音 - 圆形按钮风格 */}
+            <div className="flex items-center gap-2">
+              <button className="p-1.5 rounded-full hover:bg-white/5 text-text-tertiary hover:text-text-primary transition-all active:scale-90">
+                <Mic className="w-4 h-4" />
+              </button>
+              
+              {isStreaming ? (
+                <button
+                  onClick={onStop}
+                  className="p-1.5 bg-white text-black rounded-full hover:bg-white/90 transition-all shadow-xl active:scale-95"
+                >
+                  <Square className="w-3.5 h-3.5 fill-current" />
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmit}
+                  disabled={!content.trim() || disabled}
+                  className={`p-1.5 rounded-full transition-all active:scale-95 ${
+                    content.trim() && !disabled
+                      ? 'bg-white text-black hover:bg-white/90 shadow-xl'
+                      : 'bg-white/5 text-white/20 cursor-not-allowed'
+                  }`}
+                >
+                  <Send className="w-3.5 h-3.5 fill-current translate-x-[0.5px]" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 输入框 */}
-      <div className="relative">
-        <div className="relative border border-border rounded-2xl bg-bg-secondary overflow-hidden focus-within:border-primary/50 focus-within:shadow-[0_0_0_1px_rgba(99,102,241,0.1)] transition-all duration-200">
-          <textarea
-            ref={textareaRef}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={isStreaming ? "正在生成回答..." : "发送消息..."}
-            disabled={disabled}
-            className="w-full resize-none bg-transparent py-3.5 pl-4 pr-12 focus:outline-none text-[15px] leading-relaxed text-text-primary placeholder-text-quaternary max-h-40"
-            rows={1}
-          />
-          
-          <button
-            onClick={isStreaming ? onStop : handleSubmit}
-            disabled={isStreaming ? false : (!content.trim() || disabled)}
-            className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all duration-200 ${
-              isStreaming 
-                ? 'bg-error text-white hover:bg-red-600' 
-                : (content.trim() && !disabled
-                  ? 'bg-primary text-white hover:bg-primary-hover' 
-                  : 'bg-bg-tertiary text-text-quaternary')
-            }`}
-          >
-            {isStreaming ? <Square className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-          </button>
-        </div>
+      {/* 底部免责声明 - 移出流光边框，消除“蓝色分界线” */}
+      <div className="mt-2.5 flex justify-center">
+        <p className="text-[10px] text-text-quaternary font-medium tracking-wide opacity-60">
+          JeikChat can make mistakes. Check important info.
+        </p>
       </div>
-      
-      <p className="text-center text-xs text-text-quaternary mt-2">
-        AI 可能会产生错误信息，请核实重要内容
-      </p>
     </div>
   );
 };

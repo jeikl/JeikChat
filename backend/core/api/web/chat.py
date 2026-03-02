@@ -112,7 +112,7 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         
         try:
             # 使用支持取消的流式生成
-            for chunk in llm_sendmsg_stream(model, request.content, thinking, task.is_cancelled):
+            async for chunk in llm_sendmsg_stream(model, request.content, thinking, task.is_cancelled):
                 # 检查客户端是否断开连接
                 if await http_request.is_disconnected():
                     logger.info(f"客户端断开连接，停止生成: task_id={task_id}")

@@ -4,36 +4,158 @@
 
 /* 默认使用暗色模式 */
 :root {
-  /* 暗色模式 - 深邃优雅的蓝黑风格 */
-  --primary: #6366F1;
-  --primary-hover: #818CF8;
-  --secondary: #A855F7;
-  --accent: #F59E0B;
-  --success: #34D399;
-  --warning: #FBBF24;
-  --info: #22D3EE;
-  --error: #F87171;
+  /* Gemini 风格高级暗色模式 */
+  --primary: #4285F4;
+  --primary-hover: #5C9AFF;
+  --secondary: #9B72FF;
+  --accent: #F4B400;
+  --success: #0F9D58;
+  --error: #D93025;
   
-  /* 背景色 - 深邃的蓝黑色 */
-  --bg-primary: #0B0E14;
-  --bg-secondary: #12161F;
-  --bg-tertiary: #1A202C;
-  --bg-overlay: rgba(18, 22, 31, 0.92);
+  /* 背景色 - 引入深蓝色相，消除死气沉沉的纯黑 */
+  --bg-primary: #050508; 
+  --bg-secondary: #0F1117; 
+  --bg-tertiary: #1A1D25; 
+  --bg-overlay: rgba(5, 5, 8, 0.85);
   
-  /* 文本色 - 对比度更高的颜色 */
-  --text-primary: #F5F3FF;
-  --text-secondary: #C4B5FD;
-  --text-tertiary: #9CA3AF;
-  --text-quaternary: #6B7280;
+  /* 文本色 - 显著提升可读性 */
+  --text-primary: #FFFFFF;
+  --text-secondary: #E8EAED;
+  --text-tertiary: #BDC1C6;
+  --text-quaternary: #9AA0A6;
   
-  /* 边框色 */
-  --border: #1E2433;
-  --border-hover: #2A3244;
-  
-  /* 阴影 */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.6), 0 6px 12px rgba(0, 0, 0, 0.5);
+  /* 边框色 - 极简流光 */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+}
+
+/* 高级网格渐变背景 - 动态流光 */
+.mesh-gradient {
+  background-color: var(--bg-primary);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(66, 133, 244, 0.12) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(155, 114, 255, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(217, 101, 112, 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(66, 133, 244, 0.08) 0px, transparent 50%),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+  animation: background-flow 20s ease infinite;
+}
+
+@keyframes background-flow {
+  0%, 100% { background-position: 0% 0%; }
+  50% { background-position: 50% 50%; }
+}
+
+/* 极地流光背景 (Polar Aurora) - 极致创意 */
+.mesh-gradient {
+  background: #080808;
+  background-image: 
+    radial-gradient(at 0% 0%, #1a1b26 0%, transparent 50%),
+    radial-gradient(at 100% 0%, #16161e 0%, transparent 50%),
+    radial-gradient(at 50% 50%, #0d0e14 0%, transparent 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.mesh-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(66, 133, 244, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(155, 114, 255, 0.05) 0%, transparent 40%);
+  filter: blur(80px);
+  opacity: 0.6;
+  pointer-events: none;
+  animation: aurora-float 20s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-float {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(2%, 2%) scale(1.05); }
+}
+
+/* 基础重置 - 消除所有割裂感 */
+textarea {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Gemini 风格灵光边框 (Aura Glow) - 极致高级感 */
+.gemini-aura {
+  position: relative;
+  background: #1E1E1E;
+  border-radius: 28px;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gemini-aura::before {
+  content: '';
+  position: absolute;
+  inset: -1.2px;
+  background: linear-gradient(
+    90deg, 
+    #4285F4 0%, 
+    #9B72FF 25%, 
+    #D96570 50%, 
+    #9B72FF 75%, 
+    #4285F4 100%
+  );
+  background-size: 200% auto;
+  border-radius: inherit;
+  z-index: -1;
+  animation: gemini-flow 5s linear infinite;
+  opacity: 0.5;
+}
+
+.gemini-aura::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  background: linear-gradient(
+    90deg, 
+    rgba(66, 133, 244, 0.15), 
+    rgba(155, 114, 255, 0.15), 
+    rgba(217, 101, 112, 0.08)
+  );
+  filter: blur(25px);
+  border-radius: inherit;
+  z-index: -2;
+  opacity: 0.3;
+  transition: opacity 0.5s ease;
+}
+
+.gemini-aura:focus-within::after {
+  opacity: 0.6;
+  inset: -15px;
+}
+
+@keyframes gemini-flow {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+.gemini-gradient {
+  background: linear-gradient(70deg, #4285F4 0%, #9B72FF 50%, #D96570 100%);
+}
+
+.gemini-text-gradient {
+  background: linear-gradient(to right, #4285F4, #9B72FF, #D96570);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* 磨砂玻璃效果 */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 * {
@@ -94,10 +216,31 @@ html, body, #root {
   background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A855F7 100%);
 }
 
+.gradient-text {
+  background: linear-gradient(to right, var(--primary), var(--secondary), #F472B6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.modern-shadow {
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3), 0 4px 12px -4px rgba(0, 0, 0, 0.2);
+}
+
+.selected-item {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary);
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.2);
+}
+
 /* 自定义滚动条 - 完全隐藏 */
-.scrollbar-hidden {
+.scrollbar-none {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 
 .scrollbar-hidden::-webkit-scrollbar {

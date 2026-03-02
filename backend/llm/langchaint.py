@@ -7,12 +7,12 @@ from typing import Optional, Callable
 from dotenv import load_dotenv
 
 # 添加项目根目录到 Python 路径
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+current_dir = os.path.dirname(__file__)
+project_root = os.path.abspath(os.path.join(current_dir, "..", ".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-current_dir = os.path.dirname(__file__)
-env_path = os.path.abspath(os.path.join(current_dir, "..", ".env"))
+env_path = os.path.join(project_root, ".env")
 load_dotenv(dotenv_path=env_path, override=True)
 
 _client_cache = {}
@@ -77,7 +77,7 @@ def clear_client_cache():
     with _cache_lock:
         _client_cache.clear()
 
-def llm_sendmsg_stream(llm: str, msg: str, thinking: str = 'auto', should_stop: Optional[Callable[[], bool]] = None):
+async def llm_sendmsg_stream(llm: str, msg: str, thinking: str = 'auto', should_stop: Optional[Callable[[], bool]] = None):
     """
     流式发送消息到大模型
     
@@ -89,7 +89,8 @@ def llm_sendmsg_stream(llm: str, msg: str, thinking: str = 'auto', should_stop: 
     """
     client = create_client(llm, thinking)
     try:
-        for chunk in client.stream(msg):
+        # 使用 astream 支持真正的异步流，这样在等待响应时也能响应外部事件
+        async for chunk in client.astream(msg):
             # 检查是否需要停止
             if should_stop and should_stop():
                 print(f"LLM 流被主动中断: model={llm}")
@@ -97,14 +98,18 @@ def llm_sendmsg_stream(llm: str, msg: str, thinking: str = 'auto', should_stop: 
             
             result = {}
             
-            if chunk.content:
+            # 处理内容
+            if hasattr(chunk, 'content') and chunk.content:
                 result["content"] = chunk.content
             
+            # 处理思考过程 (Reasoning)
+            # 对于 ChatDeepSeek，通常在 additional_kwargs 中
             if hasattr(chunk, 'additional_kwargs') and chunk.additional_kwargs:
                 reasoning_content = chunk.additional_kwargs.get('reasoning_content')
                 if reasoning_content:
                     result["reasoning"] = reasoning_content
                 result["additional_kwargs"] = chunk.additional_kwargs
+            
             if result:
                 yield result
     except GeneratorExit:
@@ -115,7 +120,7 @@ def llm_sendmsg_stream(llm: str, msg: str, thinking: str = 'auto', should_stop: 
         raise
 
 
-def llm_sendmsg_stream_with_cancel(llm: str, msg: str, thinking: str = 'auto', cancel_event: Optional[threading.Event] = None):
+async def llm_sendmsg_stream_with_cancel(llm: str, msg: str, thinking: str = 'auto', cancel_event: Optional[threading.Event] = None):
     """
     支持取消的流式发送消息
     
@@ -128,4 +133,5 @@ def llm_sendmsg_stream_with_cancel(llm: str, msg: str, thinking: str = 'auto', c
     def should_stop():
         return cancel_event is not None and cancel_event.is_set()
     
-    yield from llm_sendmsg_stream(llm, msg, thinking, should_stop)
+    async for chunk in llm_sendmsg_stream(llm, msg, thinking, should_stop):
+        yield chunk
