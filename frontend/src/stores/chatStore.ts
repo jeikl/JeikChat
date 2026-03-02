@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Message, ChatSession } from '@/types/chat';
 import { useSettingsStore } from './settingsStore';
+import { chatApi } from '@/services/api';
 
 interface ChatStore {
   sessions: ChatSession[];
@@ -24,7 +25,7 @@ interface ChatStore {
   setThinkingMode: (mode: 'auto' | 'deep' | 'false') => void;
   clearAllSessions: () => void;
   sendMessage: (content: string, toolIds?: string[]) => Promise<void>;
-  stopGenerating: () => void;
+  stopGenerating: () => Promise<void>;
 }
 
 export const useChatStore = create<ChatStore>()(
@@ -186,6 +187,7 @@ export const useChatStore = create<ChatStore>()(
 
           let fullContent = '';
           let fullReasoning = '';
+          let isCancelled = false;
           console.log('开始读取流...');
 
           while (true) {
@@ -194,6 +196,13 @@ export const useChatStore = create<ChatStore>()(
             console.log('读取结果:', done, value?.length);
             
             if (done) break;
+            
+            // 检查是否已取消
+            if (abortController.signal.aborted) {
+              console.log('请求已取消，停止读取');
+              isCancelled = true;
+              break;
+            }
             
             const chunk = decoder.decode(value, { stream: true });
             const lines = chunk.split('\n');
@@ -208,6 +217,12 @@ export const useChatStore = create<ChatStore>()(
                 
                 try {
                   const parsed = JSON.parse(data);
+                  
+                  // 检查是否被取消
+                  if (parsed.cancelled) {
+                    isCancelled = true;
+                    console.log('后端报告生成被取消');
+                  }
                   
                   if (parsed.reasoning) {
                     if (!hasContent) {
@@ -248,25 +263,57 @@ export const useChatStore = create<ChatStore>()(
               }
             }
           }
+
+          // 如果被取消，更新消息状态
+          if (isCancelled) {
+            get().updateMessage(sessionId, assistantMessageId, {
+              content: fullContent || '生成已停止',
+              isCancelled: true,
+            });
+          }
+
         } catch (error) {
-          console.error('发送消息失败:', error);
-          const errorMessage: Message = {
-            id: `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-            role: 'assistant',
-            content: '抱歉，发送消息时出现错误，请稍后再试。',
-            timestamp: Date.now(),
-          };
-          get().addMessage(sessionId!, errorMessage);
+          if ((error as Error).name === 'AbortError') {
+            console.log('请求被用户取消');
+            // 更新消息显示已停止
+            get().updateMessage(sessionId, assistantMessageId, {
+              thinking: false,
+              content: fullContent || '生成已停止',
+              isCancelled: true,
+            });
+          } else {
+            console.error('发送消息失败:', error);
+            const errorMessage: Message = {
+              id: `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+              role: 'assistant',
+              content: '抱歉，发送消息时出现错误，请稍后再试。',
+              timestamp: Date.now(),
+            };
+            get().addMessage(sessionId!, errorMessage);
+          }
         } finally {
           set({ isLoading: false, isStreaming: false, abortController: null });
         }
       },
 
-      stopGenerating: () => {
-        const { abortController } = get();
+      stopGenerating: async () => {
+        const { abortController, currentSessionId } = get();
+        
+        // 1. 先中断前端请求
         if (abortController) {
           abortController.abort();
         }
+        
+        // 2. 调用后端 API 真正停止与大模型的通信
+        if (currentSessionId) {
+          try {
+            const result = await chatApi.stopGeneration(currentSessionId);
+            console.log('后端停止生成:', result);
+          } catch (error) {
+            console.error('停止生成失败:', error);
+          }
+        }
+        
         set({ isLoading: false, isStreaming: false, abortController: null });
       },
     }),

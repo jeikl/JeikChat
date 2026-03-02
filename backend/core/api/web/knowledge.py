@@ -1,8 +1,12 @@
 from fastapi import APIRouter, UploadFile, File, Form
 from typing import List, Optional
 
-from core.services.rag_service import knowledge_service, rag_service
+from core.services.rag_service import get_knowledge_base_service, get_rag_service
 from core.api.result import success
+
+# 获取服务单例
+knowledge_service = get_knowledge_base_service()
+rag_service = get_rag_service()
 
 router = APIRouter()
 

@@ -283,6 +283,28 @@ export const chatApi = {
   renameSession: async (sessionId: string, newTitle: string): Promise<void> => {
     await apiClient.put(`/chat/history/${sessionId}/title`, { title: newTitle });
   },
+
+  /**
+   * 停止指定会话的生成
+   * @请求方式 POST /api/chat/stop/{sessionId}
+   * @触发位置 InputArea.tsx - 点击停止按钮
+   * @返回 { status: 1, data: { cancelled_tasks: number }, msg: "已停止 X 个生成任务" }
+   */
+  stopGeneration: async (sessionId: string): Promise<{ cancelled_tasks: number }> => {
+    const response = await apiClient.post<ApiResponse<{ cancelled_tasks: number }>>(`/chat/stop/${sessionId}`);
+    return response.data.data || { cancelled_tasks: 0 };
+  },
+
+  /**
+   * 停止所有生成任务
+   * @请求方式 POST /api/chat/stop
+   * @触发位置 紧急情况使用
+   * @返回 { status: 1, data: { cancelled_tasks: number }, msg: "已停止 X 个生成任务" }
+   */
+  stopAllGeneration: async (): Promise<{ cancelled_tasks: number }> => {
+    const response = await apiClient.post<ApiResponse<{ cancelled_tasks: number }>>('/chat/stop');
+    return response.data.data || { cancelled_tasks: 0 };
+  },
 };
 
 // ============================================================

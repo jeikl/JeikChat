@@ -221,6 +221,12 @@ const MessageItem = ({ message }: MessageItemProps) => {
                     {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                     {copied ? '已复制' : '复制'}
                   </button>
+                  {message.isCancelled && (
+                    <span className="text-xs text-amber-500 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      生成已停止
+                    </span>
+                  )}
                   <span className="text-xs text-text-tertiary">
                     {format(message.timestamp, 'HH:mm', { locale: zhCN })}
                   </span>
