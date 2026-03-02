@@ -61,8 +61,8 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
   };
 
   return (
-    <div className="w-full max-w-[1300px] relative px-6">
-      {/* 输入框主体 - 极致纤长且扁平的“指挥棒”感 */}
+    <div className="w-full max-w-[1400px] relative px-6 md:px-8">
+      {/* 输入框主体 - 极致纤长且扁平的"指挥棒"感 */}
       <div className="relative group gemini-aura">
         <div className={`
           relative flex flex-col w-full
@@ -71,7 +71,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
           ${isStreaming ? 'ring-[0.5px] ring-primary/20' : ''}
         `}>
           {/* 文本输入区 - 纵向极致压缩 50% */}
-          <div className="flex flex-col px-5 pt-2 pb-0.5">
+          <div className="flex flex-col px-5 pt-4 pb-0.5">
             <textarea
               ref={textareaRef}
               value={content}

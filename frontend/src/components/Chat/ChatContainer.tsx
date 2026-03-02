@@ -119,13 +119,13 @@ const ChatContainer = () => {
             </div>
           </div>
         ) : (
-          <div className="w-full max-w-[1400px] mx-auto py-6 flex-1">
+          <div className="w-full max-w-[1400px] mx-auto py-4 flex-1 px-6 md:px-8 relative z-40">
             <div className="flex flex-col min-h-full">
               {messages.map((message) => (
                 <MessageItem key={message.id} message={message} />
               ))}
               {/* 底部占位，高度等于输入框高度 + 间距 */}
-              <div className="h-48 flex-shrink-0" />
+              <div className="h-24 flex-shrink-0" />
               <div ref={messagesEndRef} />
             </div>
           </div>
@@ -133,8 +133,8 @@ const ChatContainer = () => {
       </div>
 
       {/* 固定底部的输入框容器 - 极低位置，贴合底部边缘 */}
-      <div className="absolute bottom-0 left-0 right-0 z-30 pointer-events-none">
-        <div className="max-w-[1400px] mx-auto w-full flex justify-center pb-0.5 px-6 pointer-events-auto">
+      <div className="absolute bottom-[-80px] left-0 right-0 z-30">
+        <div className="max-w-[1400px] mx-auto w-full flex justify-center pb-0 px-6 md:px-8">
           <InputArea 
             onSend={handleSend}
             onStop={stopGenerating}

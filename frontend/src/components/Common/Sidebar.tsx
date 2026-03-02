@@ -6,9 +6,12 @@ import {
   Plus,
   Trash2,
   MessageSquare,
-  Wrench
+  Wrench,
+  Copy,
+  Check
 } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
@@ -21,6 +24,7 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
   const navigate = useNavigate();
   const { sessions, currentSessionId, setCurrentSession, addSession, deleteSession, updateSession } = useChatStore();
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const createNewSession = () => {
     const newSession = {
@@ -37,6 +41,24 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
     e.stopPropagation();
     if (confirm('确定要删除这个对话吗？')) {
       deleteSession(sessionId);
+    }
+  };
+
+  const handleCopySession = async (e: React.MouseEvent, session: typeof sessions[0]) => {
+    e.stopPropagation();
+    const sessionData = {
+      title: session.title,
+      messages: session.messages,
+      createdAt: session.createdAt,
+      updatedAt: session.updatedAt,
+    };
+    
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(sessionData, null, 2));
+      setCopiedId(session.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('复制失败:', err);
     }
   };
 
@@ -122,15 +144,29 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
                           {format(session.updatedAt, 'MM/dd HH:mm', { locale: zhCN })}
                         </p>
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteSession(e, session.id);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-error/10 hover:text-error rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <button
+                          onClick={(e) => handleCopySession(e, session)}
+                          className="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-all"
+                          title="复制会话内容"
+                        >
+                          {copiedId === session.id ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSession(e, session.id);
+                          }}
+                          className="p-1.5 hover:bg-error/10 hover:text-error rounded-lg transition-all"
+                          title="删除会话"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>

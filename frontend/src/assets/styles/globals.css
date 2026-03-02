@@ -398,6 +398,35 @@ html, body, #root {
   border-color: var(--border-hover);
 }
 
+/* 代码块选中样式覆盖 - 去除阴影高亮 */
+.code-block-wrapper,
+.code-block-wrapper *,
+.code-block-wrapper code,
+.code-block-wrapper pre {
+  text-shadow: none !important;
+}
+
+.code-block-wrapper ::selection,
+.code-block-wrapper *::selection {
+  background: rgba(66, 133, 244, 0.3) !important;
+  color: inherit !important;
+  text-shadow: none !important;
+}
+
+/* 覆盖 SyntaxHighlighter oneDark 主题的所有背景色 */
+.code-block-wrapper .token-line,
+.code-block-wrapper .token-line *,
+.code-block-wrapper [class*="token-"],
+.code-block-wrapper span[class*="token-"],
+.code-block-wrapper .linenumber {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.code-block-wrapper .token-line:hover {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
   .glass-effect {
