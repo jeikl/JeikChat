@@ -1,4 +1,4 @@
-from langchain_openai import ChatOpenAI
+
 from langchain_deepseek import ChatDeepSeek
 import os
 import sys
@@ -72,7 +72,7 @@ def clear_client_cache():
     with _cache_lock:
         _client_cache.clear()
 
-def llm_sendmsg_stream(llm: str, msg: str, thinking: str = 'auto'):
+def llm_sendmsg_stream(llm: str, msg: str, thinking: str = 'auto'):#聊天
     client = create_client(llm, thinking)
     try:
         for chunk in client.stream(msg):
