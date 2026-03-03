@@ -67,7 +67,11 @@ def start_backend(test_mode: bool = False, host: str = "0.0.0.0", port: int = 80
     
     # 支持双栈：如果指定 :: 或 0.0.0.0，都使用双栈模式
     if host in ["::", "0.0.0.0"]:
-        cmd = f'"{sys.executable}" -m uvicorn main:app --host :: --port {port} --reload'
+        import platform
+        if platform.system() == "Windows":
+            cmd = f'"{sys.executable}" -m uvicorn main:app --host 0.0.0.0 --port {port} --reload'
+        else:
+            cmd = f'"{sys.executable}" -m uvicorn main:app --host :: --port {port} --reload'
     else:
         cmd = f'"{sys.executable}" -m uvicorn main:app --host {host} --port {port} --reload'
     

@@ -79,8 +79,6 @@ const MessageItem = ({ message }: MessageItemProps) => {
   const isThinking = message.thinking && !message.content;
   const hasReasoning = message.reasoning && message.reasoning.length > 0;
   
-
-  
   const reasoningRef = useRef<HTMLDivElement>(null);
   const isUserScrolledUpRef = useRef(false);
 
@@ -182,27 +180,27 @@ const MessageItem = ({ message }: MessageItemProps) => {
           <div className={`w-full flex flex-col gap-2 group ${isUser ? 'items-end' : 'items-start'}`}>
             {/* 推理框 - 放在AI头像旁边 */}
             {(hasReasoning || isThinking) && (
-              <div className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-xl overflow-hidden transition-all duration-500 shadow-lg w-full ${isThinking ? 'py-2 px-3' : ''}`}>
+              <div className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-xl overflow-hidden transition-all duration-500 shadow-lg w-full -mx-1 md:mx-0 ${isThinking ? 'py-2 px-3' : ''}`}>
                 <button
                   onClick={() => !isThinking && setShowReasoning(!showReasoning)}
-                  className={`w-full flex items-center gap-2 hover:bg-white/[0.03] transition-colors ${isThinking ? 'py-0 justify-center' : 'px-5 py-2.5 justify-between'}`}
+                  className={`w-full flex items-center gap-2 hover:bg-white/[0.03] transition-colors ${isThinking ? 'py-0 justify-center' : 'px-2 py-1.5 md:px-5 md:py-2.5 justify-between'}`}
                   disabled={isThinking}
                 >
                   <div className="flex items-center gap-2">
-                    <div className={`rounded-lg flex items-center justify-center border border-white/10 bg-white/[0.05] ${isThinking ? 'w-5 h-5' : 'w-5 h-5'}`}>
+                    <div className={`rounded-lg flex items-center justify-center border border-white/10 bg-white/[0.05] w-5 h-5`}>
                       {isThinking ? (
-                        <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
+                        <Loader2 className="w-3 h-3 text-primary animate-spin" />
                       ) : (
-                        <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-500 ${showReasoning ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform duration-500 ${showReasoning ? 'rotate-180' : ''}`} />
                       )}
                     </div>
-                    <span className={`font-bold tracking-widest uppercase opacity-80 ${isThinking ? 'text-[10px] bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent animate-pulse' : 'text-[11px] text-gray-300'}`}>
-                      {isThinking ? 'Thinking Process...' : 'Thought Process'}
+                    <span className={`font-bold tracking-tighter md:tracking-widest uppercase opacity-80 ${isThinking ? 'text-[9px] bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent animate-pulse' : 'text-[10px] md:text-[11px] text-gray-300'}`}>
+                      {isThinking ? 'Thinking...' : 'Thought Process'}
                     </span>
                   </div>
                   {!isThinking && (
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-[10px] text-gray-400">{showReasoning ? '收起' : '展开'}</span>
+                    <div className="text-[9px] text-gray-500 pr-1">
+                      {showReasoning ? '点击收起' : '点击展开'}
                     </div>
                   )}
                 </button>
@@ -211,87 +209,111 @@ const MessageItem = ({ message }: MessageItemProps) => {
                   <div 
                     ref={reasoningRef}
                     onScroll={handleReasoningScroll}
-                    className="px-6 pb-5 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent animate-in fade-in slide-in-from-top-2 duration-500"
+                    className="px-3 md:px-4 pb-8 md:pb-5 animate-in fade-in slide-in-from-top-2 duration-500 w-full"
                   >
-                    <div className="text-[13.5px] text-gray-300/90 whitespace-pre-wrap font-mono leading-relaxed prose prose-invert prose-sm max-w-none italic opacity-90 border-t border-white/[0.05] pt-4">
-                      <ReactMarkdown 
-                        children={message.reasoning} 
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw]}
-                        components={{
-                          code({ node, className, children, ...props }) {
-                            const match = /language-(\w+)/.exec(className || '');
-                            const inline = !match;
-                            return inline ? (
-                              <code className={`px-1 py-0.5 rounded bg-white/[0.05] text-primary text-[12px] border border-white/[0.05] font-mono`} {...props}>
-                                {children}
-                              </code>
-                            ) : (
-                              <div className="my-4 rounded-xl overflow-hidden border border-white/[0.08] bg-[#161b22]">
-                                <div className="px-3 py-2 bg-[#0d1117] border-b border-white/[0.06]">
-                                  <span className="text-[9px] text-text-quaternary font-mono uppercase">{match?.[1] || 'code'}</span>
+                    <div className="text-[12px] md:text-[13px] text-gray-300/85 font-mono leading-[1.3] max-w-none italic border-t border-white/[0.05] pt-2">
+                      {/* 移动端：直接显示纯文本，确保布局稳定 */}
+                      <div className="block md:hidden whitespace-pre-wrap break-words w-full">
+                        {message.reasoning}
+                      </div>
+
+                      {/* 桌面端：显示Markdown渲染 */}
+                      <div className="hidden md:block">
+                        <ReactMarkdown 
+                          children={message.reasoning} 
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeRaw]}
+                          components={{
+                            code({ node, className, children, ...props }) {
+                              const match = /language-(\w+)/.exec(className || '');
+                              const inline = !match;
+                              return inline ? (
+                                <code className={`px-1 py-0 rounded bg-white/[0.05] text-primary text-[12px] font-mono`} {...props}>
+                                  {children}
+                                </code>
+                              ) : (
+                                <div className="my-1 rounded-lg overflow-hidden border border-white/[0.08] bg-[#161b22]">
+                                  <div className="px-2 py-1 bg-[#0d1117] border-b border-white/[0.06]">
+                                    <span className="text-[9px] text-text-quaternary font-mono uppercase">{match?.[1] || 'code'}</span>
+                                  </div>
+                                  <div className="p-2 overflow-x-auto text-[12px] code-block-wrapper">
+                                    <SyntaxHighlighter
+                                      children={String(children).replace(/\n$/, '')}
+                                      style={customCodeTheme as any}
+                                      language={match?.[1] || 'text'}
+                                      PreTag="div"
+                                      customStyle={{ margin: '0', background: 'transparent', padding: '0', fontSize: 'inherit' }}
+                                      wrapLines={false}
+                                      showLineNumbers={false}
+                                    />
+                                  </div>
                                 </div>
-                                <div className="p-3 overflow-x-auto text-[12px] code-block-wrapper">
-                                  <SyntaxHighlighter
-                                    children={String(children).replace(/\n$/, '')}
-                                    style={customCodeTheme as any}
-                                    language={match?.[1] || 'text'}
-                                    PreTag="div"
-                                    customStyle={{ margin: '0', background: 'transparent', padding: '0', fontSize: '12px' }}
-                                    wrapLines={false}
-                                    showLineNumbers={false}
-                                  />
-                                </div>
+                              );
+                            },
+                            p: ({ node, ...props }) => <p className={`mb-0.5 last:mb-0`} {...props} />,
+                            ul: ({ node, ...props }) => (
+                              <ul className="mb-0.5 pl-4 list-disc marker:text-gray-500 space-y-0" {...props} />
+                            ),
+                            ol: ({ node, ...props }) => (
+                              <ol className="mb-0.5 pl-4 list-decimal marker:text-gray-500 space-y-0" {...props} />
+                            ),
+                            li: ({ node, ...props }) => {
+                              const text = props.children?.toString() || '';
+                              const isFolder = text.includes(':') || text.endsWith('/');
+                              const isFile = !isFolder && text.includes('.');
+                              let colorClass = 'text-[#c9d1d9]';
+                              if (isFolder) {
+                                colorClass = 'text-[#7ee787]';
+                              } else if (isFile) {
+                                colorClass = 'text-[#79c0ff]';
+                              }
+                              return <li className={`text-[13px] font-mono ${colorClass} leading-tight`} {...props} />;
+                            },
+                            h1: ({ node, ...props }) => <h1 className="text-sm font-bold mt-1 mb-0.5 text-white/90" {...props} />,
+                            h2: ({ node, ...props }) => <h2 className="text-xs font-bold mt-1 mb-0.5 text-white/80" {...props} />,
+                            h3: ({ node, ...props }) => <h3 className="text-[11px] font-bold mt-0.5 mb-0.5 text-white/70" {...props} />,
+                            blockquote: ({ node, ...props }) => (
+                              <blockquote className="border-l-2 border-primary/30 pl-2 my-1 italic text-text-quaternary/80" {...props} />
+                            ),
+                            a: ({ node, ...props }) => (
+                              <a {...props} target="_blank" rel="noopener noreferrer" className="text-primary/80 hover:text-primary underline" />
+                            ),
+                            img: ({ node, ...props }) => (
+                              <img {...props} className="max-w-full h-auto rounded-lg my-1 border border-white/[0.05]" loading="lazy" />
+                            ),
+                            table: ({ node, ...props }) => (
+                              <div className="overflow-x-auto my-1 rounded-lg border border-white/[0.05] bg-white/[0.02]">
+                                <table className="w-full text-xs table-auto" {...props} />
                               </div>
-                            );
-                          },
-                          p: ({ node, ...props }) => <p className={`my-2 leading-relaxed`} {...props} />,
-                          ul: ({ node, ...props }) => (
-                            <ul className="my-4 rounded-xl overflow-hidden border border-white/[0.08] bg-[#161b22]" {...props} />
-                          ),
-                          ol: ({ node, ...props }) => (
-                            <ol className="my-4 rounded-xl overflow-hidden border border-white/[0.08] bg-[#161b22]" {...props} />
-                          ),
-                          li: ({ node, ...props }) => {
-                            const text = props.children?.toString() || '';
-                            const isFolder = text.includes(':') || text.endsWith('/');
-                            const isFile = !isFolder && text.includes('.');
-                            let colorClass = 'text-[#c9d1d9]';
-                            if (isFolder) {
-                              colorClass = 'text-[#7ee787]';
-                            } else if (isFile) {
-                              colorClass = 'text-[#79c0ff]';
-                            }
-                            return <li className={`px-4 py-1.5 text-[13px] font-mono ${colorClass} border-b border-white/[0.04] last:border-b-0`} {...props} />;
-                          },
-                          h1: ({ node, ...props }) => <h1 className="text-lg font-bold my-4 text-white/90" {...props} />,
-                          h2: ({ node, ...props }) => <h2 className="text-base font-bold my-3 text-white/80" {...props} />,
-                          h3: ({ node, ...props }) => <h3 className="text-sm font-bold my-2 text-white/70" {...props} />,
-                          blockquote: ({ node, ...props }) => (
-                            <blockquote className="border-l-2 border-primary/30 pl-3 my-3 italic text-text-quaternary/80" {...props} />
-                          ),
-                          a: ({ node, ...props }) => (
-                            <a {...props} target="_blank" rel="noopener noreferrer" className="text-primary/80 hover:text-primary underline" />
-                          ),
-                          img: ({ node, ...props }) => (
-                            <img {...props} className="max-w-full h-auto rounded-lg my-3 border border-white/[0.05]" loading="lazy" />
-                          ),
-                          table: ({ node, ...props }) => (
-                            <div className="overflow-x-auto my-3 rounded-lg border border-white/[0.05] bg-white/[0.02]">
-                              <table className="w-full text-xs table-auto" {...props} />
-                            </div>
-                          ),
-                          thead: ({ node, ...props }) => <thead className="bg-white/[0.05] text-text-tertiary text-[10px] whitespace-nowrap" {...props} />,
-                          th: ({ node, ...props }) => <th className="px-2 py-1.5 font-medium border-b border-white/[0.08] min-w-[40px] text-center" {...props} />,
-                          td: ({ node, ...props }) => <td className="px-2 py-1.5 border-b border-white/[0.05] text-center align-middle" {...props} />,
-                          tr: ({ node, ...props }) => <tr className="hover:bg-white/[0.03]" {...props} />,
-                          hr: ({ node, ...props }) => <hr className="my-4 border-white/[0.08]" {...props} />,
-                          del: ({ node, ...props }) => <del className="line-through text-text-quaternary/60" {...props} />,
-                          strong: ({ node, ...props }) => <strong className="font-bold text-white/90" {...props} />,
-                          em: ({ node, ...props }) => <em className="italic text-text-tertiary/80" {...props} />,
-                        }}
-                      />
+                            ),
+                            thead: ({ node, ...props }) => <thead className="bg-white/[0.05] text-text-tertiary text-[10px] whitespace-nowrap" {...props} />,
+                            th: ({ node, ...props }) => <th className="px-1.5 py-0.5 font-medium border-b border-white/[0.08] min-w-[40px] text-center" {...props} />,
+                            td: ({ node, ...props }) => <td className="px-1.5 py-0.5 border-b border-white/[0.05] text-center align-middle" {...props} />,
+                            tr: ({ node, ...props }) => <tr className="hover:bg-white/[0.03]" {...props} />,
+                            hr: ({ node, ...props }) => <hr className="my-1 border-white/[0.08]" {...props} />,
+                            del: ({ node, ...props }) => <del className="line-through text-text-quaternary/60" {...props} />,
+                            strong: ({ node, ...props }) => <strong className="font-bold text-white/90" {...props} />,
+                            em: ({ node, ...props }) => <em className="italic text-text-tertiary/80" {...props} />,
+                          }}
+                        />
+                      </div>
                     </div>
+                    
+                    {/* 底部收起按钮 - 更加紧凑且明显 */}
+                    {!isThinking && (
+                      <div className="mt-1 flex justify-center pb-1 relative z-10">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowReasoning(false);
+                          }}
+                          className="group/btn flex items-center gap-1 px-3 py-0.5 rounded-full bg-white/[0.08] hover:bg-white/15 border border-white/[0.1] transition-all duration-300 shadow-sm"
+                        >
+                          <ChevronDown className="w-2.5 h-2.5 text-gray-400 group-hover/btn:text-gray-200 rotate-180 transition-transform duration-300" />
+                          <span className="text-[10px] text-gray-400 group-hover/btn:text-gray-200 transition-colors">收起</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

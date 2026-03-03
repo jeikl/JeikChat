@@ -24,7 +24,7 @@ load_dotenv(dotenv_path=env_path, override=True)
 
 _client_cache = {}
 _cache_lock = threading.Lock()
-_CACHE_TTL = 300
+_CACHE_TTL = float('inf')
 
 def model_name(text: str):
     dash_index = text.find("-")
