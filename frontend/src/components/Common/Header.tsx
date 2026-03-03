@@ -216,7 +216,7 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
           </button>
 
           {showKnowledgeSelector && (
-            <div className="absolute right-0 mt-3 w-64 bg-bg-secondary/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/40 py-2 z-50 max-h-[400px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute right-0 mt-3 w-64 bg-[#1E1E1E] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden py-2 z-50 max-h-[400px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="px-4 py-2 mb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-widest">关联知识库</div>
               {knowledgeBases.length === 0 ? (
                 <div className="px-4 py-8 text-sm text-text-tertiary text-center flex flex-col items-center gap-2">

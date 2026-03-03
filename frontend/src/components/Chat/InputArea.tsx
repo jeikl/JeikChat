@@ -61,30 +61,30 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
   };
 
   return (
-    <div className="w-full max-w-[1400px] relative px-6 md:px-8">
+    <div className="w-full max-w-[1400px] relative px-3 md:px-8">
       {/* 输入框主体 - 极致纤长且扁平的"指挥棒"感 */}
       <div className="relative group gemini-aura">
         <div className={`
           relative flex flex-col w-full
           bg-[#1E1E1E] transition-all duration-500
-          rounded-[20px] overflow-visible
+          rounded-[16px] md:rounded-[20px] overflow-visible
           ${isStreaming ? 'ring-[0.5px] ring-primary/20' : ''}
         `}>
           {/* 文本输入区 - 纵向极致压缩 50% */}
-          <div className="flex flex-col px-5 pt-4 pb-0.5">
+          <div className="flex flex-col px-3 md:px-5 pt-1.5 md:pt-4 pb-0 md:pb-0.5">
             <textarea
               ref={textareaRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask anything..."
-              className="w-full bg-transparent border-none focus:border-none focus:ring-0 focus:outline-none resize-none p-0 text-text-primary placeholder:text-text-quaternary text-[15px] max-h-[160px] leading-relaxed scrollbar-none min-h-[32px] selection:bg-primary/30"
+              className="w-full bg-transparent border-none focus:border-none focus:ring-0 focus:outline-none resize-none p-0 text-text-primary placeholder:text-text-quaternary text-sm md:text-[15px] max-h-[120px] md:max-h-[160px] leading-relaxed scrollbar-none min-h-[20px] md:min-h-[32px] selection:bg-primary/30"
               style={{ boxShadow: 'none', border: 'none', outline: 'none' }}
             />
           </div>
 
           {/* 底部操作区 - 纵向极度紧凑 */}
-          <div className="flex items-center justify-between px-4 pb-2">
+          <div className="flex items-center justify-between px-2 md:px-4 pb-1 md:pb-2">
             <div className="flex items-center gap-2">
               {/* 左侧附件按钮 - 极小化 */}
               <button className="p-1.5 rounded-lg hover:bg-white/5 text-text-tertiary hover:text-text-primary transition-all active:scale-90">
@@ -103,7 +103,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                     }`}
                   >
                     <CurrentIcon className={`w-4 h-4 ${thinkingMode === 'deep' ? 'animate-pulse' : ''}`} />
-                    <span>{currentOption.label}</span>
+                    <span className="hidden sm:inline">{currentOption.label}</span>
                   </button>
                   
                   {showThinkingDropdown && (
@@ -141,7 +141,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                   }`}
                 >
                   <Globe className="w-4 h-4" />
-                  <span>Search</span>
+                  <span className="hidden sm:inline">Search</span>
                 </button>
               </div>
             </div>
@@ -178,8 +178,8 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
       </div>
 
       {/* 底部免责声明 - 移出流光边框，消除“蓝色分界线” */}
-      <div className="mt-2.5 flex justify-center">
-        <p className="text-[10px] text-text-quaternary font-medium tracking-wide opacity-60">
+      <div className="mt-0 md:mt-2.5 flex justify-center pb-0">
+        <p className="text-[9px] md:text-[10px] text-text-quaternary font-medium tracking-wide opacity-60 scale-90 md:scale-100 origin-top leading-tight">
           JeikChat can make mistakes. Check important info.
         </p>
       </div>

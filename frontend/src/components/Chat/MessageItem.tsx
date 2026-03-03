@@ -8,23 +8,23 @@ import { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
-// 自定义简洁代码块主题 - 无背景色
+// 自定义代码块主题 - GitHub Dark 风格
 const customCodeTheme = {
   'code[class*="language-"]': {
-    color: '#e5e7eb',
+    color: '#e6edf3',
     background: 'transparent',
     textShadow: 'none',
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
     fontSize: '14px',
-    lineHeight: '1.5',
+    lineHeight: '1.6',
   },
   'pre[class*="language-"]': {
-    color: '#e5e7eb',
+    color: '#e6edf3',
     background: 'transparent',
     textShadow: 'none',
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
     fontSize: '14px',
-    lineHeight: '1.5',
+    lineHeight: '1.6',
     margin: '0',
     padding: '0',
     borderRadius: '0',
@@ -35,35 +35,35 @@ const customCodeTheme = {
   'code': {
     background: 'transparent',
   },
-  'comment': { color: '#6b7280' },
-  'block-comment': { color: '#6b7280' },
-  'prolog': { color: '#6b7280' },
-  'doctype': { color: '#6b7280' },
-  'cdata': { color: '#6b7280' },
-  'punctuation': { color: '#9ca3af' },
-  'property': { color: '#60a5fa' },
-  'tag': { color: '#f472b6' },
-  'boolean': { color: '#f472b6' },
-  'number': { color: '#f472b6' },
-  'constant': { color: '#f472b6' },
-  'symbol': { color: '#f472b6' },
-  'deleted': { color: '#f472b6' },
-  'selector': { color: '#34d399' },
-  'attr-name': { color: '#fbbf24' },
-  'string': { color: '#34d399' },
-  'char': { color: '#34d399' },
-  'builtin': { color: '#f472b6' },
-  'inserted': { color: '#34d399' },
-  'operator': { color: '#9ca3af' },
-  'entity': { color: '#60a5fa' },
-  'url': { color: '#60a5fa' },
-  'variable': { color: '#e5e7eb' },
-  'attr-value': { color: '#34d399' },
-  'keyword': { color: '#c084fc' },
-  'function': { color: '#60a5fa' },
-  'class-name': { color: '#fbbf24' },
-  'regex': { color: '#fbbf24' },
-  'important': { color: '#f472b6', fontWeight: 'bold' },
+  'comment': { color: '#8b949e' },
+  'block-comment': { color: '#8b949e' },
+  'prolog': { color: '#8b949e' },
+  'doctype': { color: '#8b949e' },
+  'cdata': { color: '#8b949e' },
+  'punctuation': { color: '#c9d1d9' },
+  'property': { color: '#79c0ff' },
+  'tag': { color: '#7ee787' },
+  'boolean': { color: '#79c0ff' },
+  'number': { color: '#79c0ff' },
+  'constant': { color: '#79c0ff' },
+  'symbol': { color: '#79c0ff' },
+  'deleted': { color: '#f85149' },
+  'selector': { color: '#7ee787' },
+  'attr-name': { color: '#79c0ff' },
+  'string': { color: '#a5d6ff' },
+  'char': { color: '#a5d6ff' },
+  'builtin': { color: '#ffa657' },
+  'inserted': { color: '#7ee787' },
+  'operator': { color: '#c9d1d9' },
+  'entity': { color: '#ffa657' },
+  'url': { color: '#a5d6ff' },
+  'variable': { color: '#e6edf3' },
+  'attr-value': { color: '#a5d6ff' },
+  'keyword': { color: '#ff7b72' },
+  'function': { color: '#d2a8ff' },
+  'class-name': { color: '#ffa657' },
+  'regex': { color: '#7ee787' },
+  'important': { color: '#ff7b72', fontWeight: 'bold' },
   'bold': { fontWeight: 'bold' },
   'italic': { fontStyle: 'italic' },
 };
@@ -123,51 +123,47 @@ const MessageItem = ({ message }: MessageItemProps) => {
   };
 
   return (
-    <div className={`w-full py-2 transition-colors ${isUser ? '' : ''}`}>
-      <div className={`max-w-[1400px] mx-auto px-6 md:px-8 flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
-        {/* 头像 - 仅在非 thinking 状态显示 */}
-        {!isThinking && (
-          <div className="flex-shrink-0 mt-0.5">
-            {isUser ? (
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#6366f1] via-[#a855f7] to-[#ec4899] flex items-center justify-center shadow-xl shadow-indigo-500/10 border border-white/10 transform hover:scale-105 transition-transform duration-300">
-                <User className="w-5 h-5 text-white" />
-              </div>
-            ) : (
-              <div className="w-9 h-9 rounded-xl gemini-gradient p-[1.5px] shadow-xl shadow-primary/10 transform hover:scale-105 transition-transform duration-300">
-                <div className="w-full h-full rounded-xl bg-[#1E1E1E] flex items-center justify-center border border-white/5">
-                  <Sparkles className="w-4.5 h-4.5 text-primary" />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+    <div className={`w-full py-1.5 md:py-2 transition-colors ${isUser ? '' : ''}`}>
+      <div className={`max-w-[1400px] mx-auto px-3 md:px-8 flex gap-2 md:gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+        {/* 头像 - 始终显示 */}
+        <div className="flex-shrink-0 mt-0.5">
+          {isUser ? (
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#9333ea] flex items-center justify-center shadow-lg shadow-indigo-500/20 border border-white/10 transform hover:scale-105 transition-transform duration-300">
+              <User className="w-4.5 h-4.5 md:w-5.5 md:h-5.5 text-white/90" />
+            </div>
+          ) : (
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#0052D4] via-[#4364F7] to-[#6FB1FC] flex items-center justify-center shadow-lg shadow-blue-500/20 border border-white/10 transform hover:scale-105 transition-transform duration-300">
+              <Bot className="w-4.5 h-4.5 md:w-5.5 md:h-5.5 text-white/95" />
+            </div>
+          )}
+        </div>
 
         {/* 消息主体 */}
-        <div className={`flex flex-col min-w-0 flex-1 ${isUser ? 'items-end' : 'items-start'} ${isThinking ? 'w-full' : ''}`}>
+        <div className={`flex flex-col min-w-0 flex-1 ${isUser ? 'items-end' : 'items-start'}`}>
           <div className={`w-full flex flex-col gap-2 group ${isUser ? 'items-end' : 'items-start'}`}>
-            {/* 推理框 - thinking 状态时显示紧凑版本 */}
+            {/* 推理框 - 放在AI头像旁边 */}
             {(hasReasoning || isThinking) && (
-              <div className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-xl overflow-hidden transition-all duration-500 shadow-lg ${isThinking ? 'w-full py-2 px-3' : 'w-full'}`}>
+              <div className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-xl overflow-hidden transition-all duration-500 shadow-lg w-full ${isThinking ? 'py-2 px-3' : ''}`}>
                 <button
                   onClick={() => !isThinking && setShowReasoning(!showReasoning)}
                   className={`w-full flex items-center gap-2 hover:bg-white/[0.03] transition-colors ${isThinking ? 'py-0 justify-center' : 'px-5 py-2.5 justify-between'}`}
                   disabled={isThinking}
                 >
                   <div className="flex items-center gap-2">
-                    <div className={`rounded-lg flex items-center justify-center border border-white/10 bg-white/[0.05] ${isThinking ? 'w-4 h-4' : 'w-5 h-5'}`}>
+                    <div className={`rounded-lg flex items-center justify-center border border-white/10 bg-white/[0.05] ${isThinking ? 'w-5 h-5' : 'w-5 h-5'}`}>
                       {isThinking ? (
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                        <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
                       ) : (
-                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-500 ${showReasoning ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-500 ${showReasoning ? 'rotate-180' : ''}`} />
                       )}
                     </div>
-                    <span className={`font-bold tracking-widest uppercase opacity-40 ${isThinking ? 'text-[9px]' : 'text-[10px]'}`}>
-                      {isThinking ? 'Thinking' : 'Thought process'}
+                    <span className={`font-bold tracking-widest uppercase opacity-80 ${isThinking ? 'text-[10px] bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent animate-pulse' : 'text-[11px] text-gray-300'}`}>
+                      {isThinking ? 'Thinking Process...' : 'Thought Process'}
                     </span>
                   </div>
                   {!isThinking && (
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-[9px] text-text-quaternary">{showReasoning ? '收起' : '展开'}</span>
+                      <span className="text-[10px] text-gray-400">{showReasoning ? '收起' : '展开'}</span>
                     </div>
                   )}
                 </button>
@@ -178,7 +174,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
                     onScroll={handleReasoningScroll}
                     className="px-6 pb-5 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent animate-in fade-in slide-in-from-top-2 duration-500"
                   >
-                    <div className="text-[13.5px] text-text-tertiary/80 whitespace-pre-wrap font-mono leading-relaxed prose prose-invert prose-sm max-w-none italic opacity-90 border-t border-white/[0.03] pt-4">
+                    <div className="text-[13.5px] text-gray-300/90 whitespace-pre-wrap font-mono leading-relaxed prose prose-invert prose-sm max-w-none italic opacity-90 border-t border-white/[0.05] pt-4">
                       <ReactMarkdown 
                         children={message.reasoning} 
                         remarkPlugins={[remarkGfm]}
@@ -192,8 +188,8 @@ const MessageItem = ({ message }: MessageItemProps) => {
                                 {children}
                               </code>
                             ) : (
-                              <div className="my-4 rounded-xl overflow-hidden border border-white/[0.05] bg-black">
-                                <div className="px-3 py-2 bg-white/[0.02] border-b border-white/[0.02]">
+                              <div className="my-4 rounded-xl overflow-hidden border border-white/[0.08] bg-[#161b22]">
+                                <div className="px-3 py-2 bg-[#0d1117] border-b border-white/[0.06]">
                                   <span className="text-[9px] text-text-quaternary font-mono uppercase">{match?.[1] || 'code'}</span>
                                 </div>
                                 <div className="p-3 overflow-x-auto text-[12px] code-block-wrapper">
@@ -211,9 +207,24 @@ const MessageItem = ({ message }: MessageItemProps) => {
                             );
                           },
                           p: ({ node, ...props }) => <p className={`my-2 leading-relaxed`} {...props} />,
-                          ul: ({ node, ...props }) => <ul className="list-disc my-3 pl-6 space-y-1" {...props} />,
-                          ol: ({ node, ...props }) => <ol className="list-decimal my-3 pl-6 space-y-1" {...props} />,
-                          li: ({ node, ...props }) => <li className="my-1 text-text-tertiary/90" {...props} />,
+                          ul: ({ node, ...props }) => (
+                            <ul className="my-4 rounded-xl overflow-hidden border border-white/[0.08] bg-[#161b22]" {...props} />
+                          ),
+                          ol: ({ node, ...props }) => (
+                            <ol className="my-4 rounded-xl overflow-hidden border border-white/[0.08] bg-[#161b22]" {...props} />
+                          ),
+                          li: ({ node, ...props }) => {
+                            const text = props.children?.toString() || '';
+                            const isFolder = text.includes(':') || text.endsWith('/');
+                            const isFile = !isFolder && text.includes('.');
+                            let colorClass = 'text-[#c9d1d9]';
+                            if (isFolder) {
+                              colorClass = 'text-[#7ee787]';
+                            } else if (isFile) {
+                              colorClass = 'text-[#79c0ff]';
+                            }
+                            return <li className={`px-4 py-1.5 text-[13px] font-mono ${colorClass} border-b border-white/[0.04] last:border-b-0`} {...props} />;
+                          },
                           h1: ({ node, ...props }) => <h1 className="text-lg font-bold my-4 text-white/90" {...props} />,
                           h2: ({ node, ...props }) => <h2 className="text-base font-bold my-3 text-white/80" {...props} />,
                           h3: ({ node, ...props }) => <h3 className="text-sm font-bold my-2 text-white/70" {...props} />,
@@ -252,11 +263,11 @@ const MessageItem = ({ message }: MessageItemProps) => {
               {/* 内容气泡 - 采用半透明"磨砂玻璃"质感，优雅悬浮 */}
                 <div className={`
                   ${isUser 
-                    ? 'bg-white/[0.04] backdrop-blur-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3)] rounded-[12px] rounded-tr-[4px] px-3 py-1.5 text-text-primary max-w-[85%] text-left font-medium' 
-                    : 'bg-primary/[0.02] backdrop-blur-3xl border border-white/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.2)] rounded-[12px] rounded-tl-[4px] px-3 py-1.5 text-text-primary w-fit max-w-full'
+                    ? 'bg-[#2b2d31] border border-white/10 rounded-[18px] rounded-tr-[4px] px-4 py-2.5 text-white max-w-[90%] md:max-w-[85%] text-left text-[15px] md:text-[16px] shadow-sm' 
+                    : 'bg-transparent px-0 py-0 text-white w-full max-w-full text-left text-[15px] md:text-[16px]'
                   }
                 `}>
-                  <div className={`prose max-w-none ${isUser ? 'prose-invert' : 'prose-p:text-text-primary prose-strong:text-white prose-code:text-primary'}`}>
+                  <div className={`prose max-w-none ${isUser ? 'prose-invert' : 'prose-invert'}`}>
                     <ReactMarkdown
                       children={message.content}
                       remarkPlugins={[remarkGfm]}
@@ -266,12 +277,12 @@ const MessageItem = ({ message }: MessageItemProps) => {
                           const match = /language-(\w+)/.exec(className || '');
                           const inline = !match;
                           return inline ? (
-                            <code className={`px-1.5 py-0.5 rounded-md bg-white/[0.05] text-primary text-[13px] border border-white/[0.05] font-mono`} {...props}>
+                            <code className={`px-1.5 py-0.5 rounded-md bg-[#161b22] text-primary text-[13px] border border-white/[0.08] font-mono`} {...props}>
                               {children}
                             </code>
                           ) : (
-                            <div className="my-8 rounded-3xl overflow-hidden border border-white/[0.05] bg-black shadow-2xl group/code">
-                              <div className="flex items-center justify-between px-6 py-3 bg-white/[0.02] border-b border-white/[0.02]">
+                            <div className="my-8 rounded-3xl overflow-hidden border border-white/[0.08] bg-[#161b22]">
+                              <div className="flex items-center justify-between px-6 py-3 bg-[#0d1117] border-b border-white/[0.06]">
                                 <span className="text-[10px] text-text-quaternary font-mono uppercase tracking-[0.2em]">{match[1]}</span>
                                 <button 
                                   onClick={() => navigator.clipboard.writeText(String(children))}
@@ -295,25 +306,47 @@ const MessageItem = ({ message }: MessageItemProps) => {
                             </div>
                           );
                         },
-                        p: ({ node, ...props }) => <p className={`my-4 leading-relaxed text-[16.5px] tracking-wide`} {...props} />,
-                        ul: ({ node, ...props }) => <ul className="list-disc my-6 pl-8 space-y-3.5" {...props} />,
-                        ol: ({ node, ...props }) => <ol className="list-decimal my-6 pl-8 space-y-3.5" {...props} />,
-                        li: ({ node, ...props }) => <li className="my-2 text-text-secondary leading-relaxed" {...props} />,
-                        h1: ({ node, ...props }) => <h1 className="text-2xl font-black my-10 text-white tracking-tight leading-tight" {...props} />,
-                        h2: ({ node, ...props }) => <h2 className="text-xl font-bold my-8 text-white tracking-tight leading-tight" {...props} />,
-                        h3: ({ node, ...props }) => <h3 className="text-lg font-bold my-6 text-white" {...props} />,
-                        h4: ({ node, ...props }) => <h4 className="text-base font-bold my-5 text-white/90" {...props} />,
-                        h5: ({ node, ...props }) => <h5 className="text-sm font-bold my-4 text-white/80" {...props} />,
-                        h6: ({ node, ...props }) => <h6 className="text-xs font-bold my-3 text-white/70 uppercase tracking-wider" {...props} />,
+                        p: ({ node, ...props }) => <p className={`my-3 leading-7 text-[15px] md:text-[16px] text-gray-100`} {...props} />,
+                        ul: ({ node, ...props }) => (
+                          <ul className="my-3 pl-6 list-disc marker:text-gray-400 space-y-1" {...props} />
+                        ),
+                        ol: ({ node, ...props }) => (
+                          <ol className="my-3 pl-6 list-decimal marker:text-gray-400 space-y-1" {...props} />
+                        ),
+                        li: ({ node, ...props }) => {
+                          // 检查是否是文件夹结构（简单的启发式检查）
+                          const text = props.children?.toString() || '';
+                          const isFolderStructure = text.includes('├──') || text.includes('└──');
+                          
+                          if (isFolderStructure) {
+                             const isFolder = text.includes(':') || text.endsWith('/');
+                             const isFile = !isFolder && text.includes('.');
+                             let colorClass = 'text-gray-300';
+                             if (isFolder) {
+                               colorClass = 'text-green-400';
+                             } else if (isFile) {
+                               colorClass = 'text-blue-400';
+                             }
+                             return <li className={`font-mono text-sm ${colorClass} list-none -ml-4`} {...props} />;
+                          }
+                          
+                          return <li className={`text-gray-100 leading-relaxed pl-1`} {...props} />;
+                        },
+                        h1: ({ node, ...props }) => <h1 className="text-2xl font-bold my-6 text-white pb-2 border-b border-white/10" {...props} />,
+                        h2: ({ node, ...props }) => <h2 className="text-xl font-bold my-5 text-white" {...props} />,
+                        h3: ({ node, ...props }) => <h3 className="text-lg font-bold my-4 text-white" {...props} />,
+                        h4: ({ node, ...props }) => <h4 className="text-base font-bold my-3 text-white" {...props} />,
+                        h5: ({ node, ...props }) => <h5 className="text-sm font-bold my-2 text-white" {...props} />,
+                        h6: ({ node, ...props }) => <h6 className="text-xs font-bold my-2 text-white uppercase tracking-wider" {...props} />,
                         blockquote: ({ node, ...props }) => (
-                          <blockquote className="border-l-4 border-primary/20 pl-6 my-8 italic text-text-tertiary bg-white/[0.02] py-3 rounded-r-3xl" {...props} />
+                          <blockquote className="border-l-4 border-primary/40 pl-4 my-4 italic text-gray-300 bg-white/[0.03] py-2 pr-2 rounded-r-lg" {...props} />
                         ),
                         a: ({ node, ...props }) => (
                           <a 
                             {...props} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-primary hover:text-primary-hover underline underline-offset-4 transition-all font-bold"
+                            className="text-blue-400 hover:text-blue-300 underline underline-offset-4 transition-colors"
                           />
                         ),
                         img: ({ node, ...props }) => (
@@ -356,7 +389,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
                           <strong className="font-bold text-white" {...props} />
                         ),
                         em: ({ node, ...props }) => (
-                          <em className="italic text-text-secondary" {...props} />
+                          <em className="italic text-gray-200" {...props} />
                         ),
                       }}
                     />
@@ -364,7 +397,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
                 </div>
 
                 {/* 操作栏 - 类似豆包风格 */}
-                <div className={`flex items-center gap-1 mt-1 opacity-100 transition-all duration-300 relative z-50 ${isUser ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex items-center gap-1 mt-1 opacity-100 transition-all duration-300 ${isUser ? 'flex-row-reverse' : ''}`}>
                   {/* 复制按钮 */}
                   <button
                     onClick={handleCopy}
