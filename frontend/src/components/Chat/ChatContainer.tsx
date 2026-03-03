@@ -101,7 +101,7 @@ const ChatContainer = () => {
   };
 
   return (
-    <div className="relative flex flex-col w-full h-[100dvh] mesh-gradient overflow-hidden">
+    <div className="relative flex flex-col w-full h-full mesh-gradient overflow-hidden">
       {/* 动态背景光源 */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full pointer-events-none animate-pulse duration-[10000ms]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/5 blur-[120px] rounded-full pointer-events-none animate-pulse duration-[15000ms]" />
@@ -182,7 +182,7 @@ const ChatContainer = () => {
       {/* 底部输入框容器 - 绝对定位到底部，通过 ResizeObserver 动态计算高度 */}
       <div 
         ref={inputContainerRef}
-        className="absolute bottom-0 left-0 right-0 z-50 w-full backdrop-blur-md bg-gradient-to-t from-bg-primary/95 via-bg-primary/70 to-transparent pb-2"
+        className="absolute bottom-0 left-0 right-0 z-50 w-full backdrop-blur-xl bg-gradient-to-t from-bg-primary/80 via-bg-primary/40 to-transparent pb-2"
       >
         <div className="max-w-[1400px] mx-auto w-full flex justify-center px-0">
           <InputArea 

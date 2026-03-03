@@ -66,13 +66,13 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
     <>
       {mobileOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-[90] lg:hidden"
           onClick={onCloseMobile}
         />
       )}
 
       <aside className={`
-        fixed lg:relative z-50 lg:z-0
+        fixed lg:relative z-[100] lg:z-0
         top-0 left-0 h-full
         bg-bg-secondary/95 backdrop-blur-xl
         border-r border-border/40
