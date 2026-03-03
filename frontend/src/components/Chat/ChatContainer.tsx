@@ -77,7 +77,7 @@ const ChatContainer = () => {
     if (messagesEndRef.current) {
       // 只有在消息列表不为空时才滚动
       if (messages.length > 0) {
-        messagesEndRef.current.scrollIntoView({ behavior: instant ? 'auto' : 'smooth' });
+        messagesEndRef.current.scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'end' });
       }
     }
   };
@@ -106,11 +106,10 @@ const ChatContainer = () => {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full pointer-events-none animate-pulse duration-[10000ms]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/5 blur-[120px] rounded-full pointer-events-none animate-pulse duration-[15000ms]" />
       
-      {/* 消息展示区 - 使用 padding-bottom 动态避让输入框 */}
+      {/* 消息展示区 - 使用 Spacer 替代 padding-bottom 以避免布局计算问题 */}
       <div 
         ref={scrollContainerRef} 
         className="absolute inset-0 w-full h-full overflow-y-auto scrollbar-thin z-10"
-        style={{ paddingBottom: inputHeight }}
       >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-2 md:py-12 max-w-6xl mx-auto w-full min-h-full">
@@ -165,7 +164,9 @@ const ChatContainer = () => {
                 ))}
               </div>
             </div>
-            <div className="flex-[1.2]" /> {/* 底部弹簧，比顶部稍大以视觉平衡 */}
+            <div className="flex-[1.2]" /> {/* 底部弹簧 */}
+            {/* 底部 Spacer */}
+            <div style={{ height: Math.max(0, inputHeight - 10) }} className="flex-shrink-0 w-full" />
           </div>
         ) : (
           <div className="w-full max-w-[1400px] mx-auto py-2 md:py-4 min-h-full px-3 md:px-8 flex flex-col">
@@ -173,18 +174,23 @@ const ChatContainer = () => {
               {messages.map((message) => (
                 <MessageItem key={message.id} message={message} />
               ))}
+              {/* 底部 Spacer - 确保内容不被输入框遮挡，但允许部分重叠以减少视觉空隙 */}
+              <div style={{ height: Math.max(0, inputHeight - 10) }} className="flex-shrink-0 w-full" />
               <div ref={messagesEndRef} />
             </div>
           </div>
         )}
       </div>
 
-      {/* 底部输入框容器 - 绝对定位到底部，通过 ResizeObserver 动态计算高度 */}
+      {/* 底部输入框容器 - 移动端使用 fixed 定位确保稳定，桌面端保持 absolute */}
       <div 
         ref={inputContainerRef}
-        className="absolute bottom-0 left-0 right-0 z-50 w-full backdrop-blur-xl bg-gradient-to-t from-bg-primary/80 via-bg-primary/40 to-transparent pb-2"
+        className="fixed lg:absolute bottom-0 left-0 right-0 z-50 w-full backdrop-blur-xl bg-gradient-to-t from-bg-primary via-bg-primary/60 to-transparent pb-0 pointer-events-none"
+        style={{
+          paddingBottom: 'env(safe-area-inset-bottom)'
+        }}
       >
-        <div className="max-w-[1400px] mx-auto w-full flex justify-center px-0">
+        <div className="max-w-[1400px] mx-auto w-full flex justify-center px-0 pointer-events-none">
           <InputArea 
             onSend={handleSend}
             onStop={stopGenerating}

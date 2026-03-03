@@ -7,7 +7,7 @@ import {
   Trash2,
   MessageSquare,
   Wrench,
-  Copy,
+  Edit2,
   Check
 } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
@@ -21,10 +21,17 @@ interface SidebarProps {
   onCloseMobile: () => void;
 }
 
+const NAV_ITEMS = [
+  { path: '/knowledge', label: 'RAG 知识库', icon: BookOpen },
+  { path: '/agent-tools', label: 'Agent 工具', icon: Wrench },
+  { path: '/settings', label: '设置中心', icon: Settings },
+];
+
 const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
   const navigate = useNavigate();
   const { sessions, currentSessionId, setCurrentSession, addSession, deleteSession, updateSession } = useChatStore();
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
 
   const createNewSession = () => {
     const newSession = {
@@ -44,21 +51,24 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
     }
   };
 
-  const handleCopySession = async (e: React.MouseEvent, session: typeof sessions[0]) => {
+  const startEditing = (e: React.MouseEvent, session: typeof sessions[0]) => {
     e.stopPropagation();
-    const sessionData = {
-      title: session.title,
-      messages: session.messages,
-      createdAt: session.createdAt,
-      updatedAt: session.updatedAt,
-    };
-    
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(sessionData, null, 2));
-      setCopiedId(session.id);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (err) {
-      console.error('复制失败:', err);
+    setEditingSessionId(session.id);
+    setEditTitle(session.title);
+  };
+
+  const saveTitle = (sessionId: string) => {
+    if (editTitle.trim()) {
+      updateSession(sessionId, { title: editTitle.trim() });
+    }
+    setEditingSessionId(null);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, sessionId: string) => {
+    if (e.key === 'Enter') {
+      saveTitle(sessionId);
+    } else if (e.key === 'Escape') {
+      setEditingSessionId(null);
     }
   };
 
@@ -139,29 +149,38 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
                   {isOpen && (
                     <>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate ${currentSessionId === session.id ? 'text-primary' : ''}`}>{session.title}</p>
+                        {editingSessionId === session.id ? (
+                          <input
+                            autoFocus
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            onBlur={() => saveTitle(session.id)}
+                            onKeyDown={(e) => handleKeyDown(e, session.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full bg-bg-tertiary text-text-primary text-sm px-1.5 py-0.5 rounded border border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        ) : (
+                          <p className={`text-sm font-medium truncate ${currentSessionId === session.id ? 'text-primary' : ''}`}>{session.title}</p>
+                        )}
                         <p className={`text-[10px] ${currentSessionId === session.id ? 'text-primary/60' : 'text-text-tertiary'}`}>
                           {format(session.updatedAt, 'MM/dd HH:mm', { locale: zhCN })}
                         </p>
                       </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      <div className="flex items-center gap-1">
                         <button
-                          onClick={(e) => handleCopySession(e, session)}
-                          className="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-all"
-                          title="复制会话内容"
+                          onClick={(e) => startEditing(e, session)}
+                          className="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-all text-text-quaternary"
+                          title="重命名"
                         >
-                          {copiedId === session.id ? (
-                            <Check className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
-                          )}
+                          <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteSession(e, session.id);
                           }}
-                          className="p-1.5 hover:bg-error/10 hover:text-error rounded-lg transition-all"
+                          className="p-1.5 hover:bg-error/10 hover:text-error rounded-lg transition-all text-text-quaternary"
                           title="删除会话"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -176,44 +195,24 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
         </div>
 
         <div className="p-4 mt-auto border-t border-border/10 space-y-1">
-          <NavLink
-            to="/knowledge"
-            onClick={onCloseMobile}
-            className={({ isActive }) => `
-              flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
-              ${isActive ? 'bg-primary/10 text-primary' : 'text-text-secondary hover:bg-bg-tertiary/50 hover:text-text-primary'}
-              ${!isOpen && 'lg:justify-center lg:px-2'}
-            `}
-          >
-            <BookOpen className="w-5 h-5" />
-            {isOpen && <span className="text-sm font-semibold">RAG 知识库</span>}
-          </NavLink>
-          
-          <NavLink
-            to="/agent-tools"
-            onClick={onCloseMobile}
-            className={({ isActive }) => `
-              flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
-              ${isActive ? 'bg-primary/10 text-primary' : 'text-text-secondary hover:bg-bg-tertiary/50 hover:text-text-primary'}
-              ${!isOpen && 'lg:justify-center lg:px-2'}
-            `}
-          >
-            <Wrench className="w-5 h-5" />
-            {isOpen && <span className="text-sm font-semibold">Agent 工具</span>}
-          </NavLink>
-
-          <NavLink
-            to="/settings"
-            onClick={onCloseMobile}
-            className={({ isActive }) => `
-              flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
-              ${isActive ? 'bg-primary/10 text-primary' : 'text-text-secondary hover:bg-bg-tertiary/50 hover:text-text-primary'}
-              ${!isOpen && 'lg:justify-center lg:px-2'}
-            `}
-          >
-            <Settings className="w-5 h-5" />
-            {isOpen && <span className="text-sm font-semibold">设置中心</span>}
-          </NavLink>
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={onCloseMobile}
+                className={({ isActive }) => `
+                  flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
+                  ${isActive ? 'bg-primary/10 text-primary' : 'text-text-secondary hover:bg-bg-tertiary/50 hover:text-text-primary'}
+                  ${!isOpen && 'lg:justify-center lg:px-2'}
+                `}
+              >
+                <Icon className="w-5 h-5" />
+                {isOpen && <span className="text-sm font-semibold">{item.label}</span>}
+              </NavLink>
+            );
+          })}
         </div>
       </aside>
     </>

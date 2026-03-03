@@ -114,19 +114,64 @@ const MessageItem = ({ message }: MessageItemProps) => {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(message.content);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // 优先尝试使用现代 Clipboard API
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(message.content);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        throw new Error('Clipboard API unavailable');
+      }
     } catch (err) {
-      console.error('复制失败:', err);
+      console.warn('Clipboard API failed, falling back to execCommand:', err);
+      // 降级方案：使用传统的 textarea + execCommand
+      // 这种方式兼容性更好，特别是在非 HTTPS 环境或某些移动端浏览器中
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = message.content;
+        
+        // 确保 textarea 不可见但存在于 DOM 中，且不会导致滚动
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        textArea.setAttribute('readonly', ''); // 防止在 iOS 上弹出键盘
+        document.body.appendChild(textArea);
+        
+        textArea.focus();
+        textArea.select();
+        
+        // iOS 需要额外的 range 选择
+        if (navigator.userAgent.match(/ipad|iphone/i)) {
+          const range = document.createRange();
+          range.selectNodeContents(textArea);
+          const selection = window.getSelection();
+          if (selection) {
+            selection.removeAllRanges();
+            selection.addRange(range);
+            textArea.setSelectionRange(0, 999999);
+          }
+        }
+
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (successful) {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } else {
+          console.error('Fallback copy failed');
+        }
+      } catch (fallbackErr) {
+        console.error('Copy failed:', fallbackErr);
+      }
     }
   };
 
   return (
     <div className={`w-full py-1.5 md:py-2 transition-colors ${isUser ? '' : ''}`}>
-      <div className={`max-w-[1400px] mx-auto px-3 md:px-8 flex gap-2 md:gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+      <div className={`max-w-[1400px] mx-auto px-3 md:px-8 flex gap-2 md:gap-3 ${isUser ? 'flex-row-reverse items-start' : ''}`}>
         {/* 头像 - 始终显示 */}
-        <div className="flex-shrink-0 mt-0.5">
+        <div className={`flex-shrink-0 ${isUser ? 'mt-0.5' : 'mt-6 md:mt-1'}`}>
           {isUser ? (
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#9333ea] flex items-center justify-center shadow-lg shadow-indigo-500/20 border border-white/10 transform hover:scale-105 transition-transform duration-300">
               <User className="w-4.5 h-4.5 md:w-5.5 md:h-5.5 text-white/90" />
@@ -263,7 +308,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
               {/* 内容气泡 - 采用半透明"磨砂玻璃"质感，优雅悬浮 */}
                 <div className={`
                   ${isUser 
-                    ? 'bg-[#2b2d31] border border-white/10 rounded-[18px] rounded-tr-[4px] px-4 py-2.5 text-white max-w-[90%] md:max-w-[85%] text-left text-[15px] md:text-[16px] shadow-sm' 
+                    ? 'bg-[#2b2d31] border border-white/10 rounded-2xl px-3 py-2 text-white max-w-[85%] md:max-w-[75%] text-left text-[14px] md:text-[15px] shadow-md shadow-black/20 w-fit' 
                     : 'bg-transparent px-0 py-0 text-white w-full max-w-full text-left text-[15px] md:text-[16px]'
                   }
                 `}>
@@ -306,7 +351,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
                             </div>
                           );
                         },
-                        p: ({ node, ...props }) => <p className={`my-3 leading-7 text-[15px] md:text-[16px] text-gray-100`} {...props} />,
+                        p: ({ node, ...props }) => <p className={`my-1.5 leading-6 text-[14px] md:text-[15px] text-gray-100`} {...props} />,
                         ul: ({ node, ...props }) => (
                           <ul className="my-3 pl-6 list-disc marker:text-gray-400 space-y-1" {...props} />
                         ),
@@ -397,7 +442,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
                 </div>
 
                 {/* 操作栏 - 类似豆包风格 */}
-                <div className={`flex items-center gap-1 mt-1 opacity-100 transition-all duration-300 ${isUser ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex items-center gap-2 mt-1 opacity-100 transition-all duration-300 ${isUser ? 'flex-row-reverse self-end mr-1' : ''}`}>
                   {/* 复制按钮 */}
                   <button
                     onClick={handleCopy}

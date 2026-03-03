@@ -63,7 +63,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
   return (
     <div className="w-full max-w-[1400px] relative px-3 md:px-8">
       {/* 输入框主体 - 极致纤长且扁平的"指挥棒"感 */}
-      <div className="relative group gemini-aura">
+      <div className="relative group gemini-aura pointer-events-auto">
         <div className={`
           relative flex flex-col w-full
           bg-[#1E1E1E] transition-all duration-500
@@ -71,7 +71,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
           ${isStreaming ? 'ring-[0.5px] ring-primary/20' : ''}
         `}>
           {/* 文本输入区 - 纵向极致压缩 50% */}
-          <div className="flex flex-col px-3 md:px-5 pt-1.5 md:pt-4 pb-0 md:pb-0.5">
+          <div className="flex flex-col px-3 md:px-5 pt-1 md:pt-3 pb-0">
             <textarea
               ref={textareaRef}
               value={content}
@@ -84,7 +84,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
           </div>
 
           {/* 底部操作区 - 纵向极度紧凑 */}
-          <div className="flex items-center justify-between px-2 md:px-4 pb-1 md:pb-2">
+          <div className="flex items-center justify-between px-2 md:px-4 pb-0.5 md:pb-2">
             <div className="flex items-center gap-2">
               {/* 左侧附件按钮 - 极小化 */}
               <button className="p-1.5 rounded-lg hover:bg-white/5 text-text-tertiary hover:text-text-primary transition-all active:scale-90">
@@ -178,7 +178,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
       </div>
 
       {/* 底部免责声明 - 移出流光边框，消除“蓝色分界线” */}
-      <div className="mt-0 md:mt-2.5 flex justify-center pb-0">
+      <div className="mt-0 md:mt-1 flex justify-center pb-0 pointer-events-auto">
         <p className="text-[9px] md:text-[10px] text-text-quaternary font-medium tracking-wide opacity-60 scale-90 md:scale-100 origin-top leading-tight">
           JeikChat can make mistakes. Check important info.
         </p>
