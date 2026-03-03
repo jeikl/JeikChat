@@ -1,10 +1,17 @@
 from langchain_deepseek import ChatDeepSeek
+from langchain_google_genai import ChatGoogleGenerativeAI
 import os
 import sys
 import time
 import threading
 from typing import Optional, Callable
 from dotenv import load_dotenv
+
+
+
+
+
+
 
 # 添加项目根目录到 Python 路径
 current_dir = os.path.dirname(__file__)
@@ -40,9 +47,14 @@ def create_client(llm: str, thinking: str = "auto"):
             if time.time() - cached_time < _CACHE_TTL:
                 return cached_client
     
-    api_key = os.getenv(f"{model_name(llm)}_API_KEY")
-    base_url = os.getenv(f"{model_name(llm)}_BASE_URL")
+    model_provider = model_name(llm)
+    api_key = os.getenv(f"{model_provider}_API_KEY")
+    base_url = os.getenv(f"{model_provider}_BASE_URL")
+    print(f"[DEBUG] 模型: {llm}")
+    print(f"[DEBUG] 提供商: {model_provider}")
+    print(f"[DEBUG] API Key: {api_key[:10]}..." if api_key else "[DEBUG] API Key: None")
 
+    
     extra_parms = {}
     if thinking == "false":
         extra_parms = {
@@ -60,14 +72,30 @@ def create_client(llm: str, thinking: str = "auto"):
             "thinking": {"type": None},
         }
     
-    client = ChatDeepSeek(
-        model=llm,
-        api_key=api_key,
-        api_base=base_url,
-        streaming=True,
-        extra_body=extra_parms,
-    )
-    
+    if "gemini" in llm.lower():
+        print(f"[DEBUG] 检测到 Google 模型: {llm}")
+        print(f"[DEBUG] GOOGLE_API_KEY: {api_key[:20]}..." if api_key else "[DEBUG] GOOGLE_API_KEY: None")
+        # 设置环境变量给 langchain 使用
+        print(os.environ["GOOGLE_API_KEY"])
+        if api_key:
+            os.environ["GOOGLE_API_KEY"] = api_key
+        client = ChatGoogleGenerativeAI(
+            model=llm,
+            temperature=1.0,  # Gemini 3.0+ defaults to 1.0
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+        )
+        print(f"[DEBUG] Google 客户端创建成功，模型: {llm}")
+    else:
+        client = ChatDeepSeek(
+            model=llm,
+            api_key=api_key,
+            api_base=base_url,
+            streaming=True,
+            extra_body=extra_parms,
+        )
+
     with _cache_lock:
         _client_cache[cache_key] = (client, time.time())
     

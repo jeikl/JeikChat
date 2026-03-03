@@ -18,6 +18,7 @@ export interface ChatSession {
   updatedAt: number;
   modelId?: string;
   knowledgeBaseIds?: string[];
+  isDefault?: boolean;
 }
 
 export interface KnowledgeReference {

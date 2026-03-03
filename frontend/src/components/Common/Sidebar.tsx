@@ -7,8 +7,7 @@ import {
   Trash2,
   MessageSquare,
   Wrench,
-  Edit2,
-  Check
+  Edit2
 } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 import { useState } from 'react';

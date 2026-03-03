@@ -3,7 +3,7 @@ import { useChatStore } from '@/stores/chatStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import MessageItem from './MessageItem';
 import InputArea from './InputArea';
-import { Bot, Sparkles } from 'lucide-react';
+import { Bot } from 'lucide-react';
 
 const PROMPTS = [
   {
@@ -35,7 +35,6 @@ const ChatContainer = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const [inputHeight, setInputHeight] = useState(0);
-  const [viewportHeight, setViewportHeight] = useState('100%');
   const [logoError, setLogoError] = useState(false);
 
   // 监听输入框高度变化

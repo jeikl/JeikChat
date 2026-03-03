@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Mic, MicOff, Paperclip, Globe, Sparkles, ChevronDown, Zap, Ban, Square, Plus } from 'lucide-react';
+import { Send, Mic, Globe, Sparkles, Zap, Ban, Square, Plus } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 
 interface InputAreaProps {
@@ -17,7 +17,6 @@ const thinkingOptions = [
 
 const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) => {
   const [content, setContent] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
   const [isWebSearch, setIsWebSearch] = useState(false);
   const [showThinkingDropdown, setShowThinkingDropdown] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);

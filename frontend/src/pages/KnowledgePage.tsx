@@ -8,8 +8,6 @@ import { knowledgeApi } from '@/services/knowledge';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
-const toast = (message: string, options?: any) => showToast(message, options === 'success' ? 'success' : options === 'error' ? 'error' : 'empty');
-
 const showToastOnce = (() => {
   const shown = new Set<string>();
   return (key: string, callback: () => void) => {

@@ -189,6 +189,7 @@ export const useChatStore = create<ChatStore>()(
         get().addMessage(sessionId, assistantMessage);
 
         let hasContent = false;
+        let fullContent = '';
         const abortController = new AbortController();
         set({ abortController });
 

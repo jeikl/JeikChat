@@ -3,10 +3,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { Copy, Check, ChevronDown, Bot, User, Loader2, Sparkles, ChevronRight, Ban, BookOpen, Globe, RotateCcw, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Copy, Check, ChevronDown, Bot, User, Loader2, RotateCcw, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
 
 // 自定义代码块主题 - GitHub Dark 风格
 const customCodeTheme = {
@@ -68,17 +67,12 @@ const customCodeTheme = {
   'italic': { fontStyle: 'italic' },
 };
 
-function hasSourceProperty(obj: any): obj is { source: any } {
-  return 'source' in obj;
-}
-
 interface MessageItemProps {
   message: Message;
 }
 
 const MessageItem = ({ message }: MessageItemProps) => {
   const [copied, setCopied] = useState(false);
-  const [showReferences, setShowReferences] = useState(true);
   const [showReasoning, setShowReasoning] = useState(true);
   
   const isUser = message.role === 'user';

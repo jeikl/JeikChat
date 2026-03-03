@@ -54,5 +54,9 @@ export const PROVIDER_LOGOS: Record<LLMProvider, string> = {
   qwen: 'https://img.alicdn.com/imgextra/i4/OAI-CN20320219_w1200_h1200.png',
   doubao: 'https://www.vipui.cn/uploads/2024/05/31/8f9c5d3e4b1a2.png',
   moonshot: 'https://img.moonshot.cn/default/logo.png',
+  zhipu: '',
+  baidu: '',
+  xfyun: '',
+  test: '',
   ollama: 'https://ollama.com/public/ollama-logo.svg',
 };

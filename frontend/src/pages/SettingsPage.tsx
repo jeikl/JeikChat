@@ -20,6 +20,10 @@ const MODEL_OPTIONS: Record<LLMProvider, string[]> = {
   qwen: ['qwen-turbo', 'qwen-plus', 'qwen-max'],
   doubao: ['doubao-pro-32k', 'doubao-pro-4k'],
   moonshot: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
+  zhipu: ['glm-4', 'glm-4-plus'],
+  baidu: ['ernie-4', 'ernie-3.5'],
+  xfyun: ['spark-lite', 'spark-pro'],
+  test: ['test-model'],
   ollama: ['llama2', 'mistral', 'qwen', 'codellama'],
 };
 
