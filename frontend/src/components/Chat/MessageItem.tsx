@@ -176,10 +176,6 @@ const MessageItem = ({ message }: MessageItemProps) => {
     }
   };
 
-  const toggleReasoning = () => {
-    setReasoningExpanded(!reasoningExpanded);
-  };
-
   return (
     <div className={`w-full py-1.5 md:py-2 transition-colors ${isUser ? '' : ''}`}>
       <div className={`max-w-[1400px] mx-auto px-3 md:px-8 flex gap-2 md:gap-3 ${isUser ? 'flex-row-reverse items-start' : ''}`}>

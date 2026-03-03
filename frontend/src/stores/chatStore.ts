@@ -204,13 +204,11 @@ export const useChatStore = create<ChatStore>()(
             headers: {
               'Content-Type': 'application/json',
             },
-            signal: abortController.signal,
             body: JSON.stringify({
               content,
               sessionId,
               model,
               knowledgeBaseIds: toolIds,
-              reasoning: (reasoning === true ? 'true' : reasoning === false ? 'false' : 'auto'),
               stream: true,
               thinking: get().thinkingMode,
             }),

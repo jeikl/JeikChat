@@ -121,12 +121,8 @@ const ChatContainer = () => {
     }
   }, [messages.length, currentSessionId]);
 
-  const handleSend = async (content: string, reasoning?: 'auto' | boolean) => {
-    await sendMessage(content, selectedToolIds, reasoning);
-  };
-
-  const handleStop = () => {
-    stopGenerating();
+  const handleSend = async (content: string) => {
+    await sendMessage(content, selectedToolIds);
   };
 
   return (

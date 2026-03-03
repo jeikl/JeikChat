@@ -8,6 +8,8 @@ export interface Message {
   isStreaming?: boolean;
   thinking?: boolean;
   isCancelled?: boolean;  // 标记消息是否被取消生成
+  hasReasoning?: boolean;
+  reasoningExpanded?: boolean;
 }
 
 export interface ChatSession {

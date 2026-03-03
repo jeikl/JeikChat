@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Mic, Globe, Sparkles, Zap, Ban, Square, Plus } from 'lucide-react';
+import { Sparkles, Zap, Ban, Plus, Globe, Mic, Square, Send } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 
 interface InputAreaProps {
@@ -47,7 +47,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
 
   const handleSubmit = () => {
     if (content.trim() && !disabled) {
-      onSend(content, reasoningMode);
+      onSend(content);
       setContent('');
     }
   };
@@ -57,16 +57,6 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
       e.preventDefault();
       handleSubmit();
     }
-  };
-
-  const getReasoningLabel = (mode: ReasoningMode) => {
-    if (mode === 'auto') return '自动';
-    if (mode === true) return '开启';
-    return '关闭';
-  };
-
-  const getReasoningIcon = (mode: ReasoningMode) => {
-    return <Brain className={`w-3.5 h-3.5 ${mode === 'auto' ? 'text-amber-500' : mode ? 'text-green-500' : 'text-red-500'}`} />;
   };
 
   return (
