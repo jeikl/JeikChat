@@ -36,6 +36,7 @@ const ChatContainer = () => {
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const [inputHeight, setInputHeight] = useState(0);
   const [viewportHeight, setViewportHeight] = useState('100%');
+  const [logoError, setLogoError] = useState(false);
 
   // 监听输入框高度变化
   useEffect(() => {
@@ -117,11 +118,23 @@ const ChatContainer = () => {
             <div className="w-full flex flex-col items-center">
               {/* ... 保持原有欢迎页内容不变 ... */}
               <div className="relative mb-3 md:mb-8 group">
-                <div className="w-12 h-12 md:w-28 md:h-28 rounded-[1rem] md:rounded-[2rem] bg-gradient-to-br from-primary via-purple-600 to-pink-500 flex items-center justify-center shadow-2xl shadow-primary/20 transform group-hover:scale-105 transition-transform duration-500">
-                  <Bot className="w-6 h-6 md:w-14 md:h-14 text-white" />
-                </div>
-                <div className="absolute -bottom-1 -right-1 md:-bottom-2 md:-right-2 w-5 h-5 md:w-10 md:h-10 rounded-full bg-white dark:bg-bg-secondary flex items-center justify-center shadow-xl border-2 md:border-4 border-bg-primary">
-                  <Sparkles className="w-2.5 h-2.5 md:w-5 md:h-5 text-amber-500 animate-pulse" />
+                <div className="relative">
+                  {/* 外发光效果 */}
+                  <div className={`absolute -inset-1 rounded-full bg-gradient-to-br from-primary via-purple-600 to-pink-500 opacity-70 blur-md group-hover:opacity-100 group-hover:blur-lg transition-all duration-500 ${logoError ? 'hidden' : ''}`}></div>
+                  
+                  {/* LOGO 主体 */}
+                  <div className={`relative w-12 h-12 md:w-28 md:h-28 flex items-center justify-center transform group-hover:scale-105 transition-transform duration-500 z-10 ${logoError ? 'rounded-full bg-gradient-to-br from-primary via-purple-600 to-pink-500 shadow-2xl shadow-primary/20' : ''}`}>
+                    {!logoError ? (
+                      <img 
+                        src="/logo.png" 
+                        alt="Logo" 
+                        className="w-full h-full object-cover rounded-full shadow-2xl ring-2 ring-white/10" 
+                        onError={() => setLogoError(true)} 
+                      />
+                    ) : (
+                      <Bot className="w-6 h-6 md:w-14 md:h-14 text-white" />
+                    )}
+                  </div>
                 </div>
               </div>
               

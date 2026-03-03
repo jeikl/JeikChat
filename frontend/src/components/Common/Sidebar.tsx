@@ -32,6 +32,38 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
   const { sessions, currentSessionId, setCurrentSession, addSession, deleteSession, updateSession } = useChatStore();
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  const [logoError, setLogoError] = useState(false);
+
+  // 确保默认对话存在且不可删除
+  // useEffect(() => {
+  //   // 使用 requestAnimationFrame 将状态更新推迟到下一个 tick
+  //   // 避免在渲染过程中直接更新状态
+  //   const timer = requestAnimationFrame(() => {
+  //     const state = useChatStore.getState();
+  //     const hasDefaultSession = state.sessions.some(s => s.id === 'default-session');
+      
+  //     if (!hasDefaultSession) {
+  //       state.addSession({
+  //         id: 'default-session',
+  //         title: '默认对话',
+  //         messages: [],
+  //         createdAt: Date.now(),
+  //         updatedAt: Date.now(),
+  //         isDefault: true // 标记为默认
+  //       });
+  //     }
+  //   });
+
+  //   return () => cancelAnimationFrame(timer);
+  // }, []); // 仅在组件挂载时执行一次
+
+  const handleSelectSession = (sessionId: string) => {
+    setCurrentSession(sessionId);
+    if (window.innerWidth < 1024) { // 移动端自动关闭
+      onCloseMobile();
+    }
+    navigate('/chat');
+  };
 
   const createNewSession = () => {
     const newSession = {
@@ -42,10 +74,12 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
       updatedAt: Date.now(),
     };
     addSession(newSession);
+    handleSelectSession(newSession.id);
   };
 
   const handleDeleteSession = (e: React.MouseEvent, sessionId: string) => {
     e.stopPropagation();
+    if (sessionId === 'default-session') return; // 禁止删除默认对话
     if (confirm('确定要删除这个对话吗？')) {
       deleteSession(sessionId);
     }
@@ -92,9 +126,23 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
         flex flex-col shadow-2xl lg:shadow-none
       `}>
         <div className="p-6">
-          <div className={`flex items-center gap-3 ${!isOpen && 'lg:justify-center'}`}>
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
-              <MessageSquare className="w-6 h-6 text-white" />
+          <div 
+            className={`flex items-center gap-3 ${!isOpen && 'lg:justify-center'} cursor-pointer`} 
+            onClick={() => handleSelectSession('default-session')}
+          >
+            <div className="w-10 h-10 flex-shrink-0">
+              {!logoError ? (
+                <img 
+                  src="/logo.png" 
+                  alt="Logo" 
+                  className="w-full h-full object-cover rounded-full" 
+                  onError={() => setLogoError(true)} 
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg shadow-primary/20">
+                  <MessageSquare className="w-6 h-6 text-white" />
+                </div>
+              )}
             </div>
             {isOpen && (
               <span className="font-bold text-xl text-text-primary tracking-tight">
@@ -104,19 +152,40 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
           </div>
         </div>
 
+        {isOpen && (
+          <div className="px-4 mb-2">
+            <button
+              onClick={() => handleSelectSession('default-session')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 border group ${
+                currentSessionId === 'default-session'
+                  ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
+                  : 'bg-bg-tertiary text-text-secondary border-border hover:border-primary/50 hover:bg-bg-tertiary/80'
+              }`}
+            >
+              <MessageSquare className={`w-5 h-5 ${currentSessionId === 'default-session' ? 'text-white' : 'text-primary'}`} />
+              <span className="font-medium">默认对话</span>
+            </button>
+          </div>
+        )}
+
         <div className="px-4 mb-6">
           <button
             onClick={createNewSession}
-            className={`
-              w-full flex items-center gap-3 px-4 py-3.5
-              bg-primary hover:bg-primary-hover
-              text-white rounded-2xl
-              transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/30
-              ${!isOpen && 'lg:justify-center lg:px-2'}
-            `}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 border group ${
+              !isOpen ? 'justify-center px-0' : ''
+            } ${
+              currentSessionId !== 'default-session' && !sessions.find(s => s.id === currentSessionId)?.isDefault
+                ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
+                : 'bg-bg-tertiary text-text-secondary border-border hover:border-primary/50 hover:bg-bg-tertiary/80'
+            }`}
+            title="开启新对话"
           >
-            <Plus className="w-5 h-5 flex-shrink-0" />
-            {isOpen && <span className="font-semibold">开启新对话</span>}
+            <Plus className={`w-5 h-5 ${!isOpen ? 'w-6 h-6' : ''} ${
+              currentSessionId !== 'default-session' && !sessions.find(s => s.id === currentSessionId)?.isDefault 
+                ? 'text-white' 
+                : 'text-primary'
+            }`} />
+            {isOpen && <span className="font-medium">开启新对话</span>}
           </button>
         </div>
 
@@ -129,7 +198,9 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
             </div>
           ) : (
             <div className="space-y-1">
-              {sessions.map((session) => (
+              {sessions
+                .filter(session => session.id !== 'default-session') // 过滤掉默认会话
+                .map((session) => (
                 <div
                   key={session.id}
                   onClick={() => {

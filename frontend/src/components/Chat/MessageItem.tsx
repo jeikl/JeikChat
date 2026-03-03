@@ -483,7 +483,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
                   )}
                   
                   {/* 时间戳 */}
-                  <span className="text-[10px] text-text-quaternary font-mono tracking-tighter opacity-50 px-2">
+                  <span className="text-xs text-text-tertiary font-medium tracking-wide opacity-80 px-2 select-none">
                     {format(message.timestamp, 'HH:mm')}
                   </span>
                 </div>

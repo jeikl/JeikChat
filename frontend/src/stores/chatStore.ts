@@ -114,17 +114,59 @@ export const useChatStore = create<ChatStore>()(
 
         let sessionId = get().currentSessionId;
         
+        // 如果没有当前会话，创建一个新的
         if (!sessionId) {
           const newSessionId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+          // 使用用户输入的前30个字符作为标题
+          const title = content.trim().substring(0, 30) + (content.length > 30 ? '...' : '');
           const newSession: ChatSession = {
             id: newSessionId,
-            title: content.substring(0, 30) + (content.length > 30 ? '...' : ''),
+            title: title || '新对话', // 确保有标题
             messages: [],
             createdAt: Date.now(),
             updatedAt: Date.now(),
           };
           get().addSession(newSession);
           sessionId = newSessionId;
+        } else {
+          // 如果是现有会话，检查是否是"新对话"且消息为空（刚创建），则重命名
+          const currentSession = get().sessions.find(s => s.id === sessionId);
+          // 注意：default-session 不应该被重命名
+          if (currentSession && 
+              currentSession.id !== 'default-session' && 
+              currentSession.title === '新对话' && 
+              currentSession.messages.length === 0) {
+            const title = content.trim().substring(0, 30) + (content.length > 30 ? '...' : '');
+            get().updateSession(sessionId, { title: title || '新对话' });
+          }
+          
+          // 确保 currentSession 存在，防止 default-session 被意外删除后这里为 undefined
+          if (!currentSession && sessionId === 'default-session') {
+            const newDefaultSession: ChatSession = {
+              id: 'default-session',
+              title: '默认对话',
+              messages: [],
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+              isDefault: true
+            };
+            get().addSession(newDefaultSession);
+          }
+        }
+
+        // 再次确认 sessionId 有效
+        if (!get().sessions.some(s => s.id === sessionId)) {
+           console.error('Session not found, attempting to recover:', sessionId);
+           // 如果 session 真的不见了，强制新建一个临时 session 避免崩溃
+           const recoverySession: ChatSession = {
+             id: sessionId,
+             title: 'Recovered Session',
+             messages: [],
+             createdAt: Date.now(),
+             updatedAt: Date.now(),
+             isDefault: sessionId === 'default-session'
+           };
+           get().addSession(recoverySession);
         }
 
         const userMessageId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;

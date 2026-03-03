@@ -159,7 +159,7 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
           </div>
 
           {showModelSelector && (
-            <div className="absolute top-full right-0 mt-2 w-64 bg-[#1E1E1E] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
+            <div className="absolute top-full right-0 mt-2 w-64 bg-[#1E1E1E] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50 overflow-x-auto max-w-[90vw]">
               <div className="px-4 py-2 mb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-widest">选择模型</div>
               {configs.length === 0 ? (
                 <div className="px-4 py-8 text-sm text-text-tertiary text-center flex flex-col items-center gap-2">
@@ -167,7 +167,7 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
                   {isLoading ? '正在获取模型列表...' : '暂无模型，请刷新'}
                 </div>
               ) : (
-                <div className="space-y-0.5 px-1.5">
+                <div className="space-y-0.5 px-1.5 min-w-full">
                   {configs.map(config => (
                     <button
                       key={config.id}
