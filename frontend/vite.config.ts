@@ -23,6 +23,8 @@ export default defineConfig(({ mode }) => {
       allowedHosts: true,
       hmr: {
         clientPort: frontendPort,
+        // 允许所有网络接口的热更新
+        host: frontendHost,
       },
       proxy: {
         '/api': {

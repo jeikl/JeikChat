@@ -3,7 +3,7 @@ import { useChatStore } from '@/stores/chatStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import MessageItem from './MessageItem';
 import InputArea from './InputArea';
-import { Bot } from 'lucide-react';
+import { Bot, ChevronDown } from 'lucide-react';
 
 const PROMPTS = [
   {
@@ -36,6 +36,8 @@ const ChatContainer = () => {
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const [inputHeight, setInputHeight] = useState(0);
   const [logoError, setLogoError] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const isUserScrolledUpRef = useRef(false);
 
   // 监听输入框高度变化
   useEffect(() => {
@@ -73,28 +75,51 @@ const ChatContainer = () => {
   const currentSession = sessions.find(session => session.id === currentSessionId);
   const messages = currentSession ? currentSession.messages : [];
 
-  const scrollToBottom = (instant = false) => {
-    if (messagesEndRef.current) {
-      // 只有在消息列表不为空时才滚动
-      if (messages.length > 0) {
-        messagesEndRef.current.scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'end' });
-      }
+  // 监听全局滚动事件
+  const handleGlobalScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    // 使用更严格的阈值来判定是否在底部，并增加防抖判断
+    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    
+    if (!isAtBottom) {
+      // 只要不在底部，且有明显的上滑动作，就标记为已上滑
+      isUserScrolledUpRef.current = true;
+      setShowScrollButton(true);
+    } else {
+      isUserScrolledUpRef.current = false;
+      setShowScrollButton(false);
     }
   };
 
-  // 仅在消息数量变化或流式输出开始时进行平滑滚动
-  useEffect(() => {
-    // 首次加载或切换会话时，如果消息很少，不要强制滚到底部，而是让它自然显示
-    // 但如果有足够多的消息需要滚动，才执行
-    scrollToBottom(isStreaming);
-  }, [messages.length, isStreaming, currentSessionId]);
+  // 全局滚动到底部
+  const scrollToBottom = (instant = false) => {
+    if (scrollContainerRef.current) {
+      if (instant) {
+        scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+      } else {
+        scrollContainerRef.current.scrollTo({
+          top: scrollContainerRef.current.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+      isUserScrolledUpRef.current = false;
+      setShowScrollButton(false);
+    }
+  };
 
-  // 流式输出内容变化时，使用即时滚动以减少抖动
+  // 自动滚动逻辑 - 只有在非上滑状态且正在生成内容时才执行
   useEffect(() => {
-    if (isStreaming) {
+    if (scrollContainerRef.current && !isUserScrolledUpRef.current && isStreaming) {
       scrollToBottom(true);
     }
-  }, [messages]);
+  }, [messages, isStreaming]);
+
+  // 当会话改变或新消息增加时，如果没上滑，则滚到底部
+  useEffect(() => {
+    if (!isUserScrolledUpRef.current) {
+      scrollToBottom(false);
+    }
+  }, [messages.length, currentSessionId]);
 
   const handleSend = async (content: string) => {
     await sendMessage(content, selectedToolIds);
@@ -109,6 +134,7 @@ const ChatContainer = () => {
       {/* 消息展示区 - 使用 Spacer 替代 padding-bottom 以避免布局计算问题 */}
       <div 
         ref={scrollContainerRef} 
+        onScroll={handleGlobalScroll}
         className="absolute inset-0 w-full h-full overflow-y-auto scrollbar-thin z-10"
       >
         {messages.length === 0 ? (
@@ -194,18 +220,35 @@ const ChatContainer = () => {
         )}
       </div>
 
-      {/* 底部输入框容器 - 移动端使用 fixed 定位确保稳定，桌面端保持 absolute */}
+      {/* 底部输入框容器 - 移除毛玻璃背景，改为透明，并重新定位滚动按钮 */}
       <div 
         ref={inputContainerRef}
-        className="fixed lg:absolute bottom-0 left-0 right-0 z-50 w-full backdrop-blur-xl bg-gradient-to-t from-bg-primary via-bg-primary/60 to-transparent pb-0 pointer-events-none"
+        className="fixed lg:absolute bottom-0 left-0 right-0 z-50 w-full pb-0 pointer-events-none"
         style={{
           paddingBottom: 'env(safe-area-inset-bottom)'
         }}
       >
-        <div className="max-w-[1400px] mx-auto w-full flex justify-center px-0 pointer-events-none">
+        <div className="max-w-[1400px] mx-auto w-full relative flex flex-col items-center px-0">
+          {/* 全局滚动到底部按钮 - 移动到左侧空白处并提高位置 */}
+          {showScrollButton && (
+            <div className="absolute left-4 bottom-[180px] md:left-8 md:bottom-[220px] pointer-events-auto">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  scrollToBottom();
+                }}
+                className="p-2.5 rounded-full bg-[#1E1E1E] border border-white/10 text-primary hover:text-white hover:bg-primary transition-all shadow-2xl animate-in fade-in zoom-in duration-300 group"
+                title="滚动到底部"
+              >
+                <ChevronDown className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+              </button>
+            </div>
+          )}
+          
           <InputArea 
             onSend={handleSend}
             onStop={stopGenerating}
+            disabled={isStreaming}
             isStreaming={isStreaming}
           />
         </div>

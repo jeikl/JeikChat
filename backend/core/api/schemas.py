@@ -45,12 +45,14 @@ class MessageResponse(BaseModel):
     - id: 消息唯一标识
     - role: 消息角色
     - content: 消息内容
+    - reasoning: 推理过程（可选）
     - timestamp: 时间戳
     - references: 知识库引用（可选，用于 RAG）
     """
     id: str
     role: str
     content: str
+    reasoning: Optional[str] = None
     timestamp: int
     references: Optional[List[dict]] = None
 

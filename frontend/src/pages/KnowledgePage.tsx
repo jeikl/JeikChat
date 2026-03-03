@@ -166,23 +166,23 @@ const KnowledgePage = () => {
   return (
     <div className="h-full flex flex-col p-6 bg-bg-primary overflow-hidden">
       {/* 顶部标题与操作区 */}
-      <div className="flex flex-col gap-6 mb-6 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-text-primary tracking-tight">
+      <div className="flex flex-col gap-4 sm:gap-6 mb-6 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-text-primary tracking-tight truncate">
               知识库管理
             </h1>
-            <p className="text-sm text-text-tertiary mt-1.5 opacity-80">
+            <p className="text-xs sm:text-sm text-text-tertiary mt-1 sm:mt-1.5 opacity-80 line-clamp-2">
               上传文档并创建知识库，让 AI 能够基于这些文档回答问题
             </p>
           </div>
           
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 group"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 group flex-shrink-0 w-full sm:w-auto"
           >
-            <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
-            <span className="font-medium">创建知识库</span>
+            <Plus className="w-5 h-5 transition-transform group-hover:rotate-90 flex-shrink-0" />
+            <span className="font-medium whitespace-nowrap">创建知识库</span>
           </button>
         </div>
 

@@ -44,7 +44,7 @@ def get_session(session_id: Optional[str], content: str, model: Optional[str], k
     return session_id
 
 
-def save_message(session_id: str, role: str, content: str):
+def save_message(session_id: str, role: str, content: str, reasoning: str = None):
     """保存消息到会话"""
     message = {
         "id": str(uuid.uuid4()),
@@ -52,6 +52,9 @@ def save_message(session_id: str, role: str, content: str):
         "content": content,
         "timestamp": int(datetime.now().timestamp() * 1000),
     }
+    if reasoning:
+        message["reasoning"] = reasoning
+        
     sessions[session_id]["messages"].append(message)
     sessions[session_id]["updated_at"] = int(datetime.now().timestamp() * 1000)
     return message
@@ -113,13 +116,13 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         try:
             # 使用支持取消的流式生成
             async for chunk in llm_sendmsg_stream(model, request.content, thinking, task.is_cancelled):
-                # 检查客户端是否断开连接
+                # 检查客户端是否断开连接 - 仅记录日志，不中断生成，确保后台任务完成
                 if await http_request.is_disconnected():
-                    logger.info(f"客户端断开连接，停止生成: task_id={task_id}")
-                    client_disconnected = True
-                    break
+                    if not client_disconnected:
+                        logger.info(f"客户端断开连接，后台继续生成: task_id={task_id}")
+                        client_disconnected = True
                 
-                # 检查任务是否被取消
+                # 检查任务是否被取消（用户手动停止）
                 if task.is_cancelled():
                     logger.info(f"任务被取消，停止生成: task_id={task_id}")
                     break
@@ -127,27 +130,31 @@ async def send_message(request: SendMessageRequest, http_request: Request):
                 # chunk 是字典，包含 content 和 reasoning
                 if chunk.get("reasoning"):
                     full_reasoning += chunk["reasoning"]
-                    yield sse_format({"reasoning": chunk["reasoning"]})
+                    if not client_disconnected:
+                        try:
+                            yield sse_format({"reasoning": chunk["reasoning"]})
+                        except Exception:
+                            logger.info(f"客户端连接已断开，停止发送数据但继续生成: task_id={task_id}")
+                            client_disconnected = True
                 
                 if chunk.get("content"):
                     full_content += chunk["content"]
-                    yield sse_format({"content": chunk["content"]})
+                    if not client_disconnected:
+                        try:
+                            yield sse_format({"content": chunk["content"]})
+                        except Exception:
+                            logger.info(f"客户端连接已断开，停止发送数据但继续生成: task_id={task_id}")
+                            client_disconnected = True
             
-            # 保存助手消息（只有正常完成时才保存）
-            if full_content and not client_disconnected and not task.is_cancelled():
-                save_message(session_id, "assistant", full_content)
-                logger.info(f"消息已保存: session_id={session_id}, content_length={len(full_content)}")
-            elif client_disconnected or task.is_cancelled():
-                logger.info(f"生成被中断，不保存消息: task_id={task_id}")
-            
-            # 发送完成信号
-            yield sse_format({
-                "sessionId": session_id, 
-                "done": True, 
-                "hasReasoning": bool(full_reasoning),
-                "cancelled": task.is_cancelled() or client_disconnected
-            })
-            yield sse_done()
+            # 发送完成信号（仅当客户端连接时）
+            if not client_disconnected:
+                yield sse_format({
+                    "sessionId": session_id, 
+                    "done": True, 
+                    "hasReasoning": bool(full_reasoning),
+                    "cancelled": task.is_cancelled()
+                })
+                yield sse_done()
             
         except GeneratorExit:
             logger.info(f"生成器被关闭: task_id={task_id}")
@@ -155,10 +162,23 @@ async def send_message(request: SendMessageRequest, http_request: Request):
             task.cancel_event.set()
         except Exception as e:
             logger.error(f"流式生成错误: {e}", exc_info=True)
-            error_content = f"抱歉，发生了错误：{str(e)}"
-            yield sse_format({"error": error_content})
-            yield sse_done()
+            if not client_disconnected:
+                error_content = f"抱歉，发生了错误：{str(e)}"
+                yield sse_format({"error": error_content})
+                yield sse_done()
         finally:
+            # 保存助手消息（无论是否中断，只要有内容就保存）
+            # 注意：这里需要再次检查是否已经保存过，避免重复保存（简单起见，假设 stream_generator 只运行一次）
+            # 或者，我们可以只在这里保存，上面的 save_message 移除
+            if full_content or full_reasoning:
+                 # 检查最后一条消息是否已经是助手回复且内容一致（防止重复）
+                 # 但由于 database append 是原子的，这里简单 append 即可
+                 # 为了避免重复，我们只在 finally 里保存一次
+                 save_message(session_id, "assistant", full_content, full_reasoning if full_reasoning else None)
+                 logger.info(f"消息已保存(finally): session_id={session_id}, content_length={len(full_content)}")
+            else:
+                 logger.info(f"没有生成内容，不保存消息(finally): task_id={task_id}")
+
             # 移除任务
             stream_manager.remove_task(task_id)
             logger.info(f"流式任务结束: task_id={task_id}")

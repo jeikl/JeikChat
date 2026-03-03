@@ -188,8 +188,8 @@ export const useChatStore = create<ChatStore>()(
         };
         get().addMessage(sessionId, assistantMessage);
 
-        let hasContent = false;
         let fullContent = '';
+        let fullReasoning = '';
         const abortController = new AbortController();
         set({ abortController });
 
@@ -228,8 +228,6 @@ export const useChatStore = create<ChatStore>()(
             throw new Error('Response body is null');
           }
 
-          let fullContent = '';
-          let fullReasoning = '';
           let isCancelled = false;
           console.log('开始读取流...');
 
@@ -268,8 +266,7 @@ export const useChatStore = create<ChatStore>()(
                   }
                   
                   if (parsed.reasoning) {
-                    if (!hasContent) {
-                      hasContent = true;
+                    if (get().thinkingMode !== 'false') {
                       get().updateMessage(sessionId, assistantMessageId, {
                         thinking: false,
                       });
@@ -281,8 +278,7 @@ export const useChatStore = create<ChatStore>()(
                   }
                   
                   if (parsed.content) {
-                    if (!hasContent) {
-                      hasContent = true;
+                    if (get().thinkingMode !== 'false') {
                       get().updateMessage(sessionId, assistantMessageId, {
                         thinking: false,
                       });
@@ -310,7 +306,7 @@ export const useChatStore = create<ChatStore>()(
           // 如果被取消，更新消息状态
           if (isCancelled) {
             get().updateMessage(sessionId, assistantMessageId, {
-              content: fullContent || '生成已停止',
+              content: fullContent, // 仅使用已生成的内容，不强制替换为“生成已停止”
               isCancelled: true,
             });
           }
@@ -318,10 +314,10 @@ export const useChatStore = create<ChatStore>()(
         } catch (error) {
           if ((error as Error).name === 'AbortError') {
             console.log('请求被用户取消');
-            // 更新消息显示已停止
+            // 更新消息显示已停止，但保留已生成的内容
             get().updateMessage(sessionId, assistantMessageId, {
               thinking: false,
-              content: fullContent || '生成已停止',
+              content: fullContent,
               isCancelled: true,
             });
           } else {

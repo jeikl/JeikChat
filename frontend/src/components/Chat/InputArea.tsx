@@ -60,49 +60,49 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
   };
 
   return (
-    <div className="w-full max-w-[1400px] relative px-3 md:px-8">
+    <div className="w-full max-w-[1000px] relative px-4 md:px-8">
       {/* 输入框主体 - 极致纤长且扁平的"指挥棒"感 */}
       <div className="relative group gemini-aura pointer-events-auto">
         <div className={`
           relative flex flex-col w-full
           bg-[#1E1E1E] transition-all duration-500
-          rounded-[16px] md:rounded-[20px] overflow-visible
+          rounded-[24px] overflow-visible
           ${isStreaming ? 'ring-[0.5px] ring-primary/20' : ''}
         `}>
           {/* 文本输入区 - 纵向极致压缩 50% */}
-          <div className="flex flex-col px-3 md:px-5 pt-1 md:pt-3 pb-0">
+          <div className="flex flex-col px-5 pt-3.5 pb-0">
             <textarea
               ref={textareaRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask anything..."
-              className="w-full bg-transparent border-none focus:border-none focus:ring-0 focus:outline-none resize-none p-0 text-text-primary placeholder:text-text-quaternary text-sm md:text-[15px] max-h-[120px] md:max-h-[160px] leading-relaxed scrollbar-none min-h-[20px] md:min-h-[32px] selection:bg-primary/30"
+              className="w-full bg-transparent border-none focus:border-none focus:ring-0 focus:outline-none resize-none p-0 text-text-primary placeholder:text-text-quaternary text-[15px] max-h-[160px] leading-relaxed scrollbar-none min-h-[24px] selection:bg-primary/30"
               style={{ boxShadow: 'none', border: 'none', outline: 'none' }}
             />
           </div>
 
           {/* 底部操作区 - 纵向极度紧凑 */}
-          <div className="flex items-center justify-between px-2 md:px-4 pb-0.5 md:pb-2">
+          <div className="flex items-center justify-between px-4 pb-2.5">
             <div className="flex items-center gap-2">
               {/* 左侧附件按钮 - 极小化 */}
-              <button className="p-1.5 rounded-lg hover:bg-white/5 text-text-tertiary hover:text-text-primary transition-all active:scale-90">
+              <button className="p-1.5 rounded-lg hover:bg-white/5 text-text-tertiary hover:text-text-primary transition-all active:scale-90 flex-shrink-0">
                 <Plus className="w-4 h-4" />
               </button>
               
               {/* 思考模式与搜索 - 极简扁平 */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowThinkingDropdown(!showThinkingDropdown)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
                       thinkingMode === 'deep' 
                         ? 'bg-primary/10 text-primary' 
                         : 'text-text-quaternary hover:bg-white/5 hover:text-text-primary'
                     }`}
                   >
-                    <CurrentIcon className={`w-4 h-4 ${thinkingMode === 'deep' ? 'animate-pulse' : ''}`} />
-                    <span className="hidden sm:inline">{currentOption.label}</span>
+                    <CurrentIcon className={`w-4 h-4 flex-shrink-0 ${thinkingMode === 'deep' ? 'animate-pulse' : ''}`} />
+                    <span className="inline whitespace-nowrap">{currentOption.label}</span>
                   </button>
                   
                   {showThinkingDropdown && (
@@ -122,8 +122,8 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                                 : 'text-text-tertiary hover:bg-white/5 hover:text-text-primary'
                             }`}
                           >
-                            <Icon className="w-4 h-4" />
-                            {option.label}
+                            <Icon className="w-4 h-4 flex-shrink-0" />
+                            <span className="whitespace-nowrap">{option.label}</span>
                           </button>
                         );
                       })}
@@ -133,14 +133,14 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
 
                 <button
                   onClick={() => setIsWebSearch(!isWebSearch)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
                     isWebSearch 
                       ? 'bg-primary/10 text-primary' 
                       : 'text-text-quaternary hover:bg-white/5 hover:text-text-primary'
                   }`}
                 >
-                  <Globe className="w-4 h-4" />
-                  <span className="hidden sm:inline">Search</span>
+                  <Globe className="w-4 h-4 flex-shrink-0" />
+                  <span className="inline whitespace-nowrap">Search</span>
                 </button>
               </div>
             </div>
@@ -177,8 +177,8 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
       </div>
 
       {/* 底部免责声明 - 移出流光边框，消除“蓝色分界线” */}
-      <div className="mt-0 md:mt-1 flex justify-center pb-0 pointer-events-auto">
-        <p className="text-[9px] md:text-[10px] text-text-quaternary font-medium tracking-wide opacity-60 scale-90 md:scale-100 origin-top leading-tight">
+      <div className="mt-1 flex justify-center pb-0 pointer-events-auto">
+        <p className="text-[10px] text-text-quaternary font-medium tracking-wide opacity-60 scale-100 origin-top leading-tight">
           JeikChat can make mistakes. Check important info.
         </p>
       </div>
