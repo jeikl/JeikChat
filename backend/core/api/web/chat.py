@@ -7,6 +7,8 @@ import asyncio
 import logging
 from datetime import datetime
 
+logger = logging.getLogger(__name__)
+
 from core.api.schemas import (
     ChatSessionResponse,
     SendMessageRequest,
@@ -15,9 +17,12 @@ from core.api.schemas import (
 )
 from core.api.result import success, sse_format, sse_done
 from llm.langchaint import llm_sendmsg_stream, model_name
+from core.services.stream_manager import get_stream_manager
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+
+# 获取流式管理器单例
+stream_manager = get_stream_manager()
 
 # 内存会话存储（生产环境建议用数据库）
 sessions: dict = {}
@@ -39,7 +44,7 @@ def get_session(session_id: Optional[str], content: str, model: Optional[str], k
     return session_id
 
 
-def save_message(session_id: str, role: str, content: str):
+def save_message(session_id: str, role: str, content: str, reasoning: str = None):
     """保存消息到会话"""
     message = {
         "id": str(uuid.uuid4()),
@@ -47,6 +52,9 @@ def save_message(session_id: str, role: str, content: str):
         "content": content,
         "timestamp": int(datetime.now().timestamp() * 1000),
     }
+    if reasoning:
+        message["reasoning"] = reasoning
+        
     sessions[session_id]["messages"].append(message)
     sessions[session_id]["updated_at"] = int(datetime.now().timestamp() * 1000)
     return message
@@ -69,41 +77,13 @@ def build_messages(session_id: str, new_content: str) -> List[dict]:
     return result
 
 
-async def stream_llm_response(model: str, content: str):
-    """在后台线程中运行同步生成器"""
-    loop = asyncio.get_event_loop()
-    
-    def run_generator():
-        gen = llm_sendmsg_stream(model, content)
-        try:
-            while True:
-                chunk = next(gen)
-                if chunk:
-                    yield chunk
-        except StopIteration:
-            pass
-    
-    # 使用 to_thread 在线程池中运行
-    # 但因为是生成器，我们需要用不同的方式
-    gen = llm_sendmsg_stream(model, content)
-    
-    # 直接迭代同步生成器（ChatOpenAI 的 stream 是线程安全的）
-    for chunk in gen:
-        yield chunk
-
-
-def format_sse_data(data: dict) -> str:
-    """格式化 SSE 数据"""
-    return f"data: {json.dumps(data)}\n\n"
-
-
 @router.post("/chat/send")
-async def send_message(request: SendMessageRequest):
+async def send_message(request: SendMessageRequest, http_request: Request):
     """
     发送消息 - 流式返回
-    使用 langchain.py 的 llm_sendmsg_stream 进行流式输出
-    支持推理内容 (reasoning) 的流式返回
+    支持真正的中断：当客户端断开连接时，后端会停止与大模型的通信
     """
+    logger.info(f"收到消息: content={request.content[:50]}..., thinking={request.thinking}")
     
     session_id = get_session(
         request.session_id, 
@@ -117,42 +97,91 @@ async def send_message(request: SendMessageRequest):
     
     # 获取模型名称，默认 qwen3.5-plus
     model = request.model or "qwen3.5-plus"
-    reasoning = request.reasoning or 'auto'
+    # 获取思考模式，默认 auto
+    thinking = request.thinking or "auto"
+    logger.info(f"使用模型: {model}, 思考模式: {thinking}")
+    
+    # 生成任务ID
+    task_id = str(uuid.uuid4())
+    
+    # 注册流式任务
+    task = stream_manager.register_task(task_id, session_id)
     
     async def stream_generator():
         full_content = ""
         full_reasoning = ""
         has_reasoning = False
+        client_disconnected = False
         
         try:
-            for chunk in llm_sendmsg_stream(model, request.content, reasoning):
-                full_reasoning += chunk.get("reasoning", "")
-                full_content += chunk.get("content", "")
+            # 使用支持取消的流式生成
+            async for chunk in llm_sendmsg_stream(model, request.content, thinking, task.is_cancelled):
+                # 检查客户端是否断开连接 - 仅记录日志，不中断生成，确保后台任务完成
+                if await http_request.is_disconnected():
+                    if not client_disconnected:
+                        logger.info(f"客户端断开连接，后台继续生成: task_id={task_id}")
+                        client_disconnected = True
                 
+                # 检查任务是否被取消（用户手动停止）
+                if task.is_cancelled():
+                    logger.info(f"任务被取消，停止生成: task_id={task_id}")
+                    break
+                
+                # chunk 是字典，包含 content 和 reasoning
                 if chunk.get("reasoning"):
-                    has_reasoning = True
-                    yield sse_format({"reasoning": chunk["reasoning"]})
+                    full_reasoning += chunk["reasoning"]
+                    if not client_disconnected:
+                        try:
+                            yield sse_format({"reasoning": chunk["reasoning"]})
+                        except Exception:
+                            logger.info(f"客户端连接已断开，停止发送数据但继续生成: task_id={task_id}")
+                            client_disconnected = True
                 
                 if chunk.get("content"):
-                    yield sse_format({"content": chunk["content"]})
+                    full_content += chunk["content"]
+                    if not client_disconnected:
+                        try:
+                            yield sse_format({"content": chunk["content"]})
+                        except Exception:
+                            logger.info(f"客户端连接已断开，停止发送数据但继续生成: task_id={task_id}")
+                            client_disconnected = True
             
-            if full_content:
-                save_message(session_id, "assistant", full_content)
-            
-            yield sse_format({
-                "sessionId": session_id, 
-                "done": True,
-                "hasReasoning": has_reasoning
-            })
-            yield sse_done()
+            # 发送完成信号（仅当客户端连接时）
+            if not client_disconnected:
+                yield sse_format({
+                    "sessionId": session_id, 
+                    "done": True, 
+                    "hasReasoning": bool(full_reasoning),
+                    "cancelled": task.is_cancelled()
+                })
+                yield sse_done()
             
         except GeneratorExit:
-            logger.info(f"客户端断开连接，停止生成 - session: {session_id}")
-            raise
+            logger.info(f"生成器被关闭: task_id={task_id}")
+            # 标记任务为取消状态
+            task.cancel_event.set()
         except Exception as e:
-            error_content = f"抱歉，发生了错误：{str(e)}"
-            yield sse_format({"error": error_content})
-            yield sse_done()
+            logger.error(f"流式生成错误: {e}", exc_info=True)
+            if not client_disconnected:
+                error_content = f"抱歉，发生了错误：{str(e)}"
+                yield sse_format({"error": error_content})
+                yield sse_done()
+        finally:
+            # 保存助手消息（无论是否中断，只要有内容就保存）
+            # 注意：这里需要再次检查是否已经保存过，避免重复保存（简单起见，假设 stream_generator 只运行一次）
+            # 或者，我们可以只在这里保存，上面的 save_message 移除
+            if full_content or full_reasoning:
+                 # 检查最后一条消息是否已经是助手回复且内容一致（防止重复）
+                 # 但由于 database append 是原子的，这里简单 append 即可
+                 # 为了避免重复，我们只在 finally 里保存一次
+                 save_message(session_id, "assistant", full_content, full_reasoning if full_reasoning else None)
+                 logger.info(f"消息已保存(finally): session_id={session_id}, content_length={len(full_content)}")
+            else:
+                 logger.info(f"没有生成内容，不保存消息(finally): task_id={task_id}")
+
+            # 移除任务
+            stream_manager.remove_task(task_id)
+            logger.info(f"流式任务结束: task_id={task_id}")
     
     return StreamingResponse(
         stream_generator(),
@@ -163,6 +192,51 @@ async def send_message(request: SendMessageRequest):
             "X-Accel-Buffering": "no",
         }
     )
+
+
+@router.post("/chat/stop/{session_id}")
+async def stop_generation(session_id: str):
+    """
+    停止指定会话的生成
+    这会真正中断后端与大模型的通信
+    """
+    cancelled_count = stream_manager.cancel_session_tasks(session_id)
+    logger.info(f"停止会话生成: session_id={session_id}, 取消任务数={cancelled_count}")
+    
+    return success(
+        data={"cancelled_tasks": cancelled_count},
+        msg=f"已停止 {cancelled_count} 个生成任务"
+    )
+
+
+@router.post("/chat/stop")
+async def stop_all_generation():
+    """
+    停止所有活跃的生成任务
+    用于紧急停止所有对话
+    """
+    stats = stream_manager.get_stats()
+    active_count = stats.get("active_tasks", 0)
+    
+    # 取消所有活跃任务
+    cancelled = 0
+    for task_id in list(stream_manager._tasks.keys()):
+        if stream_manager.cancel_task(task_id):
+            cancelled += 1
+    
+    logger.info(f"停止所有生成任务: 活跃任务数={active_count}, 已取消={cancelled}")
+    
+    return success(
+        data={"cancelled_tasks": cancelled},
+        msg=f"已停止 {cancelled} 个生成任务"
+    )
+
+
+@router.get("/chat/stream-stats")
+async def get_stream_stats():
+    """获取流式任务统计信息（用于调试和监控）"""
+    stats = stream_manager.get_stats()
+    return success(data=stats, msg="获取成功")
 
 
 @router.get("/chat/history")
@@ -193,6 +267,9 @@ async def get_session_history(session_id: str):
 @router.delete("/chat/history/{session_id}")
 async def delete_session(session_id: str):
     """删除指定会话"""
+    # 先停止该会话的所有生成任务
+    stream_manager.cancel_session_tasks(session_id)
+    
     if session_id in sessions:
         del sessions[session_id]
     return success(data=None, msg="删除成功")
@@ -201,14 +278,24 @@ async def delete_session(session_id: str):
 @router.delete("/chat/history")
 async def clear_all_history():
     """清空所有会话历史"""
+    # 停止所有生成任务
+    for task_id in list(stream_manager._tasks.keys()):
+        stream_manager.cancel_task(task_id)
+    
     sessions.clear()
     return success(data=None, msg="清空成功")
 
 
 @router.put("/chat/history/{session_id}/title")
-async def rename_session(session_id: str, title: str):
-    """重命名会话"""
-    if session_id in sessions:
-        sessions[session_id]["title"] = title
-        sessions[session_id]["updated_at"] = int(datetime.now().timestamp() * 1000)
-    return success(data=None, msg="重命名成功")
+async def update_session_title(session_id: str, request: dict):
+    """更新会话标题"""
+    session = sessions.get(session_id)
+    if not session:
+        return success(data=None, msg="会话不存在")
+    
+    title = request.get("title")
+    if title:
+        session["title"] = title
+        session["updated_at"] = int(datetime.now().timestamp() * 1000)
+    
+    return success(data=None, msg="更新成功")

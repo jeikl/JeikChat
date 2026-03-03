@@ -1,59 +1,66 @@
+from os import name
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 from langchain.agents import create_agent
+from langgraph.checkpoint.memory import InMemorySaver
+from llm.langchaint import create_client
 
-from langgraph.checkpoint.memory import InMemorySaver  # [!code highlight]
-
-from dataclasses import dataclass
-from langchain.tools import tool, ToolRuntime
-
-def get_configuration(id: str) -> dict:
-    """
-    获取聊天智能体配置
-    
-    Args:
-        id: 配置ID
-    
-    Returns:
-        配置字典
-    """
-    return {
-        "configurable": {
-            "thread_id": id,
-        }
-    }
-def chat_agent(model: str, context: str, systempromt: str, configid: str) -> create_agent:
-    agent = create_agent(
-        model=model,
-        system_prompt=systempromt,
+def creat_chat_agent(llm: str, system: str, configid: str, thinking: str = "auto"):
+    llm_client = create_client(llm, thinking)
+    chat_agent = create_agent(
+        model=llm_client, 
         tools=[],
-        context_schema=Context,
-        response_format=ResponseFormat,
-        checkpointer=checkpointer
+        system_prompt=system
     )
+    return chat_agent
 
-    # `thread_id` 是给定对话的唯一标识符。
-    config = {"configurable": {"thread_id": "1"}}
 
-    response = agent.invoke(
-        {"messages": [{"role": "user", "content": "外面的天气怎么样？"}]},
-        config=config,
-        context=Context(user_id="1")
-    )
 
-    print(response['structured_response'])
-    # ResponseFormat(
-    #     punny_response="佛罗里达今天依然是'阳光灿烂'的一天！阳光正在播放'rey-dio'热门歌曲！我得说，这是进行'solar-bration'的完美天气！如果你希望下雨，恐怕这个想法已经'被冲走'了——预报仍然'清晰地'灿烂！",
-    #     weather_conditions="佛罗里达总是阳光明媚！"
-    # )
+if __name__ == "__main__":
+    llm = "qwen3.5-plus"
+    system = "你是一个智能助手 请你根据用户的问题进行回答"
+    chat_agent = creat_chat_agent(llm, system, "123", thinking="deep")
 
-    # 注意，我们可以使用相同的 `thread_id` 继续对话。
-    response = agent.invoke(
-        {"messages": [{"role": "user", "content": "谢谢！"}]},
-        config=config,
-        context=Context(user_id="1")
-    )
-
-    print(response['structured_response'])
-    # ResponseFormat(
-    #     punny_response="你真是'雷'厉风行地欢迎！帮助你保持'当前'天气总是'轻而易举'。我只是'云'游四方，等待随时'淋浴'你更多预报。祝你在佛罗里达的阳光下度过'sun-sational'的一天！",
-    #     weather_conditions=None
-    # )
+    print("=== 开始流式输出 ===\n", flush=True)
+    
+    reasoning_buffer = ""
+    content_buffer = ""
+    is_reasoning_phase = True
+    
+    for token, metadata in chat_agent.stream(  
+        {"messages": [{"role": "user", "content": "你好呀 怎么学习英语?"}]},
+        stream_mode="messages",
+    ):
+        # ========== 直接从 token 对象获取字段值 ==========
+        reasoning = ""
+        content = ""
+        
+        # 方法1: 从 additional_kwargs 获取 (DeepSeek)
+        if hasattr(token, 'additional_kwargs') and token.additional_kwargs:
+            reasoning = token.additional_kwargs.get('reasoning_content', '')
+        
+        # 方法2: 直接从 token 属性获取 (阿里/豆包)
+        if hasattr(token, 'reasoning'):
+            reasoning = getattr(token, 'reasoning', '')
+        
+        # 方法3: 从 content 获取
+        if hasattr(token, 'content'):
+            content = token.content
+        
+        # 显示逻辑
+        if reasoning:
+            reasoning_buffer += reasoning
+            is_reasoning_phase = True
+            print(f"\r[🤔 思考中...] {reasoning_buffer[-50:]}", end='', flush=True)
+        
+        if content:
+            if is_reasoning_phase and reasoning_buffer:
+                print("\n", flush=True)
+                is_reasoning_phase = False
+            
+            content_buffer += content
+            print(f"\r[💬 回答] {content_buffer[-50:]}", end='', flush=True)
+    
+    print("\n\n=== 完成 ===", flush=True)

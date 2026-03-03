@@ -8,8 +8,6 @@ import { knowledgeApi } from '@/services/knowledge';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
-const toast = (message: string, options?: any) => showToast(message, options === 'success' ? 'success' : options === 'error' ? 'error' : 'empty');
-
 const showToastOnce = (() => {
   const shown = new Set<string>();
   return (key: string, callback: () => void) => {
@@ -166,37 +164,42 @@ const KnowledgePage = () => {
   const selectedKnowledge = knowledgeBases.find(kb => kb.id === selectedKnowledgeId);
 
   return (
-    <div className="h-full flex flex-col p-6 bg-bg-primary">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-text-primary">
-            知识库管理
-          </h1>
-          <p className="text-sm text-text-tertiary mt-1">
-            上传文档并创建知识库，让AI能够基于这些文档回答问题
-          </p>
+    <div className="h-full flex flex-col p-6 bg-bg-primary overflow-hidden">
+      {/* 顶部标题与操作区 */}
+      <div className="flex flex-col gap-4 sm:gap-6 mb-6 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-text-primary tracking-tight truncate">
+              知识库管理
+            </h1>
+            <p className="text-xs sm:text-sm text-text-tertiary mt-1 sm:mt-1.5 opacity-80 line-clamp-2">
+              上传文档并创建知识库，让 AI 能够基于这些文档回答问题
+            </p>
+          </div>
+          
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 group flex-shrink-0 w-full sm:w-auto"
+          >
+            <Plus className="w-5 h-5 transition-transform group-hover:rotate-90 flex-shrink-0" />
+            <span className="font-medium whitespace-nowrap">创建知识库</span>
+          </button>
         </div>
-        
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="text-sm sm:text-base">创建知识库</span>
-        </button>
+
+        {/* 标签页切换 - 即使只有一个也保留结构以便未来扩展 */}
+        <div className="flex items-center border-b border-border">
+          <button
+            className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-primary border-b-2 border-primary transition-colors bg-primary/5"
+          >
+            <FileText className="w-4 h-4" />
+            <span>知识库列表</span>
+          </button>
+        </div>
       </div>
 
-      <div className="flex gap-2 mb-6">
-        <button
-          className={`px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 bg-primary text-white whitespace-nowrap text-sm sm:text-base`}
-        >
-          <FileText className="w-4 h-4 inline-block mr-2" />
-          知识库
-        </button>
-      </div>
-
-      <div className="flex-1 flex gap-6 min-h-0">
-        <div className="w-80 flex-shrink-0 bg-bg-secondary rounded-xl border border-border overflow-hidden">
+      <div className="flex-1 flex gap-6 min-h-0 overflow-hidden">
+        {/* 左侧列表 */}
+        <div className="w-80 flex-shrink-0 bg-bg-secondary/50 backdrop-blur-sm rounded-2xl border border-border overflow-hidden flex flex-col shadow-sm">
           <div className="p-4 border-b border-border">
             <h2 className="font-medium text-text-primary">知识库列表</h2>
           </div>

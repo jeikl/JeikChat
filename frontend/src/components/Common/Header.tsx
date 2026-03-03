@@ -1,4 +1,4 @@
-import { Menu, ChevronDown, Bot, Volume2, RotateCcw } from 'lucide-react';
+import { Menu, ChevronDown, Bot, BookOpen, RotateCcw } from 'lucide-react';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useKnowledgeStore } from '@/stores/knowledgeStore';
 import { useState, useEffect } from 'react';
@@ -103,30 +103,33 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
   };
 
   return (
-    <header className="h-16 px-4 flex items-center justify-between border-b border-border/50 bg-bg-primary/80 backdrop-blur-sm">
-      <div className="flex items-center gap-3 pl-2">
+    <header className="h-16 px-4 md:px-6 flex items-center justify-between border-b border-border/40 bg-bg-primary/80 backdrop-blur-xl sticky top-0 z-30">
+      <div className="flex items-center gap-4">
         <button
           onClick={onToggleMobileSidebar}
-          className="lg:hidden p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+          className="lg:hidden p-2 hover:bg-bg-tertiary rounded-xl transition-all active:scale-95 text-text-secondary hover:text-text-primary"
         >
-          <Menu className="w-5 h-5 text-text-primary" />
+          <Menu className="w-5 h-5" />
         </button>
         
         <button
           onClick={onToggleSidebar}
-          className="hidden lg:block p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+          className="hidden lg:flex p-2 hover:bg-bg-tertiary rounded-xl transition-all active:scale-95 text-text-secondary hover:text-text-primary"
         >
-          <Menu className="w-5 h-5 text-text-primary" />
+          <Menu className="w-5 h-5" />
         </button>
 
-        <h1 className="text-lg font-semibold text-text-primary hidden sm:block">
+        <div className="h-6 w-[1px] bg-border/20 hidden sm:block mx-1" />
+
+        <h1 className="text-lg font-bold text-text-primary tracking-tight hidden sm:block">
           JeikChat
         </h1>
       </div>
 
-      <div className="flex items-center gap-1 pr-2">
-        <div className="relative">
-          <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* 模型选择器 */}
+        <div className="relative group">
+          <div className="flex items-center h-10">
             <button
               onClick={() => {
                 if (!configs.length) {
@@ -135,141 +138,155 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
                   setShowModelSelector(!showModelSelector);
                 }
               }}
-              className="flex items-center gap-2 px-2 sm:px-3 py-1.5 text-sm bg-bg-secondary/80 hover:bg-bg-secondary border border-border/50 rounded-l-lg transition-all hover:border-primary/30 min-w-0"
+              className="flex items-center gap-2.5 px-3 h-full bg-[#1E1E1E] hover:bg-[#262626] border border-white/[0.05] rounded-l-xl transition-all hover:border-primary/40 min-w-0 shadow-xl"
             >
-              <Bot className="w-4 h-4 text-primary flex-shrink-0" />
-              <span className="max-w-[80px] sm:max-w-[120px] md:max-w-[180px] truncate text-text-primary">{activeConfig?.name || (configs.length > 0 ? configs[0].name : '选择模型')}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0" />
+              <div className="w-5 h-5 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Bot className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <span className="max-w-[100px] sm:max-w-[150px] truncate font-semibold text-text-primary text-sm">
+                {activeConfig?.name || (configs.length > 0 ? configs[0].name : '选择模型')}
+              </span>
+              <ChevronDown className={`w-3.5 h-3.5 text-text-quaternary flex-shrink-0 transition-transform duration-200 ${showModelSelector ? 'rotate-180' : ''}`} />
             </button>
-            <button
+            <button 
               onClick={handleRefreshModels}
               disabled={isLoading}
-              className="px-1.5 sm:px-2 py-1.5 text-sm bg-bg-secondary/80 hover:bg-bg-tertiary border border-l-0 border-border/50 rounded-r-lg transition-all disabled:opacity-50 flex-shrink-0"
+              className={`px-3 h-full bg-[#1E1E1E] hover:bg-[#262626] border-y border-r border-white/[0.05] rounded-r-xl transition-all group shadow-xl flex items-center justify-center ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
+              title="刷新模型列表"
             >
-              {isLoading ? (
-                <RotateCcw className="w-4 h-4 text-text-tertiary animate-spin" />
-              ) : (
-                <RotateCcw className="w-4 h-4 text-text-tertiary" />
-              )}
+              <RotateCcw className={`w-3.5 h-3.5 text-text-quaternary group-hover:text-primary transition-all ${isLoading ? 'animate-spin' : 'group-active:rotate-180'}`} />
             </button>
           </div>
 
           {showModelSelector && (
-            <div className="absolute right-0 mt-2 w-72 bg-bg-secondary rounded-xl shadow-xl border border-border/50 py-1 z-50 overflow-y-auto max-h-64">
+            <div className="absolute top-full right-0 mt-2 w-64 bg-[#1E1E1E] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50 overflow-x-auto max-w-[90vw]">
+              <div className="px-4 py-2 mb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-widest">选择模型</div>
               {configs.length === 0 ? (
-                <div className="px-4 py-3 text-sm text-text-tertiary text-center">
-                  {isLoading ? '加载中...' : '暂无模型，请刷新'}
+                <div className="px-4 py-8 text-sm text-text-tertiary text-center flex flex-col items-center gap-2">
+                  <Bot className="w-8 h-8 opacity-20" />
+                  {isLoading ? '正在获取模型列表...' : '暂无模型，请刷新'}
                 </div>
               ) : (
-                configs.map(config => (
-                  <button
-                    key={config.id}
-                    onClick={() => {
-                      useSettingsStore.getState().setActiveConfig(config.id);
-                      setShowModelSelector(false);
-                    }}
-                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-bg-tertiary transition-colors flex items-center gap-2 ${
-                      activeConfigId === config.id 
-                        ? 'text-white bg-primary/20' 
-                        : 'text-text-secondary'
-                    }`}
-                  >
-                    <Bot className={`w-4 h-4 ${activeConfigId === config.id ? 'text-primary' : 'text-text-tertiary'}`} />
-                    {config.name}
-                  </button>
-                ))
+                <div className="space-y-0.5 px-1.5 min-w-full">
+                  {configs.map(config => (
+                    <button
+                      key={config.id}
+                      onClick={() => {
+                        useSettingsStore.getState().setActiveConfig(config.id);
+                        setShowModelSelector(false);
+                      }}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center justify-between group/item ${
+                        activeConfigId === config.id 
+                          ? 'bg-primary/10 text-primary font-bold' 
+                          : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Bot className={`w-4 h-4 ${activeConfigId === config.id ? 'text-primary' : 'text-text-quaternary group/item:text-text-primary'}`} />
+                        <span className="truncate">{config.name}</span>
+                      </div>
+                      {activeConfigId === config.id && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
+                      )}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           )}
         </div>
 
-        <div className="relative flex-shrink-0">
+        {/* 知识库选择器 */}
+        <div className="relative">
           <button
             onClick={() => setShowKnowledgeSelector(!showKnowledgeSelector)}
-            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 text-sm rounded-lg transition-all ${
+            className={`flex items-center gap-2 px-3 py-2 text-sm rounded-xl font-semibold transition-all shadow-sm ${
               selectedKnowledgeIds.length > 0
                 ? 'bg-primary/10 text-primary border border-primary/20'
-                : 'bg-bg-secondary/80 hover:bg-bg-secondary border border-border/50 hover:border-primary/30 text-text-secondary'
+                : 'bg-bg-secondary/50 hover:bg-bg-secondary border border-border/40 hover:border-primary/40 text-text-secondary'
             }`}
           >
+            <BookOpen className="w-4 h-4" />
             <span className="hidden xs:inline">知识库</span>
-            <span className="xs:hidden text-xs">库</span>
             {selectedKnowledgeIds.length > 0 && (
-              <span className="bg-primary text-white text-xs px-1.5 py-0.5 rounded-full">
+              <div className="flex items-center justify-center min-w-[18px] h-[18px] bg-primary text-white text-[10px] font-bold rounded-full px-1">
                 {selectedKnowledgeIds.length}
-              </span>
+              </div>
             )}
-            <ChevronDown className="w-3.5 h-3.5 text-text-tertiary" />
           </button>
 
           {showKnowledgeSelector && (
-            <div className="absolute right-0 mt-2 w-60 bg-bg-secondary rounded-xl shadow-xl border border-border/50 py-1 z-50 max-h-64 overflow-y-auto">
+            <div className="absolute right-0 mt-3 w-64 bg-[#1E1E1E] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden py-2 z-50 max-h-[400px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="px-4 py-2 mb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-widest">关联知识库</div>
               {knowledgeBases.length === 0 ? (
-                <div className="px-4 py-3 text-sm text-text-tertiary">
-                  暂无知识库，请先创建
+                <div className="px-4 py-8 text-sm text-text-tertiary text-center flex flex-col items-center gap-2">
+                  <BookOpen className="w-8 h-8 opacity-20" />
+                  暂无可用知识库
                 </div>
               ) : (
-                <>
+                <div className="space-y-0.5 px-1.5">
                   <button
                     onClick={() => {
                       if (selectedKnowledgeIds.length === knowledgeBases.length) {
-                        toggleKnowledgeSelection('');
+                        useKnowledgeStore.getState().setSelectedKnowledgeIds([]);
                       } else {
                         const allIds = knowledgeBases.map(kb => kb.id);
                         useKnowledgeStore.getState().setSelectedKnowledgeIds(allIds);
                       }
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-bg-tertiary transition-colors text-text-secondary"
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all text-text-secondary hover:bg-bg-tertiary hover:text-text-primary"
                   >
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                      selectedKnowledgeIds.length === knowledgeBases.length
-                        ? 'border-primary bg-primary'
-                        : selectedKnowledgeIds.length > 0 && selectedKnowledgeIds.length < knowledgeBases.length
-                        ? 'border-primary bg-primary/50'
-                        : 'border-text-quaternary'
-                    }`}>
-                      {selectedKnowledgeIds.length === knowledgeBases.length ? (
-                        <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : selectedKnowledgeIds.length > 0 && selectedKnowledgeIds.length < knowledgeBases.length ? (
-                        <div className="w-2 h-2 bg-white rounded-sm"></div>
-                      ) : null}
+                    <div className="flex items-center gap-3">
+                      <div className={`w-4 h-4 rounded-md border-2 transition-all flex items-center justify-center ${
+                        selectedKnowledgeIds.length === knowledgeBases.length
+                          ? 'border-primary bg-primary'
+                          : selectedKnowledgeIds.length > 0
+                          ? 'border-primary bg-primary/50'
+                          : 'border-text-quaternary'
+                      }`}>
+                        {selectedKnowledgeIds.length === knowledgeBases.length && (
+                          <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="font-medium">全部选择</span>
                     </div>
-                    <span>全选</span>
                   </button>
                   
-                  <div className="border-t border-border/50 my-1"></div>
+                  <div className="h-[1px] bg-border/10 my-1 mx-2" />
                   
                   {knowledgeBases.map(kb => (
                     <button
                       key={kb.id}
                       onClick={() => toggleKnowledgeSelection(kb.id)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-bg-tertiary transition-colors text-text-secondary"
-                    >
-                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group/kb ${
                         selectedKnowledgeIds.includes(kb.id)
-                          ? 'border-primary bg-primary'
-                          : 'border-text-quaternary'
-                      }`}>
-                        {selectedKnowledgeIds.includes(kb.id) && (
-                          <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
+                          ? 'bg-primary/5 text-primary font-medium'
+                          : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 truncate">
+                        <div className={`w-4 h-4 rounded-md border-2 transition-all flex items-center justify-center flex-shrink-0 ${
+                          selectedKnowledgeIds.includes(kb.id)
+                            ? 'border-primary bg-primary'
+                            : 'border-text-quaternary group/kb:border-text-tertiary'
+                        }`}>
+                          {selectedKnowledgeIds.includes(kb.id) && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className="truncate">{kb.name}</span>
                       </div>
-                      <span className="truncate">{kb.name}</span>
                     </button>
                   ))}
-                </>
+                </div>
               )}
             </div>
           )}
         </div>
-
-        <button className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors">
-          <Volume2 className="w-5 h-5 text-text-secondary" />
-        </button>
       </div>
     </header>
   );

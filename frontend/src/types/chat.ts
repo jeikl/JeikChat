@@ -2,13 +2,12 @@ export interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
+  reasoning?: string;
   timestamp: number;
   references?: KnowledgeReference[];
   isStreaming?: boolean;
   thinking?: boolean;
-  reasoning?: string;
-  hasReasoning?: boolean;
-  reasoningExpanded?: boolean;
+  isCancelled?: boolean;  // 标记消息是否被取消生成
 }
 
 export interface ChatSession {
@@ -19,6 +18,7 @@ export interface ChatSession {
   updatedAt: number;
   modelId?: string;
   knowledgeBaseIds?: string[];
+  isDefault?: boolean;
 }
 
 export interface KnowledgeReference {

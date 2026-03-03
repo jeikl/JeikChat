@@ -1,17 +1,30 @@
-
 from langchain_deepseek import ChatDeepSeek
-
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 import os
 import sys
+import time
+import threading
+from typing import Optional, Callable
 from dotenv import load_dotenv
 
+
+
+
+
+
+
+# 添加项目根目录到 Python 路径
 current_dir = os.path.dirname(__file__)
-env_path = os.path.abspath(os.path.join(current_dir, "..", "..", ".env"))
+project_root = os.path.abspath(os.path.join(current_dir, "..", ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+env_path = os.path.join(project_root, ".env")
 load_dotenv(dotenv_path=env_path, override=True)
 
 _client_cache = {}
-
+_cache_lock = threading.Lock()
+_CACHE_TTL = float('inf')
 
 def model_name(text: str):
     dash_index = text.find("-")
@@ -22,68 +35,103 @@ def model_name(text: str):
     letters = [char for char in s if char.isalpha()]
     return ''.join(letters).upper()
 
+def _get_cache_key(llm: str, thinking: str) -> str:
+    return f"{llm}:{thinking}"
 
-def create_client(llm: str, reasoning: str = 'auto'):
-    cache_key = f"{llm}_{reasoning}"
-    if cache_key in _client_cache:
-        return _client_cache[cache_key]
+def create_client(llm: str, thinking: str = "auto"):
+    cache_key = _get_cache_key(llm, thinking)
     
-    api_key = os.getenv(f"{model_name(llm)}_API_KEY")
-    base_url = os.getenv(f"{model_name(llm)}_BASE_URL")
+    with _cache_lock:
+        if cache_key in _client_cache:
+            cached_client, cached_time = _client_cache[cache_key]
+            if time.time() - cached_time < _CACHE_TTL:
+                return cached_client
     
-    extra_body = {}
+    model_provider = model_name(llm)
+    api_key = os.getenv(f"{model_provider}_API_KEY")
+    base_url = os.getenv(f"{model_provider}_BASE_URL")
+    print(f"[DEBUG] 模型: {llm}")
+    print(f"[DEBUG] 提供商: {model_provider}")
+    print(f"[DEBUG] API Key: {api_key[:10]}..." if api_key else "[DEBUG] API Key: None")
+
     
-    # 所有模型的深度思考参数全加进去，API 会自动忽略不认识的参数
-    if reasoning == 'auto':
-        extra_body = {
-            'enable_thinking': None,
-            'thinking': {'type': 'auto'},
-            'reasoning_level': 'auto',
+    extra_parms = {}
+    if thinking == "false":
+        extra_parms = {
+            "enable_thinking": False,
+            "thinking": {"type": "disabled"},
         }
-    elif reasoning == 'true':
-        extra_body = {
-            'enable_thinking': True,#千问深度思考
-            'thinking': {'type': 'enabled'},#豆包深度思考
-            'reasoning_level': 'high',#openai深度思考等级
+    elif thinking == "deep":
+        extra_parms = {
+            "enable_thinking": True,
+            "thinking": {"type": "enabled"},
         }
-    elif reasoning == 'false':
-        extra_body = {
-            'enable_thinking': False,
-            'thinking': {'type': 'disabled'},
-            'reasoning_level': 'none',
+    else:
+        extra_parms = {
+            "enable_thinking": None,
+            "thinking": {"type": None},
         }
     
-    client = ChatDeepSeek(
-        model=llm,
-        api_key=api_key,
-        api_base=base_url,
-        temperature=0.7,
-        streaming=True,
-        timeout=1800,
-        extra_body=extra_body if extra_body else None,
-    )
+    if "gemini" in llm.lower():
+        print(f"[DEBUG] 检测到 Google 模型: {llm}")
+        print(f"[DEBUG] GOOGLE_API_KEY: {api_key[:20]}..." if api_key else "[DEBUG] GOOGLE_API_KEY: None")
+        # 设置环境变量给 langchain 使用
+        print(os.environ["GOOGLE_API_KEY"])
+        if api_key:
+            os.environ["GOOGLE_API_KEY"] = api_key
+        client = ChatGoogleGenerativeAI(
+            model=llm,
+            temperature=1.0,  # Gemini 3.0+ defaults to 1.0
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+        )
+        print(f"[DEBUG] Google 客户端创建成功，模型: {llm}")
+    else:
+        client = ChatDeepSeek(
+            model=llm,
+            api_key=api_key,
+            api_base=base_url,
+            streaming=True,
+            extra_body=extra_parms,
+        )
+
+    with _cache_lock:
+        _client_cache[cache_key] = (client, time.time())
     
-    _client_cache[cache_key] = client
     return client
 
-def llm_sendmsg(llm: str, msg: str):
-    """非流式调用"""
-    client = create_client(llm)
+def clear_client_cache():
+    with _cache_lock:
+        _client_cache.clear()
 
-    for chunk in client.invoke(msg):
-        print(chunk, end="", flush=True)
-
-
-def llm_sendmsg_stream(llm: str, msg: str, reasoning: str = 'auto'):
-    """流式调用 - 生成器版本，返回包含推理内容和标准内容的字典"""
-    client = create_client(llm, reasoning)
+async def llm_sendmsg_stream(llm: str, msg: str, thinking: str = 'auto', should_stop: Optional[Callable[[], bool]] = None):
+    """
+    流式发送消息到大模型
+    
+    Args:
+        llm: 模型名称
+        msg: 消息内容
+        thinking: 思考模式 ('auto', 'deep', 'false')
+        should_stop: 可选的停止检查函数，返回 True 时停止生成
+    """
+    client = create_client(llm, thinking)
     try:
-        for chunk in client.stream(msg):
+        # 使用 astream 支持真正的异步流，这样在等待响应时也能响应外部事件
+        async for chunk in client.astream(msg):
+            # 检查是否需要停止
+            if should_stop and should_stop():
+                print(f"LLM 流被主动中断: model={llm}")
+                break
+            
             result = {}
             
-            if chunk.content:
+            # 处理内容
+            if hasattr(chunk, 'content') and chunk.content:
                 result["content"] = chunk.content
             
+            # 处理思考过程 (Reasoning)
+            # 对于 ChatDeepSeek，通常在 additional_kwargs 中
             if hasattr(chunk, 'additional_kwargs') and chunk.additional_kwargs:
                 reasoning_content = chunk.additional_kwargs.get('reasoning_content')
                 if reasoning_content:
@@ -100,30 +148,18 @@ def llm_sendmsg_stream(llm: str, msg: str, reasoning: str = 'auto'):
         raise
 
 
-def llm_sendmsg_stream_simple(llm: str, msg: str):
-    """流式调用 - 简单版本，只返回标准内容（保持向后兼容）"""
-    client = create_client(llm)
-    for chunk in client.stream(msg):
-        if chunk.content:
-            yield chunk.content
-
-
-def llm_sendmsg_stream_async(llm: str, msg: str):
-    """流式调用 - 异步生成器版本"""
-    client = create_client(llm)
-    for chunk in client.stream(msg):
-        if chunk.content:
-            yield chunk.content
-
-
-if __name__ == "__main__":
-    print("=== 测试非流式 ===")
-    #llm_sendmsg("qwen3.5-plus", "你好 怎么学习AI开发")
-    print("\n=== 测试流式 ===")
-    for chunk in llm_sendmsg_stream_async("doubao-seed-2-0-pro-260215", "你好 怎么学习AI开发"):
-        print(chunk, end="", flush=True)
-
-
-
-
-
+async def llm_sendmsg_stream_with_cancel(llm: str, msg: str, thinking: str = 'auto', cancel_event: Optional[threading.Event] = None):
+    """
+    支持取消的流式发送消息
+    
+    Args:
+        llm: 模型名称
+        msg: 消息内容
+        thinking: 思考模式
+        cancel_event: 取消事件，当事件被设置时停止生成
+    """
+    def should_stop():
+        return cancel_event is not None and cancel_event.is_set()
+    
+    async for chunk in llm_sendmsg_stream(llm, msg, thinking, should_stop):
+        yield chunk

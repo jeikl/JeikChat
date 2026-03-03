@@ -6,7 +6,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   
   const frontendHost = env.VITE_FRONTEND_HOST || '::'
-  const frontendPort = parseInt(env.VITE_FRONTEND_PORT || '5173', 10)
+  const frontendPort = parseInt(env.VITE_FRONTEND_PORT || '5174', 10)
   const apiBaseUrl = env.VITE_API_BASE_URL || 'http://localhost:8000'
   const wsUrl = env.VITE_WS_URL || 'ws://localhost:8000'
   
@@ -23,6 +23,8 @@ export default defineConfig(({ mode }) => {
       allowedHosts: true,
       hmr: {
         clientPort: frontendPort,
+        // 允许所有网络接口的热更新
+        host: frontendHost,
       },
       proxy: {
         '/api': {

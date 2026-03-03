@@ -1,23 +1,32 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Mic, MicOff, Paperclip, Globe, Square, Brain, ChevronDown, Check } from 'lucide-react';
-
-type ReasoningMode = 'auto' | true | false;
+import { Send, Mic, Globe, Sparkles, Zap, Ban, Square, Plus } from 'lucide-react';
+import { useChatStore } from '@/stores/chatStore';
 
 interface InputAreaProps {
-  onSend: (content: string, reasoning?: ReasoningMode) => void;
+  onSend: (content: string) => void;
   onStop?: () => void;
   disabled?: boolean;
-  isGenerating?: boolean;
+  isStreaming?: boolean;
 }
 
-const InputArea = ({ onSend, onStop, disabled, isGenerating }: InputAreaProps) => {
+const thinkingOptions = [
+  { value: 'auto', label: '自动', icon: Sparkles },
+  { value: 'deep', label: '深度思考', icon: Zap },
+  { value: 'false', label: '关闭思考', icon: Ban },
+] as const;
+
+const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) => {
   const [content, setContent] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
   const [isWebSearch, setIsWebSearch] = useState(false);
-  const [reasoningMode, setReasoningMode] = useState<ReasoningMode>('auto');
-  const [showReasoningDropdown, setShowReasoningDropdown] = useState(false);
+  const [showThinkingDropdown, setShowThinkingDropdown] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  const thinkingMode = useChatStore((state) => state.thinkingMode);
+  const setThinkingMode = useChatStore((state) => state.setThinkingMode);
+  
+  const currentOption = thinkingOptions.find(o => o.value === thinkingMode) || thinkingOptions[0];
+  const CurrentIcon = currentOption.icon;
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -29,7 +38,7 @@ const InputArea = ({ onSend, onStop, disabled, isGenerating }: InputAreaProps) =
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowReasoningDropdown(false);
+        setShowThinkingDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -61,140 +70,127 @@ const InputArea = ({ onSend, onStop, disabled, isGenerating }: InputAreaProps) =
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 pt-2">
-      <div className="relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-primary via-purple-500 to-pink-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
-        <div className="relative bg-bg-secondary/95 backdrop-blur-md border border-border/60 rounded-2xl p-4 shadow-2xl shadow-black/20">
-          <div className="flex items-center justify-between mb-3 px-1 gap-2">
-            <div className="flex items-center gap-1 flex-wrap sm:flex-nowrap">
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setShowReasoningDropdown(!showReasoningDropdown)}
-                  className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs rounded-full transition-all duration-200 whitespace-nowrap ${
-                    reasoningMode !== 'auto' 
-                      ? reasoningMode === true 
-                        ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30'
-                        : 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30'
-                      : 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                  }`}
-                >
-                  {getReasoningIcon(reasoningMode)}
-                  <span className="hidden sm:inline">{getReasoningLabel(reasoningMode)}</span>
-                  <ChevronDown className={`w-3 h-3 transition-transform ${showReasoningDropdown ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {showReasoningDropdown && (
-                  <div className="absolute top-full left-0 mt-1 bg-bg-secondary border border-border rounded-lg shadow-lg py-1 z-50 min-w-[160px] sm:min-w-[140px]">
-                    <button
-                      onClick={() => { setReasoningMode('auto'); setShowReasoningDropdown(false); }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-bg-tertiary transition-colors whitespace-nowrap ${
-                        reasoningMode === 'auto' ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-text-secondary'
-                      }`}
-                    >
-                      {reasoningMode === 'auto' && <Check className="w-3 h-3" />}
-                      <Brain className="w-3.5 h-3.5 text-amber-500" />
-                      <span className="truncate">自动</span>
-                    </button>
-                    <button
-                      onClick={() => { setReasoningMode(true); setShowReasoningDropdown(false); }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-bg-tertiary transition-colors whitespace-nowrap ${
-                        reasoningMode === true ? 'text-green-600 dark:text-green-400 font-medium' : 'text-text-secondary'
-                      }`}
-                    >
-                      {reasoningMode === true && <Check className="w-3 h-3" />}
-                      <Brain className="w-3.5 h-3.5 text-green-500" />
-                      <span className="truncate">开启深度思考</span>
-                    </button>
-                    <button
-                      onClick={() => { setReasoningMode(false); setShowReasoningDropdown(false); }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-bg-tertiary transition-colors whitespace-nowrap ${
-                        reasoningMode === false ? 'text-red-600 dark:text-red-400 font-medium' : 'text-text-secondary'
-                      }`}
-                    >
-                      {reasoningMode === false && <Check className="w-3 h-3" />}
-                      <Brain className="w-3.5 h-3.5 text-red-500" />
-                      <span className="truncate">关闭深度思考</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <button
-                onClick={() => setIsWebSearch(!isWebSearch)}
-                className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs rounded-full transition-all duration-200 whitespace-nowrap ${
-                  isWebSearch 
-                    ? 'bg-primary text-white' 
-                    : 'bg-bg-tertiary text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
-                }`}
-              >
-                <Globe className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">联网搜索</span>
-              </button>
-              
-              <button
-                onClick={() => setIsRecording(!isRecording)}
-                className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs rounded-full transition-all duration-200 whitespace-nowrap ${
-                  isRecording 
-                    ? 'bg-error text-white' 
-                    : 'bg-bg-tertiary text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
-                }`}
-              >
-                {isRecording ? (
-                  <>
-                    <MicOff className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">关闭</span>
-                  </>
-                ) : (
-                  <>
-                    <Mic className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">语音</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs rounded-full bg-bg-tertiary text-text-secondary hover:bg-bg-secondary hover:text-text-primary transition-all duration-200 whitespace-nowrap"
-              >
-                <Paperclip className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">附件</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-end gap-3">
+    <div className="w-full max-w-[1000px] relative px-4 md:px-8">
+      {/* 输入框主体 - 极致纤长且扁平的"指挥棒"感 */}
+      <div className="relative group gemini-aura pointer-events-auto">
+        <div className={`
+          relative flex flex-col w-full
+          bg-[#1E1E1E] transition-all duration-500
+          rounded-[24px] overflow-visible
+          ${isStreaming ? 'ring-[0.5px] ring-primary/20' : ''}
+        `}>
+          {/* 文本输入区 - 纵向极致压缩 50% */}
+          <div className="flex flex-col px-5 pt-3.5 pb-0">
             <textarea
               ref={textareaRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="输入消息..."
-              disabled={disabled}
-              className="flex-1 min-h-[44px] max-h-32 px-4 py-2.5 bg-bg-primary/60 border border-border/40 rounded-xl resize-none focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all duration-200 text-text-primary placeholder-text-tertiary disabled:opacity-50 disabled:cursor-not-allowed shadow-inner"
-              rows={1}
+              placeholder="Ask anything..."
+              className="w-full bg-transparent border-none focus:border-none focus:ring-0 focus:outline-none resize-none p-0 text-text-primary placeholder:text-text-quaternary text-[15px] max-h-[160px] leading-relaxed scrollbar-none min-h-[24px] selection:bg-primary/30"
+              style={{ boxShadow: 'none', border: 'none', outline: 'none' }}
             />
-            
-            {isGenerating ? (
-              <button
-                onClick={onStop}
-                className="flex-shrink-0 w-10 h-10 bg-error/90 hover:bg-error text-white rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Square className="w-4 h-4" />
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={disabled || !content.trim()}
-                className="flex-shrink-0 w-10 h-10 bg-primary/90 hover:bg-primary text-white rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            )}
           </div>
-          
-          <p className="text-center text-xs text-text-quaternary mt-2">
-            AI 可能会产生错误信息，请核实重要内容
-          </p>
+
+          {/* 底部操作区 - 纵向极度紧凑 */}
+          <div className="flex items-center justify-between px-4 pb-2.5">
+            <div className="flex items-center gap-2">
+              {/* 左侧附件按钮 - 极小化 */}
+              <button className="p-1.5 rounded-lg hover:bg-white/5 text-text-tertiary hover:text-text-primary transition-all active:scale-90 flex-shrink-0">
+                <Plus className="w-4 h-4" />
+              </button>
+              
+              {/* 思考模式与搜索 - 极简扁平 */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setShowThinkingDropdown(!showThinkingDropdown)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
+                      thinkingMode === 'deep' 
+                        ? 'bg-primary/10 text-primary' 
+                        : 'text-text-quaternary hover:bg-white/5 hover:text-text-primary'
+                    }`}
+                  >
+                    <CurrentIcon className={`w-4 h-4 flex-shrink-0 ${thinkingMode === 'deep' ? 'animate-pulse' : ''}`} />
+                    <span className="inline whitespace-nowrap">{currentOption.label}</span>
+                  </button>
+                  
+                  {showThinkingDropdown && (
+                    <div className="absolute bottom-full left-0 mb-4 w-48 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-[100]">
+                      {thinkingOptions.map((option) => {
+                        const Icon = option.icon;
+                        return (
+                          <button
+                            key={option.value}
+                            onClick={() => {
+                              setThinkingMode(option.value);
+                              setShowThinkingDropdown(false);
+                            }}
+                            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-all duration-200 ${
+                              thinkingMode === option.value
+                                ? 'bg-white/10 text-white font-bold'
+                                : 'text-text-tertiary hover:bg-white/5 hover:text-text-primary'
+                            }`}
+                          >
+                            <Icon className="w-4 h-4 flex-shrink-0" />
+                            <span className="whitespace-nowrap">{option.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setIsWebSearch(!isWebSearch)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
+                    isWebSearch 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'text-text-quaternary hover:bg-white/5 hover:text-text-primary'
+                  }`}
+                >
+                  <Globe className="w-4 h-4 flex-shrink-0" />
+                  <span className="inline whitespace-nowrap">Search</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 右侧发送与语音 - 圆形按钮风格 */}
+            <div className="flex items-center gap-2">
+              <button className="p-1.5 rounded-full hover:bg-white/5 text-text-tertiary hover:text-text-primary transition-all active:scale-90">
+                <Mic className="w-4 h-4" />
+              </button>
+              
+              {isStreaming ? (
+                <button
+                  onClick={onStop}
+                  className="p-1.5 bg-white text-black rounded-full hover:bg-white/90 transition-all shadow-xl active:scale-95"
+                >
+                  <Square className="w-3.5 h-3.5 fill-current" />
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmit}
+                  disabled={!content.trim() || disabled}
+                  className={`p-1.5 rounded-full transition-all active:scale-95 ${
+                    content.trim() && !disabled
+                      ? 'bg-white text-black hover:bg-white/90 shadow-xl'
+                      : 'bg-white/5 text-white/20 cursor-not-allowed'
+                  }`}
+                >
+                  <Send className="w-3.5 h-3.5 fill-current translate-x-[0.5px]" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* 底部免责声明 - 移出流光边框，消除“蓝色分界线” */}
+      <div className="mt-1 flex justify-center pb-0 pointer-events-auto">
+        <p className="text-[10px] text-text-quaternary font-medium tracking-wide opacity-60 scale-100 origin-top leading-tight">
+          JeikChat can make mistakes. Check important info.
+        </p>
       </div>
     </div>
   );

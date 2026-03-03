@@ -12,7 +12,7 @@ function App() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
-    <div className="h-screen flex">
+    <div className="fixed inset-0 w-full h-full flex overflow-hidden bg-bg-primary">
       <Sidebar 
         isOpen={sidebarOpen} 
         mobileOpen={mobileSidebarOpen}

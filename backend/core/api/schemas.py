@@ -45,12 +45,14 @@ class MessageResponse(BaseModel):
     - id: 消息唯一标识
     - role: 消息角色
     - content: 消息内容
+    - reasoning: 推理过程（可选）
     - timestamp: 时间戳
     - references: 知识库引用（可选，用于 RAG）
     """
     id: str
     role: str
     content: str
+    reasoning: Optional[str] = None
     timestamp: int
     references: Optional[List[dict]] = None
 
@@ -96,6 +98,7 @@ class SendMessageRequest(BaseModel):
     - knowledge_base_ids: 知识库 ID 列表（可选，用于 RAG）
     - reasoning: 深度思考模式（auto/true/false）
     - stream: 是否使用流式响应
+    - thinking: 思考模式 (auto/deep/false)
     """
     content: str
     session_id: Optional[str] = None
@@ -103,6 +106,7 @@ class SendMessageRequest(BaseModel):
     knowledge_base_ids: Optional[List[str]] = None
     reasoning: Optional[Literal["auto", "true", "false"]] = 'auto'
     stream: bool = True
+    thinking: Optional[str] = "auto"
 
 
 class SendMessageResponse(BaseModel):

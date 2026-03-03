@@ -4,112 +4,133 @@
 
 /* 默认使用暗色模式 */
 :root {
-  /* 暗色模式 - 深邃优雅的蓝黑风格 */
-  --primary: #6366F1;
-  --primary-hover: #818CF8;
-  --secondary: #A855F7;
-  --accent: #F59E0B;
-  --success: #34D399;
-  --warning: #FBBF24;
-  --info: #22D3EE;
-  --error: #F87171;
+  /* Gemini 风格高级暗色模式 */
+  --primary: #4285F4;
+  --primary-hover: #5C9AFF;
+  --secondary: #9B72FF;
+  --accent: #F4B400;
+  --success: #0F9D58;
+  --error: #D93025;
   
-  /* 背景色 - 深邃的蓝黑色 */
-  --bg-primary: #0B0E14;
-  --bg-secondary: #12161F;
-  --bg-tertiary: #1A202C;
-  --bg-overlay: rgba(18, 22, 31, 0.92);
+  /* 背景色 - 引入深蓝色相，消除死气沉沉的纯黑 */
+  --bg-primary: #050508; 
+  --bg-secondary: #0F1117; 
+  --bg-tertiary: #1A1D25; 
+  --bg-overlay: rgba(5, 5, 8, 0.85);
   
-  /* 文本色 - 对比度更高的颜色 */
-  --text-primary: #F5F3FF;
-  --text-secondary: #C4B5FD;
-  --text-tertiary: #9CA3AF;
-  --text-quaternary: #6B7280;
+  /* 文本色 - 显著提升可读性 */
+  --text-primary: #FFFFFF;
+  --text-secondary: #E8EAED;
+  --text-tertiary: #BDC1C6;
+  --text-quaternary: #9AA0A6;
   
-  /* 边框色 */
-  --border: #1E2433;
-  --border-hover: #2A3244;
-  
-  /* 阴影 */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.6), 0 6px 12px rgba(0, 0, 0, 0.5);
+  /* 边框色 - 极简流光 */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
 }
 
-* {
-  box-sizing: border-box;
+/* 底部安全区适配工具类 */
+.safe-area-pb {
+  padding-bottom: 8px; /* 默认 fallback */
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
 }
 
-html, body, #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@media (min-width: 768px) {
+  .safe-area-pb {
+    padding-bottom: 16px; /* 桌面端默认 */
+    padding-bottom: 16px; /* 桌面端通常不需要 env，直接固定 */
+  }
+}
+
+/* 高级网格渐变背景 - 动态流光 */
+.mesh-gradient {
   background-color: var(--bg-primary);
-  color: var(--text-primary);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(66, 133, 244, 0.12) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(155, 114, 255, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(217, 101, 112, 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(66, 133, 244, 0.08) 0px, transparent 50%),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+  animation: background-flow 20s ease infinite;
 }
 
-/* 亮色模式 - 可选 */
-.light {
-  --primary: #4F46E5;
-  --primary-hover: #6366F1;
-  --secondary: #7C3AED;
-  --accent: #F59E0B;
-  --success: #10B981;
-  --warning: #F59E0B;
-  --info: #06B6D4;
-  --error: #EF4444;
-  
-  --bg-primary: #F8FAFC;
-  --bg-secondary: #FFFFFF;
-  --bg-tertiary: #F1F5F9;
-  --bg-overlay: rgba(255, 255, 255, 0.9);
-  
-  --text-primary: #1E293B;
-  --text-secondary: #475569;
-  --text-tertiary: #94A3B8;
-  --text-quaternary: #CBD5E1;
-  
-  --border: #E2E8F0;
-  --border-hover: #CBD5E1;
-  
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+@keyframes background-flow {
+  0%, 100% { background-position: 0% 0%; }
+  50% { background-position: 50% 50%; }
 }
 
-/* 毛玻璃效果 */
-.glass-effect {
-  background: var(--bg-overlay);
-  backdrop-filter: blur(24px) saturate(200%);
-  -webkit-backdrop-filter: blur(24px) saturate(200%);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-md);
+/* 极地流光背景 (Polar Aurora) - 极致创意 */
+.mesh-gradient {
+  background: #080808;
+  background-image: 
+    radial-gradient(at 0% 0%, #1a1b26 0%, transparent 50%),
+    radial-gradient(at 100% 0%, #16161e 0%, transparent 50%),
+    radial-gradient(at 50% 50%, #0d0e14 0%, transparent 100%);
+  position: relative;
+  overflow: hidden;
 }
 
-/* 渐变背景 */
-.gradient-bg {
-  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A855F7 100%);
+.mesh-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(66, 133, 244, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(155, 114, 255, 0.05) 0%, transparent 40%);
+  filter: blur(80px);
+  opacity: 0.6;
+  pointer-events: none;
+  animation: aurora-float 20s ease-in-out infinite alternate;
 }
 
-/* 自定义滚动条 - 完全隐藏 */
-.scrollbar-hidden {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+@keyframes aurora-float {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(2%, 2%) scale(1.05); }
 }
 
-.scrollbar-hidden::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari, Opera*/
+/* 基础重置 - 消除所有割裂感 */
+textarea {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
-/* 自定义滚动条 - 细型 */
-.scrollbar-thin {
-  scrollbar-width: thin;
-  scrollbar-color: var(--text-tertiary) transparent;
+/* Gemini 风格灵光边框 (Aura Glow) - 极致高级感 */
+.gemini-aura {
+  position: relative;
+  background: #1E1E1E;
+  border-radius: 28px;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.gemini-aura::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 30px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.gemini-aura:hover::before {
+  background: linear-gradient(135deg, rgba(66, 133, 244, 0.3), rgba(155, 114, 255, 0.3));
+}
+
+.gemini-aura:focus-within::before {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  opacity: 1;
+}
+
+/* 滚动条美化 */
 .scrollbar-thin::-webkit-scrollbar {
   width: 4px;
 }
@@ -119,146 +140,14 @@ html, body, #root {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: var(--text-tertiary);
-  border-radius: 2px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
 }
 
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+.scrollbar-thin:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* 侧边栏项目样式 */
-.sidebar-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: 0.5rem;
-  color: var(--text-secondary);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-}
-
-.sidebar-item:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.sidebar-item.active {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(168, 85, 247, 0.25) 100%);
-  color: #FFFFFF;
-  font-weight: 600;
-  border: 1px solid rgba(99, 102, 241, 0.5);
-}
-
-/* 动画效果 */
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* 消息气泡样式 */
-.message-user {
-  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
-  color: white;
-  border: none;
-}
-
-.message-assistant {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-}
-
-/* 输入框样式 */
-.input-glass {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  transition: all 0.2s ease;
-}
-
-.input-glass:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-}
-
-.input-glass::placeholder {
-  color: var(--text-quaternary);
-}
-
-/* ChatGPT 风格的输入框 */
-.chat-input {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px 16px;
-  color: var(--text-primary);
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.chat-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5), 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.chat-input::placeholder {
-  color: var(--text-tertiary);
-}
-
-/* ChatGPT 风格的按钮 */
-.chat-button {
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.chat-button:hover:not(:disabled) {
-  background: var(--primary-hover);
-  transform: scale(1.02);
-}
-
-.chat-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 选中状态 */
-.selected-item {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(168, 85, 247, 0.25) 100%);
-  border-color: rgba(99, 102, 241, 0.5);
-  color: #FFFFFF;
-}
-
-/* 卡片悬停效果 */
-.card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--border-hover);
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .glass-effect {
-    backdrop-filter: blur(16px) saturate(150%);
-    -webkit-backdrop-filter: blur(16px) saturate(150%);
-  }
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
