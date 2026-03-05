@@ -1,21 +1,23 @@
 """
-提示词配置文件
-从 YAML 文件加载提示词
+提示词模块
 """
 
 from functools import lru_cache
 from pathlib import Path
 import yaml
-from langchain.messages import HumanMessage, SystemMessage
+from typing import List
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
-PROJECT_ROOT = Path(__file__).parent.parent
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+
+TOOL_DESCRIPTIONS = {
+    "web_search": "网页搜索工具，用于获取最新信息",
+    "weather": "天气查询工具，用于获取城市天气",
+    "calculator": "计算器工具，用于数学计算",
+}
 
 
 class Prompts:
-    """
-    提示词配置类
-    """
-
     _instance = None
     _initialized = False
 
@@ -30,88 +32,72 @@ class Prompts:
             Prompts._initialized = True
 
     def _load_prompts(self):
-        """从 YAML 文件加载提示词"""
         prompts_file = PROJECT_ROOT / "app" / "prompts.yaml"
         
         if prompts_file.exists():
             with open(prompts_file, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
             
-            # 聊天相关提示词
             self.CHAT_SYSTEM_PROMPT = data.get("chat", {}).get("system", "")
             self.CHAT_WELCOME_PROMPT = data.get("chat", {}).get("welcome", "")
-
-            # 工具相关提示词
-            self.TOOL_WEB_SEARCH_PROMPT = data.get("tools", {}).get("web_search", "")
-            self.TOOL_CALCULATOR_PROMPT = data.get("tools", {}).get("calculator", "")
-
-            # Agent 提示词
             self.AGENT_SYSTEM_PROMPT = data.get("agent", {}).get("system", "")
-
-            # RAG 提示词
             self.RAG_SYSTEM_PROMPT = data.get("rag", {}).get("system", "")
             self.RAG_NO_CONTEXT_PROMPT = data.get("rag", {}).get("no_context", "")
         else:
-            # 如果文件不存在，使用默认值
             self._load_default_prompts()
 
     def _load_default_prompts(self):
-        """加载默认提示词"""
         self.CHAT_SYSTEM_PROMPT = "你是一个专业的AI客服助手"
         self.CHAT_WELCOME_PROMPT = "欢迎使用JeikChat智能客服！"
-        self.TOOL_WEB_SEARCH_PROMPT = "你是一个专业的搜索助手"
-        self.TOOL_CALCULATOR_PROMPT = "你是一个数学计算助手"
         self.AGENT_SYSTEM_PROMPT = "你是一个智能Agent助手"
         self.RAG_SYSTEM_PROMPT = "你是一个知识库问答助手"
         self.RAG_NO_CONTEXT_PROMPT = "未找到相关信息"
 
-    # ============================================================
-    # 获取提示词的方法
-    # ============================================================
-
     def get_chat_prompt(self) -> str:
-        """获取聊天系统提示词"""
         return self.CHAT_SYSTEM_PROMPT
 
     def get_welcome_prompt(self) -> str:
-        """获取欢迎提示词"""
         return self.CHAT_WELCOME_PROMPT
 
-    def get_tool_prompt(self, tool_name: str) -> str:
-        """获取指定工具的提示词"""
-        tool_prompts = {
-            "web_search": self.TOOL_WEB_SEARCH_PROMPT,
-            "calculator": self.TOOL_CALCULATOR_PROMPT,
-        }
-        return tool_prompts.get(tool_name, "")
-
-    def get_agent_prompt(self) -> str:
-        """获取Agent系统提示词"""
-        return self.AGENT_SYSTEM_PROMPT
+    def get_agent_prompt(self, tool_ids: List[str]) -> str:
+        base_prompt = self.AGENT_SYSTEM_PROMPT or "你是一个智能Agent助手。"
+        
+        if not tool_ids:
+            return base_prompt.replace("{tools}", "目前无可用工具。")
+        
+        tools_desc = []
+        for tid in tool_ids:
+            if tid in TOOL_DESCRIPTIONS:
+                tools_desc.append(f"- {tid}: {TOOL_DESCRIPTIONS[tid]}")
+        
+        if tools_desc:
+            tools_list = "你目前可用的工具：\n" + "\n".join(tools_desc)
+            return base_prompt.replace("{tools}", tools_list)
+        
+        return base_prompt.replace("{tools}", "")
 
     def get_rag_prompt(self) -> str:
-        """获取RAG系统提示词"""
         return self.RAG_SYSTEM_PROMPT
 
     def get_rag_no_context_prompt(self) -> str:
-        """获取RAG无上下文提示词"""
         return self.RAG_NO_CONTEXT_PROMPT
+
+
+def build_messages(system_prompt: str, user_content: str, history: List[dict] = None):
+    """构建消息列表"""
+    messages = [SystemMessage(content=system_prompt)]
     
-
-
-
-
-
-def create_message(systemMsg: str, userMsg: str):
-    """构建消息对象"""
-    messages = [
-        SystemMessage(content=systemMsg),
-        HumanMessage(content=userMsg)
-    ]
+    if history:
+        for msg in history[-10:]:
+            if msg.get("role") == "user":
+                messages.append(HumanMessage(content=msg.get("content", "")))
+            elif msg.get("role") == "assistant":
+                messages.append(AIMessage(content=msg.get("content", "")))
+    
+    messages.append(HumanMessage(content=user_content))
     return messages
+
 
 @lru_cache()
 def get_prompts() -> Prompts:
-    """获取提示词单例"""
     return Prompts()
-

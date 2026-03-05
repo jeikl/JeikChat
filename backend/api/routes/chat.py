@@ -15,7 +15,7 @@ from schemas.chat import SendMessageRequest
 from api.response import success, sse_format, sse_done
 from services.stream import get_stream_manager
 from agent.chatRouterStream import chat_stream, agent_stream
-from app.prompts import get_prompts, create_message
+from agent.prompt import get_prompts, build_messages
 
 router = APIRouter()
 
@@ -56,24 +56,6 @@ def save_message(session_id: str, role: str, content: str, reasoning: str = None
     return message
 
 
-def build_messages(session_id: str, new_content: str) -> List[dict]:
-    """构建消息列表，包含历史上下文"""
-    messages = sessions[session_id].get("messages", [])
-    
-    prompts = get_prompts()
-    system_prompt = {
-        "role": "system",
-        "content": prompts.get_chat_prompt()
-    }
-    
-    result = [system_prompt]
-    
-    for msg in messages[-10:]:
-        result.append({"role": msg["role"], "content": msg["content"]})
-    
-    return result
-
-
 @router.post("/chat/send")
 async def send_message(request: SendMessageRequest, http_request: Request):
     """
@@ -84,7 +66,6 @@ async def send_message(request: SendMessageRequest, http_request: Request):
     prompts = get_prompts()
     system_prompt = prompts.get_chat_prompt()
     logger.info(f"提示词: {system_prompt}")
-    msg = create_message(systemMsg=system_prompt, userMsg=request.content)
     
     session_id = get_session(
         request.session_id, 
@@ -104,6 +85,8 @@ async def send_message(request: SendMessageRequest, http_request: Request):
     task_id = str(uuid.uuid4())
     task = stream_manager.register_task(task_id, session_id)
     
+    history = sessions[session_id].get("messages", [])
+    
     async def stream_generator():
         full_content = ""
         full_reasoning = ""
@@ -113,9 +96,11 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         
         if is_agent_mode:
             stream_func = agent_stream
+            msg = build_messages(prompts.get_agent_prompt(tools), request.content, history)
             logger.info("使用 Agent 模式")
         else:
             stream_func = chat_stream
+            msg = build_messages(system_prompt, request.content, history)
             logger.info("使用聊天流模式")
         
         try:
@@ -130,6 +115,14 @@ async def send_message(request: SendMessageRequest, http_request: Request):
                         logger.info(f"任务被取消，停止生成: task_id={task_id}")
                         break
                     
+                    if chunk.get("reasoning"):
+                        full_reasoning += chunk["reasoning"]
+                        if not client_disconnected:
+                            try:
+                                yield sse_format({"reasoning": chunk["reasoning"]})
+                            except Exception:
+                                client_disconnected = True
+                    
                     if chunk.get("content"):
                         full_content += chunk["content"]
                         if not client_disconnected:
@@ -138,11 +131,7 @@ async def send_message(request: SendMessageRequest, http_request: Request):
                             except Exception:
                                 client_disconnected = True
             else:
-                # 构建包含历史上下文的消息列表
-                history_messages = build_messages(session_id, request.content)
-                # 将历史消息合并到当前消息中
-                full_messages = history_messages + [{"role": "user", "content": request.content}]
-                async for chunk in stream_func(model, full_messages, thinking, task.is_cancelled):
+                async for chunk in stream_func(model, msg, thinking, task.is_cancelled):
                     if await http_request.is_disconnected():
                         if not client_disconnected:
                             logger.info(f"客户端断开连接，后台继续生成: task_id={task_id}")

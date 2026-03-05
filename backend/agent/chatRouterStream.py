@@ -4,27 +4,31 @@
 """
 import asyncio
 from typing import List, Optional, Callable, AsyncGenerator
+from langchain.tools import tool
 from langchain.agents import create_agent
 import logging
 
 from services.llm import create_client
-from app.prompts import get_prompts
+from agent.prompt import get_prompts, build_messages
 from agent.tools.web import search as web_search_func
 from agent.tools.werther import search as weather_search_func
 
 logger = logging.getLogger(__name__)
 
 
+@tool
 def get_weather(city: str) -> str:
     """获取指定城市的天气。"""
     return weather_search_func(city)
 
 
+@tool
 def web_search(query: str) -> str:
     """搜索互联网获取最新信息。"""
     return web_search_func(query)
 
 
+@tool
 def calculator(expression: str) -> str:
     """计算数学表达式。"""
     try:
@@ -32,6 +36,13 @@ def calculator(expression: str) -> str:
         return str(result)
     except Exception as e:
         return f"计算错误: {str(e)}"
+
+
+TOOL_MAP = {
+    "web_search": web_search,
+    "weather": get_weather,
+    "calculator": calculator,
+}
 
 
 async def chat_stream(
@@ -85,21 +96,13 @@ async def agent_stream(
     """
     prompts = get_prompts()
     
-    tools = []
-    if "web_search" in tool_ids:
-        tools.append(web_search)
-    if "weather" in tool_ids:
-        tools.append(get_weather)
-    if "calculator" in tool_ids:
-        tools.append(calculator)
+    selected_tools = [TOOL_MAP[tid] for tid in tool_ids if tid in TOOL_MAP]
     
-    if not tools:
+    if not selected_tools:
         yield {"content": "未找到可用的工具"}
         return
     
-    system_prompt = prompts.get_agent_prompt()
-    if not system_prompt:
-        system_prompt = "你是一个智能助手，可以通过调用工具来完成任务。"
+    system_prompt = prompts.get_agent_prompt(tool_ids)
     
     user_input = ""
     for m in msg:
@@ -114,7 +117,7 @@ async def agent_stream(
     
     agent = create_agent(
         client,
-        tools=tools,
+        tools=selected_tools,
         system_prompt=system_prompt,
     )
     
