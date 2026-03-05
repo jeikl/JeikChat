@@ -76,8 +76,6 @@ const MessageItem = ({ message }: MessageItemProps) => {
   const isUser = message.role === 'user';
   const isThinking = message.thinking && !message.content;
   const hasReasoning = message.reasoning && message.reasoning.length > 0;
-  const hasInternalContent = message.internalContent && message.internalContent.length > 0;
-  
   // 默认展开正在生成的推理，历史消息也保持展开（除非用户手动收起）
   const [showReasoning, setShowReasoning] = useState(true);
   const [showInternalScrollButton, setShowInternalScrollButton] = useState(false);
@@ -178,7 +176,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
   };
 
   return (
-    <div className={`w-full py-1.5 md:py-2 transition-colors ${isUser ? '' : ''}`}>
+    <div className={`w-full py-1.5 md:py-2 transition-colors`}>
       <div className={`max-w-[1400px] mx-auto px-3 md:px-8 flex gap-2 md:gap-3 ${isUser ? 'flex-row-reverse items-start' : ''}`}>
         {/* 头像 - 始终显示 */}
         <div className={`flex-shrink-0 ${isUser ? 'mt-0.5' : 'mt-1 md:mt-1'}`}>
@@ -231,45 +229,45 @@ const MessageItem = ({ message }: MessageItemProps) => {
                       className="px-3 md:px-4 pb-3 md:pb-6 animate-in fade-in slide-in-from-top-2 duration-500 w-full overflow-y-auto scrollbar-thin"
                     >
                       <div className="text-[13px] md:text-[14px] text-gray-300/90 leading-relaxed max-w-none border-t border-white/[0.05] pt-2">
-                        {hasInternalContent && (
-                          <div className="mb-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                            <div className="text-xs text-blue-400 font-medium mb-1">🤖 代理过程</div>
-                            <pre className="text-xs text-gray-300 whitespace-pre-wrap font-mono">{message.internalContent}</pre>
-                          </div>
-                        )}
-                        <ReactMarkdown 
-                          children={message.reasoning || ''} 
-                          remarkPlugins={[remarkGfm]}
-                          components={{
+                        {/* Agent 工具调用信息使用 pre 标签保持换行格式 */}
+                        {message.reasoning?.includes('🧠') || message.reasoning?.includes('🛠️') ? (
+                          <pre className="whitespace-pre-wrap font-mono text-xs text-gray-300 break-all">
+                            {message.reasoning}
+                          </pre>
+                        ) : (
+                          <ReactMarkdown 
+                            children={message.reasoning || ''} 
+                            remarkPlugins={[remarkGfm]}
+                            components={{
                             code({ node, className, children, ...props }) {
                               const match = /language-(\w+)/.exec(className || '');
-                            const inline = !match;
-                            return inline ? (
-                              <code className={`px-1 py-0.5 rounded bg-white/[0.05] text-primary text-[12px] font-mono`} {...props}>
-                                {children}
-                              </code>
-                            ) : (
-                              <div className="my-2 rounded-lg overflow-hidden border border-white/[0.08] bg-[#161b22]">
-                                <div className="px-3 py-1.5 bg-[#0d1117] border-b border-white/[0.06] flex items-center justify-between">
-                                  <span className="text-[10px] text-text-quaternary font-mono uppercase">{match?.[1] || 'code'}</span>
-                                  <button 
-                                    onClick={async (e) => {
-                                      e.stopPropagation();
-                                      const success = await copyToClipboard(String(children).replace(/\n$/, ''));
-                                      if (success) {
-                                        const btn = e.currentTarget;
-                                        const originalText = btn.innerHTML;
-                                        btn.innerHTML = 'Copied!';
-                                        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-                                      }
-                                    }}
-                                    className="text-[10px] text-text-quaternary hover:text-text-primary transition-colors flex items-center gap-1"
-                                  >
-                                    <Copy className="w-3 h-3" />
-                                    <span>Copy</span>
-                                  </button>
-                                </div>
-                                <div className="p-3 overflow-x-auto text-[12px] code-block-wrapper">
+                              const inline = !match;
+                              return inline ? (
+                                <code className={`px-1 py-0.5 rounded bg-white/[0.05] text-primary text-[12px] font-mono`} {...props}>
+                                  {children}
+                                </code>
+                              ) : (
+                                <div className="my-2 rounded-lg overflow-hidden border border-white/[0.08] bg-[#161b22]">
+                                  <div className="px-3 py-1.5 bg-[#0d1117] border-b border-white/[0.06] flex items-center justify-between">
+                                    <span className="text-[10px] text-text-quaternary font-mono uppercase">{match?.[1] || 'code'}</span>
+                                    <button 
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        const success = await copyToClipboard(String(children).replace(/\n$/, ''));
+                                        if (success) {
+                                          const btn = e.currentTarget;
+                                          const originalText = btn.innerHTML;
+                                          btn.innerHTML = 'Copied!';
+                                          setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+                                        }
+                                      }}
+                                      className="text-[10px] text-text-quaternary hover:text-text-primary transition-colors flex items-center gap-1"
+                                    >
+                                      <Copy className="w-3 h-3" />
+                                      <span>Copy</span>
+                                    </button>
+                                  </div>
+                                  <div className="p-3 overflow-x-auto text-[12px] code-block-wrapper">
                                     <SyntaxHighlighter
                                       children={String(children).replace(/\n$/, '')}
                                       style={customCodeTheme as any}
@@ -324,11 +322,11 @@ const MessageItem = ({ message }: MessageItemProps) => {
                             td: ({ node, ...props }) => <td className="px-2 py-1 border-b border-white/[0.05] text-center align-middle" {...props} />,
                             tr: ({ node, ...props }) => <tr className="hover:bg-white/[0.03]" {...props} />,
                             hr: ({ node, ...props }) => <hr className="my-2 border-white/[0.08]" {...props} />,
-                            del: ({ node, ...props }) => <del className="line-through text-text-quaternary/60" {...props} />,
+                            del: ({ node, ...props }) => <del className="no-underline text-text-quaternary/60" {...props} />,
                             strong: ({ node, ...props }) => <strong className="font-bold text-white/95" {...props} />,
                             em: ({ node, ...props }) => <em className="italic text-text-tertiary/90" {...props} />,
                           }}
-                        />
+                        />)}
                       </div>
 
                       {/* 底部收起按钮 - 手机端更明显 */}
@@ -366,7 +364,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
             )}
 
             {/* 内容气泡和操作栏 */}
-            <>
+            
               {/* 内容气泡 - 采用半透明"磨砂玻璃"质感，优雅悬浮 */}
                 <div className={`
                   ${isUser 
@@ -390,7 +388,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
                           ) : (
                             <div className="my-8 rounded-3xl overflow-hidden border border-white/[0.08] bg-[#161b22]">
                               <div className="flex items-center justify-between px-6 py-3 bg-[#0d1117] border-b border-white/[0.06]">
-                                <span className="text-[10px] text-text-quaternary font-mono uppercase tracking-[0.2em]">{match[1]}</span>
+                                <span className="text-[10px] text-text-quaternary font-mono uppercase tracking-[0.2em]">{match?.[1] || 'text'}</span>
                                 <button 
                                   onClick={() => navigator.clipboard.writeText(String(children))}
                                   className="text-[10px] text-text-quaternary hover:text-text-secondary flex items-center gap-2 transition-colors uppercase font-bold tracking-wider"
@@ -403,7 +401,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
                                 <SyntaxHighlighter
                                   children={String(children).replace(/\n$/, '')}
                                   style={customCodeTheme as any}
-                                  language={match[1]}
+                                  language={match?.[1] || 'text'}
                                   PreTag="div"
                                   customStyle={{ margin: '0', background: 'transparent', padding: '0' }}
                                   wrapLines={false}
@@ -421,7 +419,6 @@ const MessageItem = ({ message }: MessageItemProps) => {
                           <ol className="my-3 pl-6 list-decimal marker:text-gray-400 marker:font-bold space-y-1" {...props} />
                         ),
                         li: ({ node, ...props }) => {
-                          // ... same logic ...
                           const text = props.children?.toString() || '';
                           const isFolderStructure = text.includes('├──') || text.includes('└──');
                           
@@ -473,7 +470,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
                         td: ({ node, ...props }) => <td className="px-3 py-2.5 border-b border-white/[0.05] text-text-primary text-center align-middle" {...props} />,
                         tr: ({ node, ...props }) => <tr className="hover:bg-white/[0.03] transition-colors" {...props} />,
                         hr: ({ node, ...props }) => <hr className="my-8 border-white/[0.08]" {...props} />,
-                        del: ({ node, ...props }) => <del className="line-through text-text-tertiary" {...props} />,
+                        del: ({ node, ...props }) => <del className="no-underline text-text-tertiary" {...props} />,
                         input: ({ node, ...props }) => {
                           if (props.type === 'checkbox') {
                             return (
@@ -555,7 +552,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
                     })()}
                   </span>
                 </div>
-            </>
+            
           </div>
         </div>
       </div>

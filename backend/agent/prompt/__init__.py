@@ -7,17 +7,17 @@ from pathlib import Path
 import yaml
 from typing import List
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
-
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
-TOOL_DESCRIPTIONS = {
-    "web_search": "网页搜索工具，用于获取最新信息",
-    "weather": "天气查询工具，用于获取城市天气",
-    "calculator": "计算器工具，用于数学计算",
-}
+# TOOL_DESCRIPTIONS = {
+#     "web_search": "网页搜索工具，用于获取最新信息",
+#     "weather": "天气查询工具，用于获取城市天气",
+#     "calculator": "计算器工具，用于数学计算",
+# }
 
 
 class Prompts:
+    
     _instance = None
     _initialized = False
 
@@ -60,12 +60,15 @@ class Prompts:
         return self.CHAT_WELCOME_PROMPT
 
     def get_agent_prompt(self, tool_ids: List[str]) -> str:
-        base_prompt = self.AGENT_SYSTEM_PROMPT or "你是一个智能Agent助手。"
+        from agent.chatRouterStream import tools
         
+        base_prompt = self.AGENT_SYSTEM_PROMPT or "你是一个智能Agent助手。"
         tools_desc = []
         for tid in tool_ids:
-            if tid in TOOL_DESCRIPTIONS:
-                tools_desc.append(f"- {tid}: {TOOL_DESCRIPTIONS[tid]}")
+            for tool in tools:
+                if tool.name == tid:
+                    tools_desc.append(f"- {tool.name}: {tool.description}")
+                    break
         
         if tools_desc:
             tools_list = "你目前可用的工具：\n" + "\n".join(tools_desc)
@@ -80,19 +83,26 @@ class Prompts:
         return self.RAG_NO_CONTEXT_PROMPT
 
 
-def build_messages(system_prompt: str, user_content: str, history: List[dict] = None):
+def build_messages(system_prompt: str, user_content: str, history: List[dict] = None, agent: bool = False):
     """构建消息列表"""
-    messages = [SystemMessage(content=system_prompt)]
+
+    # 初始化消息列表
+    msg_list = [SystemMessage(content=system_prompt)]
     
     if history:
         for msg in history[-10:]:
             if msg.get("role") == "user":
-                messages.append(HumanMessage(content=msg.get("content", "")))
+                msg_list.append(HumanMessage(content=msg.get("content", "")))
             elif msg.get("role") == "assistant":
-                messages.append(AIMessage(content=msg.get("content", "")))
+                msg_list.append(AIMessage(content=msg.get("content", "")))
     
-    messages.append(HumanMessage(content=user_content))
-    return messages
+    msg_list.append(HumanMessage(content=user_content))
+    
+    # agent 模式返回 dict 格式，普通模式返回 list
+    if agent:
+        return {"messages": user_content}
+    else:
+        return msg_list
 
 
 @lru_cache()

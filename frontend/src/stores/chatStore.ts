@@ -1,214 +1,185 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Message, ChatSession } from '@/types/chat';
+import { ChatSession, Message } from '@/types/chat';
+import { v4 as uuidv4 } from 'uuid';
 import { useSettingsStore } from './settingsStore';
-import { useKnowledgeStore } from './knowledgeStore';
-import { chatApi } from '@/services/api';
 
-interface ChatStore {
+interface ChatState {
   sessions: ChatSession[];
   currentSessionId: string | null;
   isLoading: boolean;
   isStreaming: boolean;
-  thinkingMode: 'auto' | 'deep' | 'false';
   abortController: AbortController | null;
+  thinkingMode: 'auto' | 'deep' | 'false';
+  selectedKnowledgeBaseIds: string[];
+  selectedToolIds: string[];
   
+  // Actions
   addSession: (session: ChatSession) => void;
-  removeSession: (sessionId: string) => void;
+  deleteSession: (sessionId: string) => void;
   setCurrentSession: (sessionId: string | null) => void;
   addMessage: (sessionId: string, message: Message) => void;
   updateMessage: (sessionId: string, messageId: string, updates: Partial<Message>) => void;
-  deleteMessage: (sessionId: string, messageId: string) => void;
-  deleteSession: (sessionId: string) => void;
-  updateSession: (sessionId: string, updates: Partial<ChatSession>) => void;
-  setLoading: (loading: boolean) => void;
-  setStreaming: (streaming: boolean) => void;
+  clearMessages: (sessionId: string) => void;
+  sendMessage: (content: string, sessionId?: string) => Promise<void>;
+  stopGeneration: () => void;
   setThinkingMode: (mode: 'auto' | 'deep' | 'false') => void;
-  clearAllSessions: () => void;
-  sendMessage: (content: string) => Promise<void>;
-  stopGenerating: () => Promise<void>;
+  updateSession: (sessionId: string, updates: Partial<ChatSession>) => void;
+  setSelectedKnowledgeBaseIds: (ids: string[]) => void;
+  setSelectedToolIds: (ids: string[]) => void;
 }
 
-export const useChatStore = create<ChatStore>()(
+export const useChatStore = create<ChatState>()(
   persist(
     (set, get) => ({
-      sessions: [{
-        id: 'default-session',
-        title: '默认对话',
-        messages: [],
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        isDefault: true
-      }],
-      currentSessionId: 'default-session',
+      sessions: [],
+      currentSessionId: null,
       isLoading: false,
       isStreaming: false,
-      thinkingMode: 'auto',
       abortController: null,
-
-      setThinkingMode: (mode) => set({ thinkingMode: mode }),
-
-      addSession: (session) =>
-        set((state) => ({
-          sessions: [session, ...state.sessions],
-          currentSessionId: session.id,
-        })),
-
-      removeSession: (sessionId) =>
-        set((state) => ({
-          sessions: state.sessions.filter((s) => s.id !== sessionId),
-          currentSessionId:
-            state.currentSessionId === sessionId ? null : state.currentSessionId,
-        })),
-
-      deleteSession: (sessionId) =>
-        set((state) => ({
-          sessions: state.sessions.filter((s) => s.id !== sessionId),
-          currentSessionId:
-            state.currentSessionId === sessionId ? null : state.currentSessionId,
-        })),
-
-      updateSession: (sessionId, updates) =>
-        set((state) => ({
-          sessions: state.sessions.map((s) =>
-            s.id === sessionId ? { ...s, ...updates } : s
-          ),
-        })),
-
+      thinkingMode: 'auto',
+      selectedKnowledgeBaseIds: [],
+      selectedToolIds: [],
+      
+      addSession: (session) => set((state) => ({
+        sessions: [...state.sessions, session],
+        currentSessionId: session.id,
+      })),
+      
+      deleteSession: (sessionId) => set((state) => ({
+        sessions: state.sessions.filter((s) => s.id !== sessionId),
+        currentSessionId: state.currentSessionId === sessionId ? null : state.currentSessionId,
+      })),
+      
       setCurrentSession: (sessionId) => set({ currentSessionId: sessionId }),
-
-      addMessage: (sessionId, message) =>
-        set((state) => ({
-          sessions: state.sessions.map((s) =>
-            s.id === sessionId
-              ? { ...s, messages: [...s.messages, message], updatedAt: Date.now() }
-              : s
-          ),
-        })),
-
-      updateMessage: (sessionId, messageId, updates) =>
-        set((state) => ({
-          sessions: state.sessions.map((s) =>
-            s.id === sessionId
-              ? {
-                  ...s,
-                  messages: s.messages.map((m) =>
-                    m.id === messageId ? { ...m, ...updates } : m
-                  ),
-                }
-              : s
-          ),
-        })),
-
-      deleteMessage: (sessionId, messageId) =>
-        set((state) => ({
-          sessions: state.sessions.map((s) =>
-            s.id === sessionId
-              ? { ...s, messages: s.messages.filter((m) => m.id !== messageId) }
-              : s
-          ),
-        })),
-
-      setLoading: (loading) => set({ isLoading: loading }),
-      setStreaming: (streaming) => set({ isStreaming: streaming }),
-
-      clearAllSessions: () => set({ sessions: [], currentSessionId: null }),
-
-      sendMessage: async (content) => {
-        set({ isLoading: true, isStreaming: true });
+      
+      addMessage: (sessionId, message) => set((state) => ({
+        sessions: state.sessions.map((session) =>
+          session.id === sessionId
+            ? { ...session, messages: [...session.messages, message] }
+            : session
+        ),
+      })),
+      
+      updateMessage: (sessionId, messageId, updates) => set((state) => ({
+        sessions: state.sessions.map((session) =>
+          session.id === sessionId
+            ? {
+                ...session,
+                messages: session.messages.map((msg) =>
+                  msg.id === messageId ? { ...msg, ...updates } : msg
+                ),
+              }
+            : session
+        ),
+      })),
+      
+      clearMessages: (sessionId) => set((state) => ({
+        sessions: state.sessions.map((session) =>
+          session.id === sessionId ? { ...session, messages: [] } : session
+        ),
+      })),
+      
+      setThinkingMode: (mode) => set({ thinkingMode: mode }),
+      
+      updateSession: (sessionId, updates) => set((state) => ({
+        sessions: state.sessions.map((session) =>
+          session.id === sessionId ? { ...session, ...updates } : session
+        ),
+      })),
+      
+      setSelectedKnowledgeBaseIds: (ids) => set({ selectedKnowledgeBaseIds: ids }),
+      
+      setSelectedToolIds: (ids) => set({ selectedToolIds: ids }),
+      
+      stopGeneration: () => {
+        const { abortController } = get();
+        if (abortController) {
+          abortController.abort();
+          set({ abortController: null, isStreaming: false });
+        }
+      },
+      
+      sendMessage: async (content: string, sessionId?: string) => {
+        const { 
+          currentSessionId, 
+          addSession, 
+          addMessage,
+          thinkingMode,
+          selectedKnowledgeBaseIds,
+          // selectedToolIds, // 移除这里的解构，使用 SettingsStore 中的
+          updateSession,
+        } = get();
         
-        const activeConfig = useSettingsStore.getState().getActiveConfig();
-        const model = activeConfig?.model;
-        const selectedToolIds = useSettingsStore.getState().selectedToolIds;
-        const selectedKnowledgeBaseIds = useKnowledgeStore.getState().selectedKnowledgeIds;
+        // 从 SettingsStore 获取工具选择状态
+        const settingsState = useSettingsStore.getState();
+        const selectedToolIds = settingsState.selectedToolIds;
 
-        let sessionId = get().currentSessionId;
+        // 获取当前激活的模型配置，如果没有则尝试获取第一个配置，再没有则使用默认值
+        const activeConfig = settingsState.getActiveConfig();
+        const firstConfig = settingsState.configs?.[0];
+        const activeModelId = activeConfig?.model || firstConfig?.model || 'qwen3.5-plus';
+
+        const targetSessionId = sessionId || currentSessionId;
         
-        // 如果没有当前会话，创建一个新的
-        if (!sessionId) {
-          const newSessionId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-          // 使用用户输入的前30个字符作为标题
-          const title = content.trim().substring(0, 30) + (content.length > 30 ? '...' : '');
+        // 如果没有指定会话，创建新会话
+        if (!targetSessionId) {
           const newSession: ChatSession = {
-            id: newSessionId,
-            title: title || '新对话', // 确保有标题
+            id: uuidv4(),
+            title: content.slice(0, 30) + (content.length > 30 ? '...' : ''),
             messages: [],
             createdAt: Date.now(),
             updatedAt: Date.now(),
+            modelId: activeModelId,
           };
-          get().addSession(newSession);
-          sessionId = newSessionId;
+          addSession(newSession);
+          sessionId = newSession.id;
         } else {
-          // 如果是现有会话，检查是否是"新对话"且消息为空（刚创建），则重命名
-          const currentSession = get().sessions.find(s => s.id === sessionId);
-          // 注意：default-session 不应该被重命名
-          if (currentSession && 
-              currentSession.id !== 'default-session' && 
-              currentSession.title === '新对话' && 
-              currentSession.messages.length === 0) {
-            const title = content.trim().substring(0, 30) + (content.length > 30 ? '...' : '');
-            get().updateSession(sessionId, { title: title || '新对话' });
-          }
-          
-          // 确保 currentSession 存在，防止 default-session 被意外删除后这里为 undefined
-          if (!currentSession && sessionId === 'default-session') {
-            const newDefaultSession: ChatSession = {
-              id: 'default-session',
-              title: '默认对话',
-              messages: [],
-              createdAt: Date.now(),
-              updatedAt: Date.now(),
-              isDefault: true
-            };
-            get().addSession(newDefaultSession);
-          }
+          sessionId = targetSessionId;
         }
-
-        // 再次确认 sessionId 有效
-        if (!get().sessions.some(s => s.id === sessionId)) {
-           console.error('Session not found, attempting to recover:', sessionId);
-           // 如果 session 真的不见了，强制新建一个临时 session 避免崩溃
-           const recoverySession: ChatSession = {
-             id: sessionId,
-             title: 'Recovered Session',
-             messages: [],
-             createdAt: Date.now(),
-             updatedAt: Date.now(),
-             isDefault: sessionId === 'default-session'
-           };
-           get().addSession(recoverySession);
+        
+        // 确保会话有模型ID (修复旧数据)
+        const currentSession = get().sessions.find(s => s.id === sessionId);
+        if (currentSession && !currentSession.modelId) {
+            updateSession(sessionId!, { modelId: activeModelId });
         }
-
-        const userMessageId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        
+        // 添加用户消息
         const userMessage: Message = {
-          id: userMessageId,
+          id: uuidv4(),
           role: 'user',
           content,
           timestamp: Date.now(),
         };
-        get().addMessage(sessionId, userMessage);
-
-        const assistantMessageId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        addMessage(sessionId!, userMessage);
+        
+        set({ isLoading: true, isStreaming: true });
+        
+        // 创建助手消息（初始为空，用于流式更新）
+        const assistantMessageId = uuidv4();
         const assistantMessage: Message = {
           id: assistantMessageId,
           role: 'assistant',
           content: '',
           timestamp: Date.now(),
+          isStreaming: true,
           thinking: true,
           reasoning: '',
-          hasReasoning: false,
           reasoningExpanded: true,
         };
-        get().addMessage(sessionId, assistantMessage);
+        addMessage(sessionId!, assistantMessage);
 
         let fullContent = '';
         let fullReasoning = '';
-        let fullInternalContent = '';
         const abortController = new AbortController();
         set({ abortController });
 
         try {
-          console.log('发送请求:', { content, sessionId, model, thinking: get().thinkingMode });
+          // 重新获取会话以确保 modelId 已更新
+          const sessionToSend = get().sessions.find(s => s.id === sessionId);
+          const modelIdToSend = sessionToSend?.modelId || activeModelId;
+          
+          console.log('发送请求:', { content, sessionId, model: modelIdToSend, thinking: thinkingMode });
           
           const response = await fetch('/api/chat/send', {
             method: 'POST',
@@ -218,25 +189,22 @@ export const useChatStore = create<ChatStore>()(
             body: JSON.stringify({
               content,
               sessionId,
-              model,
+              model: modelIdToSend,
               knowledgeBaseIds: selectedKnowledgeBaseIds,
               tools: selectedToolIds,
               stream: true,
-              thinking: get().thinkingMode,
+              thinking: thinkingMode,
             }),
             signal: abortController.signal,
           });
 
           console.log('收到响应:', response.status, response.statusText);
-          console.log('响应类型:', response.type);
 
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
 
           const reader = response.body?.getReader();
-          console.log('Reader:', reader);
-          
           const decoder = new TextDecoder();
           
           if (!reader) {
@@ -281,39 +249,21 @@ export const useChatStore = create<ChatStore>()(
                     console.log('后端报告生成被取消');
                   }
                   
+                  // Agent 流的工具调用信息通过 reasoning 字段返回
                   if (parsed.reasoning) {
-                    if (get().thinkingMode !== 'false') {
-                      get().updateMessage(sessionId, assistantMessageId, {
-                        thinking: false,
-                      });
-                    }
                     fullReasoning += parsed.reasoning;
-                    get().updateMessage(sessionId, assistantMessageId, {
+                    get().updateMessage(sessionId!, assistantMessageId, {
                       reasoning: fullReasoning,
                     });
                   }
                   
-                  if (parsed.content) {
-                    console.log('Received content:', parsed.content, 'thinking:', parsed.thinking);
-                    
-                    if (get().thinkingMode !== 'false') {
-                      get().updateMessage(sessionId, assistantMessageId, {
-                        thinking: false,
-                      });
-                    }
-                    
-                    // 如果是 thinking 内容，添加到 internalContent
-                    if (parsed.thinking) {
-                      fullInternalContent += parsed.content;
-                      get().updateMessage(sessionId, assistantMessageId, {
-                        internalContent: fullInternalContent,
-                      });
-                    } else {
-                      fullContent += parsed.content;
-                      get().updateMessage(sessionId, assistantMessageId, {
-                        content: fullContent,
-                      });
-                    }
+                  // 普通内容通过 content 字段返回
+                  if (parsed.content !== undefined) {
+                    fullContent += parsed.content;
+                    get().updateMessage(sessionId!, assistantMessageId, {
+                      content: fullContent,
+                      thinking: false,
+                    });
                   }
                   
                   if (parsed.done) {
@@ -325,6 +275,7 @@ export const useChatStore = create<ChatStore>()(
                   }
                 } catch (e) {
                   // 跳过无效 JSON
+                  console.error('Parse error:', e);
                 }
               }
             }
@@ -332,8 +283,8 @@ export const useChatStore = create<ChatStore>()(
 
           // 如果被取消，更新消息状态
           if (isCancelled) {
-            get().updateMessage(sessionId, assistantMessageId, {
-              content: fullContent, // 仅使用已生成的内容，不强制替换为“生成已停止”
+            get().updateMessage(sessionId!, assistantMessageId, {
+              content: fullContent,
               isCancelled: true,
             });
           }
@@ -342,7 +293,7 @@ export const useChatStore = create<ChatStore>()(
           if ((error as Error).name === 'AbortError') {
             console.log('请求被用户取消');
             // 更新消息显示已停止，但保留已生成的内容
-            get().updateMessage(sessionId, assistantMessageId, {
+            get().updateMessage(sessionId!, assistantMessageId, {
               thinking: false,
               content: fullContent,
               isCancelled: true,
@@ -350,7 +301,7 @@ export const useChatStore = create<ChatStore>()(
           } else {
             console.error('发送消息失败:', error);
             const errorMessage: Message = {
-              id: `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+              id: uuidv4(),
               role: 'assistant',
               content: '抱歉，发送消息时出现错误，请稍后再试。',
               timestamp: Date.now(),
@@ -359,35 +310,20 @@ export const useChatStore = create<ChatStore>()(
           }
         } finally {
           set({ isLoading: false, isStreaming: false, abortController: null });
+          // 最终更新，标记流式传输结束
+          get().updateMessage(sessionId!, assistantMessageId, {
+            isStreaming: false,
+            thinking: false,
+          });
         }
-      },
-
-      stopGenerating: async () => {
-        const { abortController, currentSessionId } = get();
-        
-        // 1. 先中断前端请求
-        if (abortController) {
-          abortController.abort();
-        }
-        
-        // 2. 调用后端 API 真正停止与大模型的通信
-        if (currentSessionId) {
-          try {
-            const result = await chatApi.stopGeneration(currentSessionId);
-            console.log('后端停止生成:', result);
-          } catch (error) {
-            console.error('停止生成失败:', error);
-          }
-        }
-        
-        set({ isLoading: false, isStreaming: false, abortController: null });
       },
     }),
     {
       name: 'chat-storage',
       partialize: (state) => ({
-        sessions: state.sessions.slice(0, 50),
+        sessions: state.sessions,
         currentSessionId: state.currentSessionId,
+        thinkingMode: state.thinkingMode,
       }),
     }
   )

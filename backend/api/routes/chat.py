@@ -2,6 +2,7 @@
 聊天 API 路由
 """
 
+import sys
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from typing import Optional, List
@@ -96,47 +97,21 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         logger.info(f"模式判断: is_agent_mode={is_agent_mode}")
         if is_agent_mode:
             stream_func = agent_stream
-            msg = build_messages(prompts.get_agent_prompt(tools), request.content, history)
+            system_prompt = prompts.get_agent_prompt(tools)
+            msg = request.content
             logger.info("使用 Agent 模式")
+
         else:
-            stream_func = chat_stream
-            msg = build_messages(prompts.get_chat_prompt(), request.content, history)
+            # stream_func = chat_stream
+            system_prompt = prompts.get_chat_prompt()
+            msg = build_messages(system_prompt, request.content, history, agent=False)
             logger.info("使用聊天流模式")
-        
+         
+
+        print(f"提示词: {system_prompt}")
         try:
             if is_agent_mode:
-                async for chunk in stream_func(model, msg, thinking, tools, task.is_cancelled):
-                    if await http_request.is_disconnected():
-                        if not client_disconnected:
-                            logger.info(f"客户端断开连接，后台继续生成: task_id={task_id}")
-                            client_disconnected = True
-                    
-                    if task.is_cancelled:
-                        logger.info(f"任务被取消，停止生成: task_id={task_id}")
-                        break
-                    
-                    thinking_flag = chunk.get("thinking", False)
-                    
-                    if chunk.get("reasoning"):
-                        full_reasoning += chunk["reasoning"]
-                        if not client_disconnected:
-                            try:
-                                yield sse_format({"reasoning": chunk["reasoning"]})
-                            except Exception:
-                                client_disconnected = True
-                    
-                    if chunk.get("content"):
-                        full_content += chunk["content"]
-                        if not client_disconnected:
-                            try:
-                                yield sse_format({
-                                    "content": chunk["content"],
-                                    "thinking": thinking_flag
-                                })
-                            except Exception:
-                                client_disconnected = True
-            else:
-                async for chunk in stream_func(model, msg, thinking, task.is_cancelled):
+                async for chunk in agent_stream(model, msg, thinking, tools, system_prompt, task.is_cancelled):
                     if await http_request.is_disconnected():
                         if not client_disconnected:
                             logger.info(f"客户端断开连接，后台继续生成: task_id={task_id}")
@@ -161,6 +136,36 @@ async def send_message(request: SendMessageRequest, http_request: Request):
                                 yield sse_format({"content": chunk["content"]})
                             except Exception:
                                 client_disconnected = True
+            else:
+                async for chunk in chat_stream(model, msg, thinking, task.is_cancelled):
+                    if await http_request.is_disconnected():
+                        if not client_disconnected:
+                            logger.info(f"客户端断开连接，后台继续生成: task_id={task_id}")
+                            client_disconnected = True
+                    
+                    if task.is_cancelled:
+                        logger.info(f"任务被取消，停止生成: task_id={task_id}")
+                        break
+                    
+                    if chunk.get("reasoning"):
+                        full_reasoning += chunk["reasoning"]
+                        if not client_disconnected:
+                            try:
+                                yield sse_format({"reasoning": chunk["reasoning"]})
+                            except Exception:
+                                client_disconnected = True
+                    
+                    if chunk.get("content"):
+                        full_content += chunk["content"]
+                        if not client_disconnected:
+                            try:
+                                yield sse_format({"content": chunk["content"]})
+                            except Exception:
+                                client_disconnected = True
+            
+            # 保存助手回复到会话历史
+            if full_content or full_reasoning:
+                save_message(session_id, "assistant", full_content, full_reasoning)
             
             if not client_disconnected:
                 yield sse_format({

@@ -85,77 +85,89 @@ async def chat_stream(
 
 async def agent_stream(
     llm: str,
-    msg: list,
+    msg,
     thinking: str,
     tool_ids: List[str],
+    system_prompt: str = "",
     should_stop: Optional[Callable[[], bool]] = None
 ) -> AsyncGenerator[dict, None]:
     """
-    代理流式响应（带深度思考效果 + 打字机效果）
+    代理流式响应
+    使用 astream_events 获取详细的执行事件
     """
-    prompts = get_prompts()
+    logger.info(f"Agent 处理输入: {msg}..., 工具: {tool_ids}")
     
-    # 提取用户输入
-    user_input = ""
-    for m in msg:
-        if isinstance(m, dict) and "content" in m:
-            user_input = m["content"]
-        elif hasattr(m, "content"):
-            user_input = m.content
-    
-    logger.info(f"Agent 处理输入: {user_input[:50]}..., 工具: {tool_ids}")
+    # 过滤工具
+    selected_tools = [t for t in tools if t.name in tool_ids] if tool_ids else tools
     
     # 创建客户端和代理
     client = create_client(llm, thinking)
     agent = create_agent(
         client,
-        tools=tools,
-        system_prompt=prompts.get_agent_prompt(tool_ids),
+        tools=selected_tools,
+        system_prompt=system_prompt
     )
     
-    # 使用 stream_mode="updates" 获取所有步骤
-    for chunk in agent.stream(
-        {"messages": [{"role": "user", "content": user_input}]},
-        stream_mode="updates"
-    ):
-        # chunk 是字典，key 是节点名，value 是该节点的输出
-        for step, data in chunk.items():
-            if "messages" not in data:
-                continue
-                
-            messages = data["messages"]
-            if not messages:
-                continue
-                
-            last_msg = messages[-1]
-            content_blocks = last_msg.content_blocks if hasattr(last_msg, "content_blocks") else None
+    try:
+        # 输入数据处理
+        # 确保输入符合 langgraph/agent 的要求，通常需要是 {"messages": [...]}
+        input_data = {"messages": msg} if isinstance(msg, list) else msg
+
+        # 使用 astream_events 获取异步流式事件 (v2)
+        async for event in agent.astream_events(
+            input_data,
+            version="v2"
+        ):
+            if should_stop and should_stop():
+                break
             
-            if not content_blocks:
-                continue
+            kind = event["event"]
             
-            # 遍历内容块
-            for block in content_blocks:
-                block_type = block.get("type")
-                
-                # 工具调用
-                if block_type == "tool_call":
-                    tool_name = block.get("name", "unknown")
-                    tool_args = block.get("args", "")
-                    yield {"content": f"🧠 正在调用工具: {tool_name}({tool_args})", "thinking": True}
-                
-                # 文本输出 - 打字机效果
-                elif block_type == "text":
-                    text = block.get("text", "")
-                    for char in text:
-                        if should_stop and should_stop():
-                            break
-                        yield {"content": char, "thinking": False}
-                
-                # 工具结果
-                elif block_type == "tool_result":
-                    tool_id = block.get("tool_call_id", "")
-                    content = block.get("content", "")
-                    yield {"content": f"🛠️ 工具返回: {content}", "thinking": True}
-    
-    # 确保最终完成
-    yield {"content": "", "done": True}
+            # 1. 模型生成的 Token (正式内容)
+            if kind == "on_chat_model_stream":
+                # 确保是最终回答的流，而不是工具调用的流
+                # 通常工具调用的流会在 on_tool_start 之前，但 event data chunk 可能包含 tool_call_chunks
+                # 我们只关心 content
+                chunk = event["data"]["chunk"]
+                if hasattr(chunk, "content") and chunk.content:
+                    yield {"content": chunk.content}
+            
+            # 2. 工具开始调用 (推理过程)
+            elif kind == "on_tool_start":
+                # 过滤掉内部工具或链
+                if event["name"] and not event["name"].startswith("_"):
+                    tool_name = event["name"]
+                    tool_input = event["data"].get("input")
+                    # 格式化为: 🧠 正在调用工具: tool_name(args)
+                    # 添加换行符确保显示格式
+                    yield {"reasoning": f"\n🧠 正在调用工具: {tool_name}({tool_input})\n"}
+            
+            # 3. 工具调用结束 (推理过程)
+            elif kind == "on_tool_end":
+                if event["name"] and not event["name"].startswith("_"):
+                    tool_output = event["data"].get("output")
+                    # 格式化为: 🛠️ 工具返回: result
+                    
+                    # 尝试提取内容 (处理 ToolMessage 或 dict)
+                    output_str = str(tool_output)
+                    if hasattr(tool_output, "content"):
+                        output_str = str(tool_output.content)
+                    elif isinstance(tool_output, dict) and "content" in tool_output:
+                        output_str = str(tool_output["content"])
+                    
+                    # 截断过长的输出
+                    if len(output_str) > 500:
+                        output_str = output_str[:500] + "..."
+                    yield {"reasoning": f"\n🛠️ 工具返回: {output_str}\n"}
+
+    except GeneratorExit:
+        raise
+    except Exception as e:
+        logger.error(f"Agent 流错误: {e}")
+        # 发送错误信息作为内容
+        yield {"content": f"\n\n[系统错误: {str(e)}]"}
+        raise
+
+
+
+#123456

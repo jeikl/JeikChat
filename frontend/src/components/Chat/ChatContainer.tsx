@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { useChatStore } from '@/stores/chatStore';
-import { useSettingsStore } from '@/stores/settingsStore';
+// import { useSettingsStore } from '@/stores/settingsStore';
 import MessageItem from './MessageItem';
 import InputArea from './InputArea';
 import { Bot, ChevronDown } from 'lucide-react';
@@ -29,7 +29,7 @@ const PROMPTS = [
 ];
 
 const ChatContainer = () => {
-  const { sessions, currentSessionId, isLoading, isStreaming, sendMessage, stopGenerating } = useChatStore();
+  const { sessions, currentSessionId, isLoading, isStreaming, sendMessage, stopGeneration } = useChatStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
@@ -246,7 +246,7 @@ const ChatContainer = () => {
           
           <InputArea 
             onSend={handleSend}
-            onStop={stopGenerating}
+            onStop={stopGeneration}
             disabled={isStreaming}
             isStreaming={isStreaming}
           />

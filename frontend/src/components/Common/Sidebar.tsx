@@ -28,7 +28,7 @@ const NAV_ITEMS = [
 
 const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
   const navigate = useNavigate();
-  const { sessions, currentSessionId, setCurrentSession, addSession, deleteSession, updateSession } = useChatStore();
+  const { sessions, currentSessionId, setCurrentSession, deleteSession, updateSession } = useChatStore();
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [logoError, setLogoError] = useState(false);
