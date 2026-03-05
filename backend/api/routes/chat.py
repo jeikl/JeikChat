@@ -64,8 +64,8 @@ async def send_message(request: SendMessageRequest, http_request: Request):
     logger.info(f"收到消息: content={request.content[:50]}..., thinking={request.thinking}")
     
     prompts = get_prompts()
-    system_prompt = prompts.get_chat_prompt()
-    logger.info(f"提示词: {system_prompt}")
+    # logger.info(f"提示词: {system_prompt}")
+
     
     session_id = get_session(
         request.session_id, 
@@ -93,14 +93,14 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         client_disconnected = False
         
         is_agent_mode = len(tools) > 0
-        
+        logger.info(f"模式判断: is_agent_mode={is_agent_mode}")
         if is_agent_mode:
             stream_func = agent_stream
             msg = build_messages(prompts.get_agent_prompt(tools), request.content, history)
             logger.info("使用 Agent 模式")
         else:
             stream_func = chat_stream
-            msg = build_messages(system_prompt, request.content, history)
+            msg = build_messages(prompts.get_chat_prompt(), request.content, history)
             logger.info("使用聊天流模式")
         
         try:
@@ -115,6 +115,8 @@ async def send_message(request: SendMessageRequest, http_request: Request):
                         logger.info(f"任务被取消，停止生成: task_id={task_id}")
                         break
                     
+                    thinking_flag = chunk.get("thinking", False)
+                    
                     if chunk.get("reasoning"):
                         full_reasoning += chunk["reasoning"]
                         if not client_disconnected:
@@ -127,7 +129,10 @@ async def send_message(request: SendMessageRequest, http_request: Request):
                         full_content += chunk["content"]
                         if not client_disconnected:
                             try:
-                                yield sse_format({"content": chunk["content"]})
+                                yield sse_format({
+                                    "content": chunk["content"],
+                                    "thinking": thinking_flag
+                                })
                             except Exception:
                                 client_disconnected = True
             else:

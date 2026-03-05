@@ -62,9 +62,6 @@ class Prompts:
     def get_agent_prompt(self, tool_ids: List[str]) -> str:
         base_prompt = self.AGENT_SYSTEM_PROMPT or "你是一个智能Agent助手。"
         
-        if not tool_ids:
-            return base_prompt.replace("{tools}", "目前无可用工具。")
-        
         tools_desc = []
         for tid in tool_ids:
             if tid in TOOL_DESCRIPTIONS:

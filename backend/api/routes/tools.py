@@ -4,24 +4,25 @@ from api.response import success
 router = APIRouter()
 
 
+def get_tool_list():
+    from agent.chatRouterStream import tools
+    
+    result = []
+    for tool in tools:
+        tool_info = {
+            "id": tool.name,
+            "name": tool.name,
+            "description": tool.description,
+            "enabled": True
+        }
+        result.append(tool_info)
+    return result
+
+
 @router.get("/tools")
 async def list_tools():
     """获取所有可用的Agent工具列表"""
-    tools = [
-        {
-            "id": "web_search",
-            "name": "网页搜索",
-            "description": "搜索互联网获取最新信息",
-            "enabled": True
-        },
-        {
-            "id": "calculator",
-            "name": "计算器",
-            "description": "数学计算工具",
-            "enabled": True
-        }
-    ]
-    return success(data=tools, msg="获取成功")
+    return success(data=get_tool_list(), msg="获取成功")
 
 
 @router.post("/tools/{tool_id}/enable")

@@ -7,9 +7,10 @@ export interface Message {
   references?: KnowledgeReference[];
   isStreaming?: boolean;
   thinking?: boolean;
-  isCancelled?: boolean;  // 标记消息是否被取消生成
+  isCancelled?: boolean;
   hasReasoning?: boolean;
   reasoningExpanded?: boolean;
+  internalContent?: string;  // 代理内部过程(工具调用等)
 }
 
 export interface ChatSession {

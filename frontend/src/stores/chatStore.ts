@@ -203,6 +203,7 @@ export const useChatStore = create<ChatStore>()(
 
         let fullContent = '';
         let fullReasoning = '';
+        let fullInternalContent = '';
         const abortController = new AbortController();
         set({ abortController });
 
@@ -272,6 +273,7 @@ export const useChatStore = create<ChatStore>()(
                 
                 try {
                   const parsed = JSON.parse(data);
+                  console.log('Parsed:', parsed);
                   
                   // 检查是否被取消
                   if (parsed.cancelled) {
@@ -292,15 +294,26 @@ export const useChatStore = create<ChatStore>()(
                   }
                   
                   if (parsed.content) {
+                    console.log('Received content:', parsed.content, 'thinking:', parsed.thinking);
+                    
                     if (get().thinkingMode !== 'false') {
                       get().updateMessage(sessionId, assistantMessageId, {
                         thinking: false,
                       });
                     }
-                    fullContent += parsed.content;
-                    get().updateMessage(sessionId, assistantMessageId, {
-                      content: fullContent,
-                    });
+                    
+                    // 如果是 thinking 内容，添加到 internalContent
+                    if (parsed.thinking) {
+                      fullInternalContent += parsed.content;
+                      get().updateMessage(sessionId, assistantMessageId, {
+                        internalContent: fullInternalContent,
+                      });
+                    } else {
+                      fullContent += parsed.content;
+                      get().updateMessage(sessionId, assistantMessageId, {
+                        content: fullContent,
+                      });
+                    }
                   }
                   
                   if (parsed.done) {

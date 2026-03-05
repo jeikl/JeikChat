@@ -76,6 +76,7 @@ const MessageItem = ({ message }: MessageItemProps) => {
   const isUser = message.role === 'user';
   const isThinking = message.thinking && !message.content;
   const hasReasoning = message.reasoning && message.reasoning.length > 0;
+  const hasInternalContent = message.internalContent && message.internalContent.length > 0;
   
   // 默认展开正在生成的推理，历史消息也保持展开（除非用户手动收起）
   const [showReasoning, setShowReasoning] = useState(true);
@@ -230,8 +231,14 @@ const MessageItem = ({ message }: MessageItemProps) => {
                       className="px-3 md:px-4 pb-3 md:pb-6 animate-in fade-in slide-in-from-top-2 duration-500 w-full overflow-y-auto scrollbar-thin"
                     >
                       <div className="text-[13px] md:text-[14px] text-gray-300/90 leading-relaxed max-w-none border-t border-white/[0.05] pt-2">
+                        {hasInternalContent && (
+                          <div className="mb-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                            <div className="text-xs text-blue-400 font-medium mb-1">🤖 代理过程</div>
+                            <pre className="text-xs text-gray-300 whitespace-pre-wrap font-mono">{message.internalContent}</pre>
+                          </div>
+                        )}
                         <ReactMarkdown 
-                          children={message.reasoning} 
+                          children={message.reasoning || ''} 
                           remarkPlugins={[remarkGfm]}
                           components={{
                             code({ node, className, children, ...props }) {

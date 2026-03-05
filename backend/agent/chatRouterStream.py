@@ -9,7 +9,7 @@ from langchain.agents import create_agent
 import logging
 
 from services.llm import create_client
-from agent.prompt import get_prompts, build_messages
+from agent.prompt import get_prompts
 from agent.tools.web import search as web_search_func
 from agent.tools.werther import search as weather_search_func
 
@@ -38,11 +38,11 @@ def calculator(expression: str) -> str:
         return f"计算错误: {str(e)}"
 
 
-TOOL_MAP = {
-    "web_search": web_search,
-    "weather": get_weather,
-    "calculator": calculator,
-}
+tools = [
+    web_search,
+    get_weather,
+    calculator,
+]
 
 
 async def chat_stream(
@@ -91,56 +91,71 @@ async def agent_stream(
     should_stop: Optional[Callable[[], bool]] = None
 ) -> AsyncGenerator[dict, None]:
     """
-    Agent 流式响应
-    支持工具调用
+    代理流式响应（带深度思考效果 + 打字机效果）
     """
     prompts = get_prompts()
     
-    selected_tools = [TOOL_MAP[tid] for tid in tool_ids if tid in TOOL_MAP]
-    
-    if not selected_tools:
-        yield {"content": "未找到可用的工具"}
-        return
-    
-    system_prompt = prompts.get_agent_prompt(tool_ids)
-    
+    # 提取用户输入
     user_input = ""
     for m in msg:
-        if isinstance(m, dict):
-            user_input = m.get("content", "")
-        elif hasattr(m, 'content'):
+        if isinstance(m, dict) and "content" in m:
+            user_input = m["content"]
+        elif hasattr(m, "content"):
             user_input = m.content
     
     logger.info(f"Agent 处理输入: {user_input[:50]}..., 工具: {tool_ids}")
     
+    # 创建客户端和代理
     client = create_client(llm, thinking)
-    
     agent = create_agent(
         client,
-        tools=selected_tools,
-        system_prompt=system_prompt,
+        tools=tools,
+        system_prompt=prompts.get_agent_prompt(tool_ids),
     )
     
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+    # 使用 stream_mode="updates" 获取所有步骤
+    for chunk in agent.stream(
+        {"messages": [{"role": "user", "content": user_input}]},
+        stream_mode="updates"
+    ):
+        # chunk 是字典，key 是节点名，value 是该节点的输出
+        for step, data in chunk.items():
+            if "messages" not in data:
+                continue
+                
+            messages = data["messages"]
+            if not messages:
+                continue
+                
+            last_msg = messages[-1]
+            content_blocks = last_msg.content_blocks if hasattr(last_msg, "content_blocks") else None
+            
+            if not content_blocks:
+                continue
+            
+            # 遍历内容块
+            for block in content_blocks:
+                block_type = block.get("type")
+                
+                # 工具调用
+                if block_type == "tool_call":
+                    tool_name = block.get("name", "unknown")
+                    tool_args = block.get("args", "")
+                    yield {"content": f"🧠 正在调用工具: {tool_name}({tool_args})", "thinking": True}
+                
+                # 文本输出 - 打字机效果
+                elif block_type == "text":
+                    text = block.get("text", "")
+                    for char in text:
+                        if should_stop and should_stop():
+                            break
+                        yield {"content": char, "thinking": False}
+                
+                # 工具结果
+                elif block_type == "tool_result":
+                    tool_id = block.get("tool_call_id", "")
+                    content = block.get("content", "")
+                    yield {"content": f"🛠️ 工具返回: {content}", "thinking": True}
     
-    def run_agent():
-        return agent.invoke({"messages": [{"role": "user", "content": user_input}]})
-    
-    result = await loop.run_in_executor(None, run_agent)
-    
-    messages = result.get("messages", [])
-    final_message = messages[-1] if messages else None
-    
-    if final_message:
-        output = final_message.content if hasattr(final_message, "content") else str(final_message)
-        
-        for char in output:
-            if should_stop and should_stop():
-                break
-            yield {"content": char}
-    
+    # 确保最终完成
     yield {"content": "", "done": True}
