@@ -9,8 +9,9 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-from init import get_settings
-from core.api.web import  chat, knowledge, model
+from app.config import get_settings
+from api.routes import chat, knowledge, model, tools
+
 settings = get_settings()
 
 TEST_MODE = os.environ.get("AICHAT_TEST_MODE", "0") == "1"
@@ -38,7 +39,7 @@ app = FastAPI(
 app.state.TEST_MODE = TEST_MODE
 
 if TEST_MODE:
-    from api import mock as test_router
+    from api.routes import mock as test_router
     app.include_router(test_router.router, prefix="/api", tags=["测试模式"])
     print("📦 测试路由已注册")
 
@@ -57,6 +58,7 @@ if not TEST_MODE:
     app.include_router(chat.router, prefix="/api", tags=["聊天"])
     app.include_router(knowledge.router, prefix="/api", tags=["知识库"])
     app.include_router(model.router, prefix="/api", tags=["模型配置"])
+    app.include_router(tools.router, prefix="/api", tags=["工具"])
 
 
 @app.get("/")

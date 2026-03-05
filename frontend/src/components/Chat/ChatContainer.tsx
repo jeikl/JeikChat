@@ -30,7 +30,6 @@ const PROMPTS = [
 
 const ChatContainer = () => {
   const { sessions, currentSessionId, isLoading, isStreaming, sendMessage, stopGenerating } = useChatStore();
-  const { selectedToolIds } = useSettingsStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
@@ -122,7 +121,7 @@ const ChatContainer = () => {
   }, [messages.length, currentSessionId]);
 
   const handleSend = async (content: string) => {
-    await sendMessage(content, selectedToolIds);
+    await sendMessage(content);
   };
 
   return (

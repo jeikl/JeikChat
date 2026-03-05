@@ -65,15 +65,7 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
   };
 
   const createNewSession = () => {
-    const newSession = {
-      id: `session_${Date.now()}`,
-      title: '新对话',
-      messages: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    addSession(newSession);
-    handleSelectSession(newSession.id);
+    setCurrentSession(null);
   };
 
   const handleDeleteSession = (e: React.MouseEvent, sessionId: string) => {

@@ -45,6 +45,7 @@ export interface SendMessageRequest {
   model?: string;
   knowledgeBaseIds?: string[];
   stream?: boolean;
+  tools?: string[];
 }
 
 export interface SendMessageResponse {

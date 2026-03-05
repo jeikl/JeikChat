@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Message, ChatSession } from '@/types/chat';
 import { useSettingsStore } from './settingsStore';
+import { useKnowledgeStore } from './knowledgeStore';
 import { chatApi } from '@/services/api';
 
 interface ChatStore {
@@ -24,15 +25,22 @@ interface ChatStore {
   setStreaming: (streaming: boolean) => void;
   setThinkingMode: (mode: 'auto' | 'deep' | 'false') => void;
   clearAllSessions: () => void;
-  sendMessage: (content: string, toolIds?: string[]) => Promise<void>;
+  sendMessage: (content: string) => Promise<void>;
   stopGenerating: () => Promise<void>;
 }
 
 export const useChatStore = create<ChatStore>()(
   persist(
     (set, get) => ({
-      sessions: [],
-      currentSessionId: null,
+      sessions: [{
+        id: 'default-session',
+        title: '默认对话',
+        messages: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        isDefault: true
+      }],
+      currentSessionId: 'default-session',
       isLoading: false,
       isStreaming: false,
       thinkingMode: 'auto',
@@ -106,11 +114,13 @@ export const useChatStore = create<ChatStore>()(
 
       clearAllSessions: () => set({ sessions: [], currentSessionId: null }),
 
-      sendMessage: async (content, toolIds = []) => {
+      sendMessage: async (content) => {
         set({ isLoading: true, isStreaming: true });
         
         const activeConfig = useSettingsStore.getState().getActiveConfig();
         const model = activeConfig?.model;
+        const selectedToolIds = useSettingsStore.getState().selectedToolIds;
+        const selectedKnowledgeBaseIds = useKnowledgeStore.getState().selectedKnowledgeIds;
 
         let sessionId = get().currentSessionId;
         
@@ -208,7 +218,8 @@ export const useChatStore = create<ChatStore>()(
               content,
               sessionId,
               model,
-              knowledgeBaseIds: toolIds,
+              knowledgeBaseIds: selectedKnowledgeBaseIds,
+              tools: selectedToolIds,
               stream: true,
               thinking: get().thinkingMode,
             }),
