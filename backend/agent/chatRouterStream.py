@@ -110,7 +110,7 @@ async def agent_stream(
     
     try:
         # 输入数据处理
-        # 确保输入符合 langgraph/agent 的要求，通常需要是 {"messages": [...]}
+
         input_data = {"messages": msg} if isinstance(msg, list) else msg
 
         # 使用 astream_events 获取异步流式事件 (v2)
@@ -170,4 +170,3 @@ async def agent_stream(
 
 
 
-#123456
