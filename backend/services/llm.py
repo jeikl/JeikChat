@@ -48,7 +48,7 @@ async def _warmup_all_models():
              return
 
         print(f"🚀 开始预热 {len(all_models)} 个模型...")
-        
+        await asyncio.sleep(100)
         # 遍历每个模型的三种 thinking 状态
         for model in all_models:
             for thinking in ["auto", "deep", "false"]:
@@ -60,7 +60,7 @@ async def _warmup_all_models():
                 await asyncio.to_thread(create_client, model, thinking)
                 
                 # 关键：每次初始化后等待 15 秒
-                await asyncio.sleep(15)
+                await asyncio.sleep(200)
         
         print(f"✨ 所有模型预热完成! (共 {len(all_models) * 3} 个组合)")
             

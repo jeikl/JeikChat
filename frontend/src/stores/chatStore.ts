@@ -138,7 +138,7 @@ export const useChatStore = create<ChatState>()(
             messages: [],
             createdAt: Date.now(),
             updatedAt: Date.now(),
-            modelId: activeModelId,
+            // 不保存 modelId 到会话中，避免持久化会话级别的设置
           };
           addSession(newSession);
           sessionId = newSession.id;
@@ -146,13 +146,14 @@ export const useChatStore = create<ChatState>()(
           sessionId = targetSessionId;
         }
         
-        // 确保会话有模型ID (修复旧数据)
-        const currentSession = get().sessions.find(s => s.id === sessionId);
-        if (currentSession) {
-            // 如果 modelId 不存在或者是 config_xxx 格式,更新为真正的模型名称
-            if (!currentSession.modelId || currentSession.modelId.startsWith('config_')) {
-                updateSession(sessionId!, { modelId: activeModelId });
-            }
+        // 获取或生成会话的UUID（永久唯一）
+        let sessionUuid = null;
+        if (sessionId) {
+          sessionUuid = localStorage.getItem(`session-uuid-${sessionId}`);
+          if (!sessionUuid) {
+            sessionUuid = uuidv4();
+            localStorage.setItem(`session-uuid-${sessionId}`, sessionUuid);
+          }
         }
         
         // 添加用户消息
@@ -186,9 +187,8 @@ export const useChatStore = create<ChatState>()(
         set({ abortController });
 
         try {
-          // 重新获取会话以确保 modelId 已更新
-          const sessionToSend = get().sessions.find(s => s.id === sessionId);
-          const modelIdToSend = sessionToSend?.modelId || activeModelId;
+          // 使用全局设置的模型，而不是会话级别的设置
+          const modelIdToSend = activeModelId;
           
           console.log('发送请求:', { content, sessionId, model: modelIdToSend, thinking: thinkingMode });
           
@@ -205,6 +205,7 @@ export const useChatStore = create<ChatState>()(
               tools: selectedToolIds,
               stream: true,
               thinking: thinkingMode,
+              sessionUuid: sessionUuid,
             }),
             signal: abortController.signal,
           });
@@ -332,7 +333,15 @@ export const useChatStore = create<ChatState>()(
     {
       name: 'chat-storage',
       partialize: (state) => ({
-        sessions: state.sessions,
+        sessions: state.sessions.map(session => ({
+          id: session.id,
+          title: session.title,
+          messages: session.messages,
+          createdAt: session.createdAt,
+          updatedAt: session.updatedAt,
+          // 移除 modelId 和 knowledgeBaseIds，避免持久化会话级别的设置
+          // 这些设置由全局设置管理，每次请求时使用当前设置
+        })),
         currentSessionId: state.currentSessionId,
         thinkingMode: state.thinkingMode,
       }),

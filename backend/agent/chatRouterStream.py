@@ -4,15 +4,16 @@
 包含聊天流和Agent流 (同步版本)
 """
 
-from typing import List, Optional, Callable, Generator
+
+from typing import List, Optional, Callable, AsyncGenerator
 from langchain.tools import tool
 from langchain.agents import create_agent
 import logging
 
-from services.llm import create_client
-from langgraph.checkpoint.postgres import PostgresSaver
-from . import checkpointer
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+DB_URL = "postgresql://root:anhuang520@pan.junv.top:5432/postgres?sslmode=disable"
 
+from services.llm import create_client
 
 from agent.tools.web import search as web_search_func
 from agent.tools.werther import search as weather_search_func
@@ -49,43 +50,8 @@ tools = [
     calculator,
 ]
 
-def chat_stream(
-    llm: str,
-    msg: list,
-    thinking: str = "auto",
-    should_stop: Optional[Callable[[], bool]] = None,
-    history: dict = None
-) -> Generator[dict, None, None]:
-    """
-    纯聊天流式响应 (同步版本)
-    不使用工具
-    """
-    client = create_client(llm, thinking)
-    
-    try:
-        for chunk in client.stream(msg, config=history):
-            if should_stop and should_stop():
-                break
-            
-            result = {}
-            
-            if hasattr(chunk, 'content') and chunk.content:
-                result["content"] = chunk.content
-            
-            if hasattr(chunk, 'additional_kwargs') and chunk.additional_kwargs:
-                reasoning_content = chunk.additional_kwargs.get('reasoning_content')
-                if reasoning_content:
-                    result["reasoning"] = reasoning_content
-                result["additional_kwargs"] = chunk.additional_kwargs
-            
-            if result:
-                yield result
-                
-    except GeneratorExit:
-        raise
-    except Exception as e:
-        logger.error(f"聊天流错误: {e}")
-        raise
+
+
 
 
 def agent_stream(
@@ -93,50 +59,65 @@ def agent_stream(
     msg,
     thinking: str,
     tool_ids: List[str],
+    history,
     should_stop: Optional[Callable[[], bool]] = None,
-    history: dict = None
-) -> Generator[dict, None, None]:
+) -> AsyncGenerator[dict, None]:
     """
     Agent流式响应 (同步版本)
     """
-    client = create_client(llm, thinking)
-    agent = create_agent(
-    client,
-    tools=tools,
-    checkpointer=checkpointer
-)
 
-    print(history)
-    try:
-        # 使用同步的 stream 方法
-        for token, metadata in agent.stream(msg, config=history, stream_mode="messages"):
-            if should_stop and should_stop():
-                break
-            
-            node = metadata.get("langgraph_node", "")
+    async with AsyncPostgresSaver.from_conn_string(DB_URL) as checkpoint:
+        selected_tools = [t for t in tools if t.name in tool_ids] if tool_ids else tools
+        client = create_client(llm, thinking)
+        agent = create_agent(
+            client,
+            tools=selected_tools,
+            checkpointer=checkpoint,
+        )
+        
+        # ❌ 删除了繁杂的 current_tool_call 状态变量
+        try:
+            async for token, metadata in agent.astream(msg, config=history,stream_mode="messages"):
+                if should_stop and should_stop():
+                    break
+                
+                node = metadata.get("langgraph_node", "")
 
-            # 1. 提取推理过程
-            if token.additional_kwargs.get("reasoning_content"):
-                yield {"reasoning": token.additional_kwargs["reasoning_content"]}
+                # ==========================================
+                # 1. 提取推理过程 (Reasoning)
+                # ==========================================
+                reasoning = token.additional_kwargs.get("reasoning_content")
+                if reasoning:
+                    yield {"reasoning": reasoning}
 
-            # 2. 提取工具调用
-            for tc_chunk in getattr(token, "tool_call_chunks", []):
-                if tc_chunk.get("name"): 
-                    yield {"reasoning": f"\n\n🧠 正在调用工具: {tc_chunk['name']} ...\n"}
+                # ==========================================
+                # 2. 提取工具调用动作 (Tool Calls)
+                # ==========================================
+                # 💡 核心技巧: LangChain 的 tool_call_chunks 在流式传输时，
+                # 只有工具发出的“第一帧”会包含 'name' 字段。
+                # 我们利用这一点，无需任何状态变量就能实现“只提示一次工具调用”。
+                for tc_chunk in getattr(token, "tool_call_chunks", []):
+                    if tc_chunk.get("name"): 
+                        yield {"reasoning": f"\n\n🧠 正在调用工具: {tc_chunk['name']} ...\n"}
 
-            # 3. 提取内容
-            if token.content:
-                text = token.content
-                if isinstance(text, list):
-                    text = "".join([b.get("text", "") for b in text if isinstance(b, dict) and b.get("type") == "text"])
-                if text:
-                    if node == "tools":
-                        yield {"reasoning": f"\n🛠️ 工具返回: {text}\n"}
-                    elif node == "model":
-                        yield {"content": text}
+                # ==========================================
+                # 3. 提取常规文本与工具返回结果 (Content)
+                # ==========================================
+                # LangChain 默认会将生成的文本放在 token.content 中
+                if token.content:
+                    text = token.content
+                    
+                    # 兼容某些模型 content 返回 list(dict) 的情况
+                    if isinstance(text, list):
+                        text = "".join([b.get("text", "") for b in text if isinstance(b, dict) and b.get("type") == "text"])
 
-    except GeneratorExit:
-        raise
-    except Exception as e:
-        logger.error(f"Agent 流错误: {e}")
-        raise
+                    if text:
+                        if node == "tools":
+                            yield {"reasoning": f"\n🛠️ 工具返回: {text}\n"}
+                        elif node == "model":
+                            yield {"content": text}
+
+        except GeneratorExit:
+            raise
+        except Exception:
+            raise
