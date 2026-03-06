@@ -38,6 +38,10 @@ def start_backend(test_mode: bool = False, host: str = "localhost", port: int = 
     mode_str = "测试模式" if test_mode else "正常模式"
     print(f"\n{BLUE}启动后端 ({mode_str}) - http://{host}:{port}{RESET}")
     
+    print(f"{YELLOW}正在检查端口占用...{RESET}")
+    subprocess.run(f'powershell -Command "Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | ForEach-Object {{ Stop-Process -Id $_.OwningProcess -Force }}"', shell=True)
+    time.sleep(1)
+    
     env = os.environ.copy()
     if test_mode:
         env["AICHAT_TEST_MODE"] = "1"

@@ -2,11 +2,14 @@
 流式处理模块
 包含聊天流和Agent流
 """
+
 import asyncio
 from typing import List, Optional, Callable, AsyncGenerator
 from langchain.tools import tool
 from langchain.agents import create_agent
 import logging
+
+from langchain_core.messages import SystemMessage
 
 from services.llm import create_client
 from agent.prompt import get_prompts
@@ -83,90 +86,75 @@ async def chat_stream(
         raise
 
 
-async def agent_stream(
+
+
+
+# 假设其他必要的 imports 已经存在 (SystemMessage, create_client, create_agent, logger, tools 等)
+
+async def agent_stream0(
     llm: str,
     msg,
     thinking: str,
     tool_ids: List[str],
-    system_prompt: str = "",
     should_stop: Optional[Callable[[], bool]] = None
 ) -> AsyncGenerator[dict, None]:
     """
-    代理流式响应
-    使用 astream_events 获取详细的执行事件
+    代理流式响应 (精简版)
     """
-    logger.info(f"Agent 处理输入: {msg}..., 工具: {tool_ids}")
-    
-    # 过滤工具
     selected_tools = [t for t in tools if t.name in tool_ids] if tool_ids else tools
-    
-    # 创建客户端和代理
     client = create_client(llm, thinking)
+    print(f"发送: {msg}")
+
+
     agent = create_agent(
         client,
         tools=selected_tools,
-        system_prompt=system_prompt
     )
-    
+
+    # ❌ 删除了繁杂的 current_tool_call 状态变量
     try:
-        # 输入数据处理
-
-        input_data = {"messages": msg} if isinstance(msg, list) else msg
-
-        # 使用 astream_events 获取异步流式事件 (v2)
-        async for event in agent.astream_events(
-            input_data,
-            version="v2"
-        ):
+        async for token, metadata in agent.astream(msg, stream_mode="messages"):
             if should_stop and should_stop():
                 break
             
-            kind = event["event"]
-            
-            # 1. 模型生成的 Token (正式内容)
-            if kind == "on_chat_model_stream":
-                # 确保是最终回答的流，而不是工具调用的流
-                # 通常工具调用的流会在 on_tool_start 之前，但 event data chunk 可能包含 tool_call_chunks
-                # 我们只关心 content
-                chunk = event["data"]["chunk"]
-                if hasattr(chunk, "content") and chunk.content:
-                    yield {"content": chunk.content}
-            
-            # 2. 工具开始调用 (推理过程)
-            elif kind == "on_tool_start":
-                # 过滤掉内部工具或链
-                if event["name"] and not event["name"].startswith("_"):
-                    tool_name = event["name"]
-                    tool_input = event["data"].get("input")
-                    # 格式化为: 🧠 正在调用工具: tool_name(args)
-                    # 添加换行符确保显示格式
-                    yield {"reasoning": f"\n🧠 正在调用工具: {tool_name}({tool_input})\n"}
-            
-            # 3. 工具调用结束 (推理过程)
-            elif kind == "on_tool_end":
-                if event["name"] and not event["name"].startswith("_"):
-                    tool_output = event["data"].get("output")
-                    # 格式化为: 🛠️ 工具返回: result
-                    
-                    # 尝试提取内容 (处理 ToolMessage 或 dict)
-                    output_str = str(tool_output)
-                    if hasattr(tool_output, "content"):
-                        output_str = str(tool_output.content)
-                    elif isinstance(tool_output, dict) and "content" in tool_output:
-                        output_str = str(tool_output["content"])
-                    
-                    # 截断过长的输出
-                    if len(output_str) > 500:
-                        output_str = output_str[:500] + "..."
-                    yield {"reasoning": f"\n🛠️ 工具返回: {output_str}\n"}
+            node = metadata.get("langgraph_node", "")
+
+            # ==========================================
+            # 1. 提取推理过程 (Reasoning)
+            # ==========================================
+            reasoning = token.additional_kwargs.get("reasoning_content")
+            if reasoning:
+                yield {"reasoning": reasoning}
+
+            # ==========================================
+            # 2. 提取工具调用动作 (Tool Calls)
+            # ==========================================
+            # 💡 核心技巧: LangChain 的 tool_call_chunks 在流式传输时，
+            # 只有工具发出的“第一帧”会包含 'name' 字段。
+            # 我们利用这一点，无需任何状态变量就能实现“只提示一次工具调用”。
+            for tc_chunk in getattr(token, "tool_call_chunks", []):
+                if tc_chunk.get("name"): 
+                    yield {"reasoning": f"\n\n🧠 正在调用工具: {tc_chunk['name']} ...\n"}
+
+            # ==========================================
+            # 3. 提取常规文本与工具返回结果 (Content)
+            # ==========================================
+            # LangChain 默认会将生成的文本放在 token.content 中
+            if token.content:
+                text = token.content
+                
+                # 兼容某些模型 content 返回 list(dict) 的情况
+                if isinstance(text, list):
+                    text = "".join([b.get("text", "") for b in text if isinstance(b, dict) and b.get("type") == "text"])
+
+                if text:
+                    if node == "tools":
+                        yield {"reasoning": f"\n🛠️ 工具返回: {text}\n"}
+                    elif node == "model":
+                        yield {"content": text}
 
     except GeneratorExit:
         raise
     except Exception as e:
-        logger.error(f"Agent 流错误: {e}")
-        # 发送错误信息作为内容
-        yield {"content": f"\n\n[系统错误: {str(e)}]"}
+        # logger.error(f"Agent 流错误: {e}")
         raise
-
-
-

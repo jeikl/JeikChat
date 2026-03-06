@@ -10,12 +10,14 @@ import uuid
 import logging
 from datetime import datetime
 
+from langchain_core.messages import HumanMessage
+
 logger = logging.getLogger(__name__)
 
 from schemas.chat import SendMessageRequest
 from api.response import success, sse_format, sse_done
 from services.stream import get_stream_manager
-from agent.chatRouterStream import chat_stream, agent_stream
+from agent.chatRouterStream import chat_stream, agent_stream0
 from agent.prompt import get_prompts, build_messages
 
 router = APIRouter()
@@ -96,22 +98,22 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         is_agent_mode = len(tools) > 0
         logger.info(f"模式判断: is_agent_mode={is_agent_mode}")
         if is_agent_mode:
-            stream_func = agent_stream
+            #stream_func = agent_stream
             system_prompt = prompts.get_agent_prompt(tools)
-            msg = request.content
+            msg = build_messages(system_prompt, request.content, history, agent=True)
             logger.info("使用 Agent 模式")
 
         else:
             # stream_func = chat_stream
             system_prompt = prompts.get_chat_prompt()
             msg = build_messages(system_prompt, request.content, history, agent=False)
-            logger.info("使用聊天流模式")
+            logger.info(f"使用聊天流模式:{msg}")
          
 
-        print(f"提示词: {system_prompt}")
+        
         try:
             if is_agent_mode:
-                async for chunk in agent_stream(model, msg, thinking, tools, system_prompt, task.is_cancelled):
+                async for chunk in agent_stream0(model, msg, thinking, tools, task.is_cancelled):
                     if await http_request.is_disconnected():
                         if not client_disconnected:
                             logger.info(f"客户端断开连接，后台继续生成: task_id={task_id}")

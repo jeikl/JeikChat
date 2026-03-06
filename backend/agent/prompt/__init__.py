@@ -98,9 +98,16 @@ def build_messages(system_prompt: str, user_content: str, history: List[dict] = 
     
     msg_list.append(HumanMessage(content=user_content))
     
-    # agent 模式返回 dict 格式，普通模式返回 list
+
     if agent:
-        return {"messages": user_content}
+        msg_list_agent = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content}
+    ]
+        return {"messages": msg_list_agent}
+
+
+        # return {"messages": msg_list}
     else:
         return msg_list
 

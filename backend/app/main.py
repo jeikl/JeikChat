@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
+import asyncio
 import logging
 
 logging.basicConfig(
@@ -26,6 +27,10 @@ if TEST_MODE:
 async def lifespan(app: FastAPI):
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs("./vector_store", exist_ok=True)
+    
+    from services.llm import _warmup_all_models
+    asyncio.create_task(_warmup_all_models())
+    
     yield
 
 
