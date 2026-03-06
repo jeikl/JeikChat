@@ -109,7 +109,6 @@ export const useChatStore = create<ChatState>()(
           thinkingMode,
           // selectedKnowledgeBaseIds, // 移除这里的解构，使用 KnowledgeStore 中的
           // selectedToolIds, // 移除这里的解构，使用 SettingsStore 中的
-          updateSession,
         } = get();
         
         // 从 KnowledgeStore 获取知识库选择状态
