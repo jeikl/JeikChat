@@ -22,6 +22,7 @@ export interface ChatSession {
   modelId?: string;
   knowledgeBaseIds?: string[];
   isDefault?: boolean;
+  threadId?: string;
 }
 
 export interface KnowledgeReference {

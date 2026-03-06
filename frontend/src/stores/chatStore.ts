@@ -139,6 +139,7 @@ export const useChatStore = create<ChatState>()(
             createdAt: Date.now(),
             updatedAt: Date.now(),
             modelId: activeModelId,
+            threadId: uuidv4(), // 初始化 threadId
           };
           addSession(newSession);
           sessionId = newSession.id;
@@ -146,12 +147,21 @@ export const useChatStore = create<ChatState>()(
           sessionId = targetSessionId;
         }
         
-        // 确保会话有模型ID (修复旧数据)
+        // 确保会话有模型ID (修复旧数据) 和 threadId
         const currentSession = get().sessions.find(s => s.id === sessionId);
         if (currentSession) {
+            const updates: Partial<ChatSession> = {};
             // 如果 modelId 不存在或者是 config_xxx 格式,更新为真正的模型名称
             if (!currentSession.modelId || currentSession.modelId.startsWith('config_')) {
-                updateSession(sessionId!, { modelId: activeModelId });
+                updates.modelId = activeModelId;
+            }
+            // 如果没有 threadId，生成一个
+            if (!currentSession.threadId) {
+                updates.threadId = uuidv4();
+            }
+            
+            if (Object.keys(updates).length > 0) {
+                updateSession(sessionId!, updates);
             }
         }
         
@@ -186,11 +196,13 @@ export const useChatStore = create<ChatState>()(
         set({ abortController });
 
         try {
-          // 重新获取会话以确保 modelId 已更新
+          // 重新获取会话以确保 modelId 和 threadId 已更新
           const sessionToSend = get().sessions.find(s => s.id === sessionId);
           const modelIdToSend = sessionToSend?.modelId || activeModelId;
+          // 使用 threadId 作为后端的 sessionId (即 thread_id)
+          const threadIdToSend = sessionToSend?.threadId || sessionId;
           
-          console.log('发送请求:', { content, sessionId, model: modelIdToSend, thinking: thinkingMode });
+          console.log('发送请求:', { content, sessionId: threadIdToSend, model: modelIdToSend, thinking: thinkingMode });
           
           const response = await fetch('/api/chat/send', {
             method: 'POST',
@@ -199,7 +211,7 @@ export const useChatStore = create<ChatState>()(
             },
             body: JSON.stringify({
               content,
-              sessionId,
+              sessionId: threadIdToSend, // 发送 threadId 给后端
               model: modelIdToSend,
               knowledgeBaseIds: selectedKnowledgeBaseIds,
               tools: selectedToolIds,

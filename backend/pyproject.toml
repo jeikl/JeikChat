@@ -26,6 +26,8 @@ dependencies = [
     "aiofiles",
     "httpx",
     "tenacity",
+    "langgraph-checkpoint-postgres",
+    "psycopg[binary,pool]",
 ]
 
 [project.optional-dependencies]

@@ -83,18 +83,18 @@ class Prompts:
         return self.RAG_NO_CONTEXT_PROMPT
 
 
-def build_messages(system_prompt: str, user_content: str, history: List[dict] = None, agent: bool = False):
+def build_messages(system_prompt: str, user_content: str, agent: bool = False):
     """构建消息列表"""
 
     # 初始化消息列表
     msg_list = [SystemMessage(content=system_prompt)]
     
-    if history:
-        for msg in history[-10:]:
-            if msg.get("role") == "user":
-                msg_list.append(HumanMessage(content=msg.get("content", "")))
-            elif msg.get("role") == "assistant":
-                msg_list.append(AIMessage(content=msg.get("content", "")))
+    # if history:
+    #     for msg in history[-10:]:
+    #         if msg.get("role") == "user":
+    #             msg_list.append(HumanMessage(content=msg.get("content", "")))
+    #         elif msg.get("role") == "assistant":
+    #             msg_list.append(AIMessage(content=msg.get("content", "")))
     
     msg_list.append(HumanMessage(content=user_content))
     
