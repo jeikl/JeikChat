@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { ChatSession, Message } from '@/types/chat';
 import { v4 as uuidv4 } from 'uuid';
 import { useSettingsStore } from './settingsStore';
+import { useKnowledgeStore } from './knowledgeStore';
 
 interface ChatState {
   sessions: ChatSession[];
@@ -106,10 +107,14 @@ export const useChatStore = create<ChatState>()(
           addSession, 
           addMessage,
           thinkingMode,
-          selectedKnowledgeBaseIds,
+          // selectedKnowledgeBaseIds, // 移除这里的解构，使用 KnowledgeStore 中的
           // selectedToolIds, // 移除这里的解构，使用 SettingsStore 中的
           updateSession,
         } = get();
+        
+        // 从 KnowledgeStore 获取知识库选择状态
+        const knowledgeState = useKnowledgeStore.getState();
+        const selectedKnowledgeBaseIds = knowledgeState.selectedKnowledgeIds;
         
         // 从 SettingsStore 获取工具选择状态
         const settingsState = useSettingsStore.getState();
@@ -154,6 +159,9 @@ export const useChatStore = create<ChatState>()(
             sessionUuid = uuidv4();
             localStorage.setItem(`session-uuid-${sessionId}`, sessionUuid);
           }
+          console.log('UUID 生成/获取:', { sessionId, sessionUuid });
+        } else {
+          console.warn('sessionId 为 null，无法生成 UUID');
         }
         
         // 添加用户消息
@@ -190,7 +198,7 @@ export const useChatStore = create<ChatState>()(
           // 使用全局设置的模型，而不是会话级别的设置
           const modelIdToSend = activeModelId;
           
-          console.log('发送请求:', { content, sessionId, model: modelIdToSend, thinking: thinkingMode });
+          console.log('发送请求:', { content, sessionId, model: modelIdToSend, thinking: thinkingMode, sessionUuid });
           
           const response = await fetch('/api/chat/send', {
             method: 'POST',

@@ -1,7 +1,6 @@
-
 """
 流式处理模块
-包含聊天流和Agent流 (同步版本)
+包含聊天流和Agent流
 """
 
 
@@ -18,9 +17,8 @@ from services.llm import create_client
 from agent.tools.web import search as web_search_func
 from agent.tools.werther import search as weather_search_func
 
-DB_URI = "postgresql://root:anhuang520@pan.junv.top:5432/postgres?sslmode=disable"
-
 logger = logging.getLogger(__name__)
+
 
 @tool
 def get_weather(city: str) -> str:
@@ -54,7 +52,12 @@ tools = [
 
 
 
-def agent_stream(
+
+
+
+# 假设其他必要的 imports 已经存在 (SystemMessage, create_client, create_agent, logger, tools 等)
+
+async def agent_stream0(
     llm: str,
     msg,
     thinking: str,
@@ -63,7 +66,7 @@ def agent_stream(
     should_stop: Optional[Callable[[], bool]] = None,
 ) -> AsyncGenerator[dict, None]:
     """
-    Agent流式响应 (同步版本)
+    代理流式响应 (精简版)
     """
 
     async with AsyncPostgresSaver.from_conn_string(DB_URL) as checkpoint:
@@ -119,5 +122,7 @@ def agent_stream(
 
         except GeneratorExit:
             raise
-        except Exception:
+        except Exception as e:
+            logger.error(f"Agent 流错误: {e}")
+            yield {"content": f"\n\n❌ 模型调用失败: {str(e)}"}
             raise

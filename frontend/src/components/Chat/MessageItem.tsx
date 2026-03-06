@@ -229,16 +229,12 @@ const MessageItem = ({ message }: MessageItemProps) => {
                       className="px-3 md:px-4 pb-3 md:pb-6 animate-in fade-in slide-in-from-top-2 duration-500 w-full overflow-y-auto scrollbar-thin"
                     >
                       <div className="text-[13px] md:text-[14px] text-gray-300/90 leading-relaxed max-w-none border-t border-white/[0.05] pt-2">
-                        {/* Agent 工具调用信息使用 pre 标签保持换行格式 */}
-                        {message.reasoning?.includes('🧠') || message.reasoning?.includes('🛠️') ? (
-                          <pre className="whitespace-pre-wrap font-mono text-xs text-gray-300 break-all">
-                            {message.reasoning}
-                          </pre>
-                        ) : (
-                          <ReactMarkdown 
-                            children={message.reasoning || ''} 
-                            remarkPlugins={[remarkGfm]}
-                            components={{
+                        {/* 推理框也使用 ReactMarkdown 渲染，支持完整的 Markdown 格式 */}
+                        <ReactMarkdown 
+                          children={message.reasoning || ''} 
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeRaw]}
+                          components={{
                             code({ node, className, children, ...props }) {
                               const match = /language-(\w+)/.exec(className || '');
                               const inline = !match;
@@ -281,52 +277,107 @@ const MessageItem = ({ message }: MessageItemProps) => {
                                 </div>
                               );
                             },
-                            p: ({ node, ...props }) => <p className={`mb-2 last:mb-0`} {...props} />,
+                            // 段落样式 - 增加行高和间距
+                            p: ({ node, ...props }) => <p className={`mb-3 last:mb-0 leading-relaxed text-gray-300/90`} {...props} />,
+                            // 无序列表 - 使用主题色标记
                             ul: ({ node, ...props }) => (
-                              <ul className="mb-2 pl-4 list-disc marker:text-gray-200 marker:font-bold space-y-1" {...props} />
+                              <ul className="mb-3 pl-5 list-disc marker:text-primary marker:text-[14px] space-y-1.5" {...props} />
                             ),
+                            // 有序列表 - 使用主题色数字
                             ol: ({ node, ...props }) => (
-                              <ol className="mb-2 pl-4 list-decimal marker:text-gray-200 marker:font-bold space-y-1" {...props} />
+                              <ol className="mb-3 pl-5 list-decimal marker:text-primary marker:font-bold space-y-1.5" {...props} />
                             ),
+                            // 列表项 - 智能识别文件夹/文件结构
                             li: ({ node, ...props }) => {
                               const text = props.children?.toString() || '';
                               const isFolder = text.includes(':') || text.endsWith('/');
                               const isFile = !isFolder && text.includes('.');
-                              let colorClass = 'text-[#c9d1d9]';
+                              const isToolCall = text.includes('🧠') || text.includes('🛠️');
+                              let colorClass = 'text-gray-300';
                               if (isFolder) {
-                                colorClass = 'text-[#7ee787]';
+                                colorClass = 'text-green-400';
                               } else if (isFile) {
-                                colorClass = 'text-[#79c0ff]';
+                                colorClass = 'text-blue-400';
+                              } else if (isToolCall) {
+                                colorClass = 'text-yellow-400';
                               }
                               return <li className={`text-[13px] md:text-[14px] ${colorClass} leading-relaxed`} {...props} />;
                             },
-                            h1: ({ node, ...props }) => <h1 className="text-base font-bold mt-3 mb-1 text-white/95" {...props} />,
-                            h2: ({ node, ...props }) => <h2 className="text-sm font-bold mt-2 mb-1 text-white/90" {...props} />,
-                            h3: ({ node, ...props }) => <h3 className="text-[13px] font-bold mt-2 mb-1 text-white/80" {...props} />,
+                            // 标题层级 - 统一使用主题色系，层次分明
+                            h1: ({ node, ...props }) => (
+                              <h1 className="text-lg font-bold mt-4 mb-2 text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400 border-b border-primary/20 pb-1" {...props} />
+                            ),
+                            h2: ({ node, ...props }) => (
+                              <h2 className="text-base font-bold mt-3 mb-2 text-primary/90 flex items-center gap-2 before:content-['##'] before:text-primary/50 before:text-sm" {...props} />
+                            ),
+                            h3: ({ node, ...props }) => (
+                              <h3 className="text-[15px] font-semibold mt-3 mb-1.5 text-primary/80 flex items-center gap-2 before:content-['###'] before:text-primary/40 before:text-xs" {...props} />
+                            ),
+                            h4: ({ node, ...props }) => (
+                              <h4 className="text-[14px] font-semibold mt-2 mb-1 text-primary/70 flex items-center gap-2 before:content-['####'] before:text-primary/30 before:text-[10px]" {...props} />
+                            ),
+                            h5: ({ node, ...props }) => (
+                              <h5 className="text-[13px] font-medium mt-2 mb-1 text-primary/60" {...props} />
+                            ),
+                            h6: ({ node, ...props }) => (
+                              <h6 className="text-[12px] font-medium mt-1.5 mb-1 text-primary/50 uppercase tracking-wider" {...props} />
+                            ),
+                            // 引用块 - 左侧主题色边框
                             blockquote: ({ node, ...props }) => (
-                              <blockquote className="border-l-2 border-primary/30 pl-3 my-2 italic text-text-quaternary/80" {...props} />
+                              <blockquote className="border-l-3 border-primary/40 pl-4 my-3 py-2 italic text-gray-400/90 bg-white/[0.02] rounded-r-lg" {...props} />
                             ),
+                            // 链接 - 主题色悬停效果
                             a: ({ node, ...props }) => (
-                              <a {...props} target="_blank" rel="noopener noreferrer" className="text-primary/80 hover:text-primary underline" />
+                              <a {...props} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors" />
                             ),
+                            // 图片 - 圆角阴影效果
                             img: ({ node, ...props }) => (
-                              <img {...props} className="max-w-full h-auto rounded-lg my-2 border border-white/[0.05]" loading="lazy" />
+                              <img {...props} className="max-w-full h-auto rounded-xl my-3 border border-white/[0.08] shadow-lg" loading="lazy" />
                             ),
+                            // 表格 - 现代化样式
                             table: ({ node, ...props }) => (
-                              <div className="overflow-x-auto my-2 rounded-lg border border-white/[0.05] bg-white/[0.02]">
-                                <table className="w-full text-xs table-auto" {...props} />
+                              <div className="overflow-x-auto my-3 rounded-xl border border-white/[0.08] bg-white/[0.02] shadow-sm">
+                                <table className="w-full text-[13px] table-auto" {...props} />
                               </div>
                             ),
-                            thead: ({ node, ...props }) => <thead className="bg-white/[0.05] text-text-tertiary text-[12px] whitespace-nowrap" {...props} />,
-                            th: ({ node, ...props }) => <th className="px-2 py-1 font-medium border-b border-white/[0.08] min-w-[40px] text-center" {...props} />,
-                            td: ({ node, ...props }) => <td className="px-2 py-1 border-b border-white/[0.05] text-center align-middle" {...props} />,
-                            tr: ({ node, ...props }) => <tr className="hover:bg-white/[0.03]" {...props} />,
-                            hr: ({ node, ...props }) => <hr className="my-2 border-white/[0.08]" {...props} />,
-                            del: ({ node, ...props }) => <del className="no-underline text-text-quaternary/60" {...props} />,
-                            strong: ({ node, ...props }) => <strong className="font-bold text-white/95" {...props} />,
-                            em: ({ node, ...props }) => <em className="italic text-text-tertiary/90" {...props} />,
+                            thead: ({ node, ...props }) => <thead className="bg-primary/10 text-primary/90 text-[12px] font-semibold whitespace-nowrap" {...props} />,
+                            th: ({ node, ...props }) => <th className="px-3 py-2 font-semibold border-b border-primary/20 text-left" {...props} />,
+                            td: ({ node, ...props }) => <td className="px-3 py-2 border-b border-white/[0.05] text-gray-300/80" {...props} />,
+                            tr: ({ node, ...props }) => <tr className="hover:bg-white/[0.03] transition-colors" {...props} />,
+                            // 分隔线 - 渐变效果
+                            hr: ({ node, ...props }) => <hr className="my-4 border-t border-gradient-to-r from-transparent via-white/10 to-transparent" {...props} />,
+                            // 删除线 - 禁用删除线样式，只显示为普通文本
+                            del: ({ node, ...props }) => <span className="text-gray-400/80" {...props} />,
+                            // 粗体 - 高亮白色
+                            strong: ({ node, ...props }) => <strong className="font-bold text-white" {...props} />,
+                            // 斜体 - 柔和灰色
+                            em: ({ node, ...props }) => <em className="italic text-gray-300/90" {...props} />,
+                            // 复选框 - 任务列表
+                            input: ({ node, ...props }) => {
+                              if (props.type === 'checkbox') {
+                                return (
+                                  <input 
+                                    {...props} 
+                                    disabled 
+                                    className="mr-2 w-4 h-4 rounded border-primary/30 bg-white/5 text-primary focus:ring-primary/30 cursor-default"
+                                  />
+                                );
+                              }
+                              return <input {...props} />;
+                            },
+                            // 上标/下标
+                            sup: ({ node, ...props }) => (
+                              <sup className="text-primary text-[10px] font-medium" {...props} />
+                            ),
+                            sub: ({ node, ...props }) => (
+                              <sub className="text-gray-400 text-[10px]" {...props} />
+                            ),
+                            // 预格式化文本
+                            pre: ({ node, ...props }) => (
+                              <pre className="bg-[#0d1117] rounded-lg p-3 my-2 overflow-x-auto text-[12px] text-gray-300 border border-white/[0.08]" {...props} />
+                            ),
                           }}
-                        />)}
+                        />
                       </div>
 
                       {/* 底部收起按钮 - 手机端更明显 */}
@@ -411,16 +462,21 @@ const MessageItem = ({ message }: MessageItemProps) => {
                             </div>
                           );
                         },
-                        p: ({ node, ...props }) => <p className={`my-1.5 leading-7 text-[15px] md:text-[16px] text-gray-100`} {...props} />,
+                        // 段落样式
+                        p: ({ node, ...props }) => <p className={`my-2 leading-7 text-[15px] md:text-[16px] text-gray-100`} {...props} />,
+                        // 无序列表 - 主题色标记
                         ul: ({ node, ...props }) => (
-                          <ul className="my-3 pl-6 list-disc marker:text-gray-400 marker:font-bold space-y-1" {...props} />
+                          <ul className="my-4 pl-6 list-disc marker:text-primary marker:text-[16px] space-y-2" {...props} />
                         ),
+                        // 有序列表 - 主题色数字
                         ol: ({ node, ...props }) => (
-                          <ol className="my-3 pl-6 list-decimal marker:text-gray-400 marker:font-bold space-y-1" {...props} />
+                          <ol className="my-4 pl-6 list-decimal marker:text-primary marker:font-bold space-y-2" {...props} />
                         ),
+                        // 列表项 - 智能识别
                         li: ({ node, ...props }) => {
                           const text = props.children?.toString() || '';
                           const isFolderStructure = text.includes('├──') || text.includes('└──');
+                          const isToolCall = text.includes('🧠') || text.includes('🛠️');
                           
                           if (isFolderStructure) {
                              const isFolder = text.includes(':') || text.endsWith('/');
@@ -434,66 +490,96 @@ const MessageItem = ({ message }: MessageItemProps) => {
                              return <li className={`font-mono text-[14px] ${colorClass} list-none -ml-4`} {...props} />;
                           }
                           
+                          if (isToolCall) {
+                            return <li className={`text-yellow-400 leading-relaxed pl-1 text-[15px] md:text-[16px] font-medium`} {...props} />;
+                          }
+                          
                           return <li className={`text-gray-100 leading-relaxed pl-1 text-[15px] md:text-[16px]`} {...props} />;
                         },
-                        h1: ({ node, ...props }) => <h1 className="text-2xl font-bold my-6 text-white pb-2 border-b border-white/10" {...props} />,
-                        h2: ({ node, ...props }) => <h2 className="text-xl font-bold my-5 text-white" {...props} />,
-                        h3: ({ node, ...props }) => <h3 className="text-lg font-bold my-4 text-white" {...props} />,
-                        h4: ({ node, ...props }) => <h4 className="text-base font-bold my-3 text-white" {...props} />,
-                        h5: ({ node, ...props }) => <h5 className="text-sm font-bold my-2 text-white" {...props} />,
-                        h6: ({ node, ...props }) => <h6 className="text-xs font-bold my-2 text-white uppercase tracking-wider" {...props} />,
-                        blockquote: ({ node, ...props }) => (
-                          <blockquote className="border-l-4 border-primary/40 pl-4 my-4 italic text-gray-300 bg-white/[0.03] py-2 pr-2 rounded-r-lg" {...props} />
+                        // 标题层级 - 统一主题色系
+                        h1: ({ node, ...props }) => (
+                          <h1 className="text-2xl font-bold my-6 text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400 pb-2 border-b border-primary/20" {...props} />
                         ),
+                        h2: ({ node, ...props }) => (
+                          <h2 className="text-xl font-bold my-5 text-primary/90 flex items-center gap-2 before:content-['##'] before:text-primary/50" {...props} />
+                        ),
+                        h3: ({ node, ...props }) => (
+                          <h3 className="text-lg font-semibold my-4 text-primary/80 flex items-center gap-2 before:content-['###'] before:text-primary/40 before:text-sm" {...props} />
+                        ),
+                        h4: ({ node, ...props }) => (
+                          <h4 className="text-base font-semibold my-3 text-primary/70 flex items-center gap-2 before:content-['####'] before:text-primary/30 before:text-xs" {...props} />
+                        ),
+                        h5: ({ node, ...props }) => (
+                          <h5 className="text-sm font-medium my-2 text-primary/60" {...props} />
+                        ),
+                        h6: ({ node, ...props }) => (
+                          <h6 className="text-xs font-medium my-2 text-primary/50 uppercase tracking-wider" {...props} />
+                        ),
+                        // 引用块
+                        blockquote: ({ node, ...props }) => (
+                          <blockquote className="border-l-4 border-primary/40 pl-4 my-4 py-2 italic text-gray-300 bg-white/[0.03] rounded-r-lg" {...props} />
+                        ),
+                        // 链接 - 主题色
                         a: ({ node, ...props }) => (
                           <a 
                             {...props} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-blue-400 hover:text-blue-300 underline underline-offset-4 transition-colors"
+                            className="text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
                           />
                         ),
+                        // 图片
                         img: ({ node, ...props }) => (
                           <img 
                             {...props} 
-                            className="max-w-full h-auto rounded-2xl my-6 border border-white/[0.05] shadow-xl"
+                            className="max-w-full h-auto rounded-2xl my-6 border border-white/[0.08] shadow-xl"
                             loading="lazy"
                           />
                         ),
+                        // 表格 - 主题色表头
                         table: ({ node, ...props }) => (
-                          <div className="overflow-x-auto my-6 rounded-2xl border border-white/[0.05] bg-white/[0.02]">
+                          <div className="overflow-x-auto my-6 rounded-2xl border border-white/[0.08] bg-white/[0.02] shadow-sm">
                             <table className="w-full text-[14px] md:text-[15px] text-left table-auto" {...props} />
                           </div>
                         ),
-                        thead: ({ node, ...props }) => <thead className="bg-white/[0.05] text-text-secondary text-xs tracking-wider whitespace-nowrap" {...props} />,
-                        th: ({ node, ...props }) => <th className="px-3 py-2.5 font-semibold border-b border-white/[0.08] min-w-[60px] text-center" {...props} />,
-                        td: ({ node, ...props }) => <td className="px-3 py-2.5 border-b border-white/[0.05] text-text-primary text-center align-middle" {...props} />,
+                        thead: ({ node, ...props }) => <thead className="bg-primary/10 text-primary/90 text-xs font-semibold tracking-wider whitespace-nowrap" {...props} />,
+                        th: ({ node, ...props }) => <th className="px-4 py-3 font-semibold border-b border-primary/20 text-left" {...props} />,
+                        td: ({ node, ...props }) => <td className="px-4 py-3 border-b border-white/[0.05] text-gray-300/90" {...props} />,
                         tr: ({ node, ...props }) => <tr className="hover:bg-white/[0.03] transition-colors" {...props} />,
-                        hr: ({ node, ...props }) => <hr className="my-8 border-white/[0.08]" {...props} />,
-                        del: ({ node, ...props }) => <del className="no-underline text-text-tertiary" {...props} />,
+                        // 分隔线 - 渐变
+                        hr: ({ node, ...props }) => <hr className="my-8 border-t border-gradient-to-r from-transparent via-white/10 to-transparent" {...props} />,
+                        // 删除线 - 禁用删除线样式，只显示为普通文本
+                        del: ({ node, ...props }) => <span className="text-gray-400/80" {...props} />,
+                        // 复选框
                         input: ({ node, ...props }) => {
                           if (props.type === 'checkbox') {
                             return (
                               <input 
                                 {...props} 
                                 disabled 
-                                className="mr-2 w-4 h-4 rounded border-white/20 bg-white/5 text-primary focus:ring-primary/50"
+                                className="mr-2 w-4 h-4 rounded border-primary/30 bg-white/5 text-primary focus:ring-primary/30 cursor-default"
                               />
                             );
                           }
                           return <input {...props} />;
                         },
+                        // 上标/下标
                         sup: ({ node, ...props }) => (
-                          <sup className="text-primary text-xs" {...props} />
+                          <sup className="text-primary text-xs font-medium" {...props} />
                         ),
                         sub: ({ node, ...props }) => (
-                          <sub className="text-text-tertiary text-xs" {...props} />
+                          <sub className="text-gray-400 text-xs" {...props} />
                         ),
+                        // 粗体/斜体
                         strong: ({ node, ...props }) => (
                           <strong className="font-bold text-white" {...props} />
                         ),
                         em: ({ node, ...props }) => (
                           <em className="italic text-gray-200" {...props} />
+                        ),
+                        // 预格式化文本
+                        pre: ({ node, ...props }) => (
+                          <pre className="bg-[#0d1117] rounded-xl p-4 my-3 overflow-x-auto text-[13px] text-gray-300 border border-white/[0.08]" {...props} />
                         ),
                       }}
                     />

@@ -77,6 +77,7 @@ async def send_message(request: SendMessageRequest, http_request: Request):
     # 记录会话UUID
     session_uuid = request.session_uuid
     logger.info(f"收到前端UUID: {session_uuid}")
+    logger.info(f"完整请求: {request.model_dump()}")
     
     config = {
         "configurable": {

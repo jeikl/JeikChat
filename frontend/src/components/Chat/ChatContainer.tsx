@@ -29,7 +29,7 @@ const PROMPTS = [
 ];
 
 const ChatContainer = () => {
-  const { sessions, currentSessionId, isLoading, isStreaming, sendMessage, stopGeneration } = useChatStore();
+  const { sessions, currentSessionId, isLoading, isStreaming, sendMessage, stopGeneration, setCurrentSession } = useChatStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
@@ -37,6 +37,13 @@ const ChatContainer = () => {
   const [logoError, setLogoError] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const isUserScrolledUpRef = useRef(false);
+
+  // 进入页面时，如果没有选中会话，自动进入默认会话
+  useEffect(() => {
+    if (!currentSessionId) {
+      setCurrentSession('default-session');
+    }
+  }, [currentSessionId, setCurrentSession]);
 
   // 监听输入框高度变化
   useEffect(() => {
