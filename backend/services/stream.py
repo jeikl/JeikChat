@@ -46,7 +46,7 @@ class StreamManager:
             
             task = StreamTask(task_id, session_id)
             self._tasks[task_id] = task
-            logger.info(f"注册流式任务: {task}")
+            #logger.info(f"注册流式任务: {task}")
             return task
     
     def unregister_task(self, task_id: str):
@@ -54,7 +54,7 @@ class StreamManager:
         with self._lock:
             if task_id in self._tasks:
                 del self._tasks[task_id]
-                logger.info(f"注销流式任务: {task_id}")
+                #logger.info(f"注销流式任务: {task_id}")
     
     def cancel_task(self, task_id: str):
         """取消任务"""
