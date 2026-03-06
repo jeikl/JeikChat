@@ -24,6 +24,10 @@ export interface ChatSession {
   isDefault?: boolean;
 }
 
+
+
+
+
 export interface KnowledgeReference {
   source: any;
   knowledgeId: string;
