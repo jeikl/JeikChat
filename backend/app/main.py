@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs("./vector_store", exist_ok=True)
     
-    from services.llm import _warmup_all_models
+    from services.llm import _warmup_all_models#预热模型
     asyncio.create_task(_warmup_all_models())
     
     yield
