@@ -34,13 +34,13 @@ def get_dynamic_model_options():
         ("openai", "OpenAI", settings.OPENAI_MODEL, settings.OPENAI_DISPLAY_NAME),
         ("anthropic", "Anthropic", settings.ANTHROPIC_MODEL, settings.ANTHROPIC_DISPLAY_NAME),
         ("google", "Google", settings.GOOGLE_MODEL, settings.GOOGLE_DISPLAY_NAME),
-        ("qwen", "阿里云通义千问", settings.QWEN_MODEL, settings.QWEN_DISPLAY_NAME),
-        ("doubao", "字节跳动豆包", settings.DOUBAO_MODEL, settings.DOUBAO_DISPLAY_NAME),
-        ("moonshot", "月之暗面Kimi", settings.MOONSHOT_MODEL, settings.MOONSHOT_DISPLAY_NAME),
+        ("doubao", "字节跳动", settings.DOUBAO_MODEL, settings.DOUBAO_DISPLAY_NAME),
+        ("qwen", "通义千问", settings.QWEN_MODEL, settings.QWEN_DISPLAY_NAME),
+        ("moonshot", "月之暗面", settings.MOONSHOT_MODEL, settings.MOONSHOT_DISPLAY_NAME),
         ("zhipu", "智谱AI", settings.ZHIPU_MODEL, settings.ZHIPU_DISPLAY_NAME),
-        ("baidu", "百度文心一言", settings.BAIDU_MODEL, settings.BAIDU_DISPLAY_NAME),
+        ("baidu", "文心一言", settings.BAIDU_MODEL, settings.BAIDU_DISPLAY_NAME),
         ("xfyun", "讯飞星火", settings.XFYUN_MODEL, settings.XFYUN_DISPLAY_NAME),
-        ("ollama", "Ollama (本地)", settings.OLLAMA_MODEL, settings.OLLAMA_DISPLAY_NAME),
+        ("ollama", "Ollama", settings.OLLAMA_MODEL, settings.OLLAMA_DISPLAY_NAME),
     ]
     
     for provider_key, provider_name, model_config, display_name in providers:
