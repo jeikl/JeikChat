@@ -41,6 +41,7 @@ class SendMessageRequest(BaseModel):
     thinking: Optional[str] = "auto"
     knowledge_base_ids: Optional[List[str]] = None
     tools: Optional[List[str]] = None
+    session_uuid: Optional[str] = Field(default=None, alias="sessionUuid")
 
 
 class SendMessageResponse(BaseModel):

@@ -10,14 +10,14 @@ import uuid
 import logging
 from datetime import datetime
 
-from langchain_core.messages import HumanMessage
+
 
 logger = logging.getLogger(__name__)
 
 from schemas.chat import SendMessageRequest
 from api.response import success, sse_format, sse_done
 from services.stream import get_stream_manager
-from agent.chatRouterStream import chat_stream, agent_stream0
+from agent.chatRouterStream import agent_stream0
 from agent.prompt import get_prompts, build_messages
 
 router = APIRouter()
@@ -27,18 +27,17 @@ stream_manager = get_stream_manager()
 sessions: dict = {}
 
 
-def get_session(session_id: Optional[str], content: str, model: Optional[str], knowledge_base_ids: Optional[List[str]]):
-    """获取或创建会话"""
+def get_session(session_id: Optional[str], content: str):
+    """获取或创建会话 - 不持久化会话级别的设置"""
     if not session_id or session_id not in sessions:
-        session_id = str(uuid.uuid4())
         sessions[session_id] = {
             "id": session_id,
             "title": content[:30] + "..." if len(content) > 30 else content,
             "messages": [],
             "created_at": int(datetime.now().timestamp() * 1000),
             "updated_at": int(datetime.now().timestamp() * 1000),
-            "model": model,
-            "knowledge_base_ids": knowledge_base_ids or [],
+            # 不保存 model, knowledge_base_ids 到会话中
+            # 这些设置由全局设置管理，每次请求时使用当前设置
         }
     return session_id
 
@@ -71,12 +70,19 @@ async def send_message(request: SendMessageRequest, http_request: Request):
 
     
     session_id = get_session(
-        request.session_id, 
+        request.session_uuid, 
         request.content, 
-        request.model, 
-        request.knowledge_base_ids
     )
     
+    # 记录会话UUID
+    session_uuid = request.session_uuid
+    logger.info(f"收到前端UUID: {session_uuid}")
+    
+    config = {
+        "configurable": {
+            "thread_id": session_uuid
+        }
+    }
     save_message(session_id, "user", request.content)
     
     model = request.model or "qwen3.5-plus"
@@ -88,82 +94,48 @@ async def send_message(request: SendMessageRequest, http_request: Request):
     task_id = str(uuid.uuid4())
     task = stream_manager.register_task(task_id, session_id)
     
-    history = sessions[session_id].get("messages", [])
-    
     async def stream_generator():
         full_content = ""
         full_reasoning = ""
         client_disconnected = False
-        
         is_agent_mode = len(tools) > 0
         logger.info(f"模式判断: is_agent_mode={is_agent_mode}")
         if is_agent_mode:
             #stream_func = agent_stream
             system_prompt = prompts.get_agent_prompt(tools)
-            msg = build_messages(system_prompt, request.content, history, agent=True)
-            logger.info("使用 Agent 模式")
-
         else:
-            # stream_func = chat_stream
             system_prompt = prompts.get_chat_prompt()
-            msg = build_messages(system_prompt, request.content, history, agent=False)
-            logger.info(f"使用聊天流模式")
-         
 
-        
+        msg = build_messages(system_prompt, request.content)
+
         try:
-            if is_agent_mode:
-                async for chunk in agent_stream0(model, msg, thinking, tools, task.is_cancelled):
-                    if await http_request.is_disconnected():
-                        if not client_disconnected:
-                            logger.info(f"客户端断开连接，后台继续生成: task_id={task_id}")
+            async for chunk in agent_stream0(model, msg, thinking, tools, config,task.is_cancelled):
+                if await http_request.is_disconnected():
+                    if not client_disconnected:
+                        logger.info(f"客户端断开连接，后台继续生成: task_id={task_id}")
+                        client_disconnected = True
+                
+                if task.is_cancelled:
+                    logger.info(f"任务被取消，停止生成: task_id={task_id}")
+                    break
+                
+                if chunk.get("reasoning"):
+                    full_reasoning += chunk["reasoning"]
+                    if not client_disconnected:
+                        try:
+                            yield sse_format({"reasoning": chunk["reasoning"]})
+                        except Exception:
                             client_disconnected = True
-                    
-                    if task.is_cancelled:
-                        logger.info(f"任务被取消，停止生成: task_id={task_id}")
-                        break
-                    
-                    if chunk.get("reasoning"):
-                        full_reasoning += chunk["reasoning"]
-                        if not client_disconnected:
-                            try:
-                                yield sse_format({"reasoning": chunk["reasoning"]})
-                            except Exception:
-                                client_disconnected = True
-                    
-                    if chunk.get("content"):
-                        full_content += chunk["content"]
-                        if not client_disconnected:
-                            try:
-                                yield sse_format({"content": chunk["content"]})
-                            except Exception:
-                                client_disconnected = True
-            else:
-                async for chunk in chat_stream(model, msg, thinking, task.is_cancelled):
-                    if await http_request.is_disconnected():
-                        if not client_disconnected:
-                            logger.info(f"客户端断开连接，后台继续生成: task_id={task_id}")
+                
+                if chunk.get("content"):
+                    full_content += chunk["content"]
+                    if not client_disconnected:
+                        try:
+                            yield sse_format({"content": chunk["content"]})
+                        except Exception as e:
+                            yield sse_format({"content": f"{str(e)}"})
                             client_disconnected = True
-                    
-                    if task.is_cancelled:
-                        logger.info(f"任务被取消，停止生成: task_id={task_id}")
-                        break
-                    
-                    if chunk.get("reasoning"):
-                        full_reasoning += chunk["reasoning"]
-                        if not client_disconnected:
-                            try:
-                                yield sse_format({"reasoning": chunk["reasoning"]})
-                            except Exception:
-                                client_disconnected = True
-                    
-                    if chunk.get("content"):
-                        full_content += chunk["content"]
-                        if not client_disconnected:
-                            try:
-                                yield sse_format({"content": chunk["content"]})
-                            except Exception:
-                                client_disconnected = True
+            
             
             # 保存助手回复到会话历史
             if full_content or full_reasoning:
