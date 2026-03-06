@@ -107,7 +107,7 @@ async def send_message(request: SendMessageRequest, http_request: Request):
             # stream_func = chat_stream
             system_prompt = prompts.get_chat_prompt()
             msg = build_messages(system_prompt, request.content, history, agent=False)
-            logger.info(f"使用聊天流模式:{msg}")
+            logger.info(f"使用聊天流模式")
          
 
         

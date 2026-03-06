@@ -66,6 +66,7 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
 
   const createNewSession = () => {
     setCurrentSession(null);
+    navigate('/chat');
   };
 
   const handleDeleteSession = (e: React.MouseEvent, sessionId: string) => {

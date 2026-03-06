@@ -119,6 +119,14 @@ export const useChatStore = create<ChatState>()(
         const activeConfig = settingsState.getActiveConfig();
         const firstConfig = settingsState.configs?.[0];
         const activeModelId = activeConfig?.model || firstConfig?.model || 'qwen3.5-plus';
+        
+        console.log('模型选择调试:', {
+          activeConfigId: settingsState.activeConfigId,
+          activeConfig,
+          firstConfig,
+          activeModelId,
+          allConfigs: settingsState.configs
+        });
 
         const targetSessionId = sessionId || currentSessionId;
         
@@ -140,8 +148,11 @@ export const useChatStore = create<ChatState>()(
         
         // 确保会话有模型ID (修复旧数据)
         const currentSession = get().sessions.find(s => s.id === sessionId);
-        if (currentSession && !currentSession.modelId) {
-            updateSession(sessionId!, { modelId: activeModelId });
+        if (currentSession) {
+            // 如果 modelId 不存在或者是 config_xxx 格式,更新为真正的模型名称
+            if (!currentSession.modelId || currentSession.modelId.startsWith('config_')) {
+                updateSession(sessionId!, { modelId: activeModelId });
+            }
         }
         
         // 添加用户消息
