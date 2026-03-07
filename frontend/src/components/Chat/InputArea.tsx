@@ -19,7 +19,13 @@ const thinkingOptions = [
 ] as const;
 
 // Web 搜索工具的 toolid 列表
-const WEB_SEARCH_TOOL_IDS = ['bing_search', 'web_search', 'webSearchSogou', 'webSearchQuark', 'webSearchPro', 'webSearchStd'];
+const WEB_SEARCH_TOOL_IDS = [
+  'bing-search_bing_search',
+  'zhipu-web-search-sse_webSearchSogou',
+  'zhipu-web-search-sse_webSearchQuark',
+  'zhipu-web-search-sse_webSearchPro',
+  'zhipu-web-search-sse_webSearchStd'
+];
 
 const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) => {
   const [content, setContent] = useState('');
