@@ -1,0 +1,176 @@
+# LLM 模型配置文件
+# 根据模型ID读取对应的配置信息
+# enable字段说明：
+#   - 提供商级别enable: 控制整个提供商是否启用，默认为true
+#   - 模型级别enable: 控制单个模型是否启用，默认为true
+#   - 如果提供商enable为false，则其下所有模型都不启用
+#   - 如果提供商enable为true，模型enable为false，则该模型不启用
+
+providers:
+  openai:
+    name: "OpenAI"
+    api_key: "${OPENAI_API_KEY}"
+    base_url: "${OPENAI_BASE_URL}"
+    display_name: "${OPENAI_DISPLAY_NAME:-OpenAI}"
+    # enable: true  # 可选，默认为true
+    models:
+      - id: "gpt-4o-mini"
+        
+      - id: "gpt-4o"
+        # enable: true  # 可选，默认为true
+      - id: "gpt-4-turbo"
+    enable: false
+
+  anthropic:
+    name: "Anthropic"
+    api_key: "${ANTHROPIC_API_KEY}"
+    base_url: "${ANTHROPIC_BASE_URL}"
+    display_name: "${ANTHROPIC_DISPLAY_NAME:-Anthropic}"
+    models:
+      - id: "claude-3-5-sonnet-20241022"
+        
+      - id: "claude-3-opus-20240229"
+      - id: "claude-3-sonnet-20240229"
+    enable: false
+
+  google:
+    name: "Google"
+    api_key: "${GOOGLE_API_KEY}"
+    base_url: "${GOOGLE_BASE_URL}"
+    display_name: "${GOOGLE_DISPLAY_NAME:-Google}"
+    models:
+      - id: "gemini-2.0-flash"
+        
+      - id: "gemini-2.0-pro"
+      - id: "gemini-1.5-pro"
+    enable: false
+
+  doubao:
+    name: "字节跳动"
+    api_key: "${DOUBAO_API_KEY}"
+    base_url: "${DOUBAO_BASE_URL}"
+    display_name: "${DOUBAO_DISPLAY_NAME:-字节跳动}"
+    models:
+      - id: "deepseek-v3-2-251201"
+        default: true
+      - id: "doubao-seed-2-0-pro-260215"
+        enable: false
+      - id: "doubao-seed-2-0-code-preview-260215"
+        enable: false
+      - id: "doubao-seed-2-0-lite-260215"
+        enable: false
+
+  qwen:
+    name: "通义千问"
+    api_key: "${QWEN_API_KEY}"
+    base_url: "${QWEN_BASE_URL}"
+    display_name: "${QWEN_DISPLAY_NAME:-通义千问}"
+    models:
+      - id: "qwen3.5-flash"
+      - id: "qwen3-max"
+        enable: false
+      - id: "qwen3-coder-plus"
+
+  moonshot:
+    name: "月之暗面"
+    api_key: "${MOONSHOT_API_KEY}"
+    base_url: "${MOONSHOT_BASE_URL}"
+    display_name: "${MOONSHOT_DISPLAY_NAME:-月之暗面}"
+    models:
+      - id: "moonshot-v1-8k"
+      - id: "moonshot-v1-32k"
+      - id: "moonshot-v1-128k"
+    enable: false
+
+  zhipu:
+    name: "智谱AI"
+    api_key: "${ZHIPU_API_KEY}"
+    base_url: "${ZHIPU_BASE_URL}"
+    display_name: "${ZHIPU_DISPLAY_NAME:-智谱AI}"
+    models:
+      - id: "glm-4-air"
+        
+      - id: "glm-4"
+      - id: "glm-4-flash"
+    enable: false
+
+  baidu:
+    name: "文心一言"
+    api_key: "${BAIDU_API_KEY}"
+    secret_key: "${BAIDU_SECRET_KEY}"
+    base_url: "${BAIDU_BASE_URL}"
+    display_name: "${BAIDU_DISPLAY_NAME:-文心一言}"
+    models:
+      - id: "ernie-bot-4.5"
+      - id: "ernie-bot-4"
+      - id: "ernie-bot-turbo"
+    enable: false
+
+  xfyun:
+    name: "讯飞星火"
+    api_key: "${XFYUN_API_KEY}"
+    secret_key: "${XFYUN_SECRET_KEY}"
+    app_id: "${XFYUN_APP_ID}"
+    base_url: "${XFYUN_BASE_URL}"
+    display_name: "${XFYUN_DISPLAY_NAME:-讯飞星火}"
+    models:
+      - id: "spark-4.5-ultra"
+      - id: "spark-v4.0"
+      - id: "spark-v3.5"
+    enable: false
+
+  ollama:
+    name: "Ollama"
+    base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
+    display_name: "${OLLAMA_DISPLAY_NAME:-Ollama}"
+    models:
+      - id: "qwen2:7b"
+      - id: "llama3:8b"
+      - id: "gemma:7b"
+    enable: false
+
+# 模型ID到提供商的映射
+# 用于根据模型ID快速查找对应的配置
+model_mappings:
+  # OpenAI
+  "gpt-4o-mini": openai
+  "gpt-4o": openai
+  "gpt-4-turbo": openai
+  "gpt-4": openai
+  "gpt-3.5-turbo": openai
+  
+  # Anthropic
+  "claude-3-5-sonnet": anthropic
+  "claude-3-opus": anthropic
+  "claude-3-sonnet": anthropic
+  "claude-3-haiku": anthropic
+  
+  # Google
+  "gemini-2.0-flash": google
+  "gemini-2.0-pro": google
+  "gemini-1.5-pro": google
+  "gemini-1.5-flash": google
+  "gemini": google
+  
+  # Doubao
+  "deepseek": doubao
+  "doubao": doubao
+  "seed": doubao
+  
+  # Qwen
+  "qwen": qwen
+  
+  # Moonshot
+  "moonshot": moonshot
+  
+  # Zhipu
+  "glm": zhipu
+  "zhipu": zhipu
+  
+  # Baidu
+  "ernie": baidu
+  "baidu": baidu
+  
+  # Xfyun
+  "spark": xfyun
+  "xfyun": xfyun

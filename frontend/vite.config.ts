@@ -17,6 +17,26 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, './src'),
       },
     },
+    build: {
+      // 添加内容哈希，确保文件更新时 URL 变化
+      rollupOptions: {
+        output: {
+          entryFileNames: 'js/[name]-[hash].js',
+          chunkFileNames: 'js/[name]-[hash].js',
+          assetFileNames: (assetInfo) => {
+            const info = assetInfo.name.split('.');
+            const ext = info[info.length - 1];
+            if (/\.(png|jpe?g|gif|svg|webp|ico)$/i.test(assetInfo.name)) {
+              return 'img/[name]-[hash][extname]';
+            }
+            if (/\.css$/i.test(assetInfo.name)) {
+              return 'css/[name]-[hash][extname]';
+            }
+            return '[name]-[hash][extname]';
+          },
+        },
+      },
+    },
     server: {
       host: frontendHost,
       port: frontendPort,

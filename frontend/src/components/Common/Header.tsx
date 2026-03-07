@@ -32,7 +32,7 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
       if (result.status === 1) {
         const newConfigs: LLMConfig[] = [];
         let configId = 1;
-        
+
         for (const [providerKey, providerInfo] of Object.entries(result.data.providers)) {
           const provider = providerInfo as any;
           for (const model of provider.models) {
@@ -48,31 +48,38 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
             });
           }
         }
-        
+
         const currentActiveConfig = useSettingsStore.getState().activeConfigId;
         const currentActiveModel = useSettingsStore.getState().configs.find(c => c.id === currentActiveConfig)?.model;
-        
+
         let newActiveConfigId = currentActiveConfig;
         if (currentActiveModel) {
+          // 如果之前有选中的模型，尝试保持选中
           const matchedConfig = newConfigs.find(c => c.model === currentActiveModel);
           if (matchedConfig) {
             newActiveConfigId = matchedConfig.id;
           } else if (newConfigs.length > 0) {
-            newActiveConfigId = newConfigs[0].id;
+            // 之前的模型不在新列表中，使用服务器推荐的默认模型
+            const serverDefaultModel = result.data.default_model;
+            const defaultConfig = newConfigs.find(c => c.model === serverDefaultModel);
+            newActiveConfigId = defaultConfig ? defaultConfig.id : newConfigs[0].id;
           } else {
             newActiveConfigId = null;
           }
         } else if (newConfigs.length > 0) {
-          newActiveConfigId = newConfigs[0].id;
+          // 首次加载，没有选中过模型，使用服务器推荐的默认模型
+          const serverDefaultModel = result.data.default_model;
+          const defaultConfig = newConfigs.find(c => c.model === serverDefaultModel);
+          newActiveConfigId = defaultConfig ? defaultConfig.id : newConfigs[0].id;
         } else {
           newActiveConfigId = null;
         }
-        
-        useSettingsStore.setState({ 
-          configs: newConfigs, 
+
+        useSettingsStore.setState({
+          configs: newConfigs,
           activeConfigId: newActiveConfigId
         });
-        
+
         const totalModels = Object.values(result.data.providers).reduce((sum: number, p: any) => sum + (p.models?.length || 0), 0);
         showToast(`获取到 ${totalModels} 个模型`, 'success');
       } else {

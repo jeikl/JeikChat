@@ -11,7 +11,7 @@ logging.basicConfig(
 )
 
 from app.config import get_settings
-from api.routes import chat, knowledge, model, tools
+from api.routes import chat, knowledge, model, tools, tools_stream
 
 settings = get_settings()
 
@@ -27,6 +27,14 @@ if TEST_MODE:
 async def lifespan(app: FastAPI):
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs("./vector_store", exist_ok=True)
+    
+    # 初始化 MCP 工具缓存（关键优化：启动时预加载）
+    from agent.mcp.mcp_cache import get_tool_cache
+    try:
+        cache = await get_tool_cache()
+        # 日志已在 mcp_cache 中输出，这里不再重复
+    except Exception as e:
+        print(f"[Startup] MCP 缓存初始化失败: {e}")
     
     from services.llm import _warmup_all_models#预热模型
     asyncio.create_task(_warmup_all_models())
@@ -64,6 +72,7 @@ if not TEST_MODE:
     app.include_router(knowledge.router, prefix="/api", tags=["知识库"])
     app.include_router(model.router, prefix="/api", tags=["模型配置"])
     app.include_router(tools.router, prefix="/api", tags=["工具"])
+    app.include_router(tools_stream.router, prefix="/api", tags=["工具流式"])
 
 
 @app.get("/")

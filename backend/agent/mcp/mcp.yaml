@@ -1,0 +1,36 @@
+# MCP 服务配置
+servers:
+  - name: bing-search
+    transport: stdio
+    command: npx
+    args: [-y, bing-cn-mcp]
+    windows:
+      command: cmd
+      args: [/c, npx, -y, bing-cn-mcp]
+
+  - name: 12306-mcp
+    transport: stdio
+    command: npx
+    args: [-y, 12306-mcp]
+    windows:
+      command: cmd
+      args: [/c, npx, -y, 12306-mcp]
+
+  - name: github-mcp
+    transport: stdio
+    command: npx
+    args: [-y, "@modelcontextprotocol/server-github"]
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: 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
+    windows:
+      command: cmd
+      args: [/c, npx, -y, "@modelcontextprotocol/server-github"]
+
+  - name: zhipu-web-search-sse
+    transport: sse
+    url: https://open.bigmodel.cn/api/mcp/web_search/sse?Authorization=834213e9b3cb42769cf3f5d4641a8df1.4xDerkV5c9x4PopI
+
+settings:
+  timeout: 30
+  auto_reload: true
+  log_level: info

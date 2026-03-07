@@ -7,7 +7,9 @@ from pathlib import Path
 import yaml
 from typing import List
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
-PROJECT_ROOT = Path(__file__).parent.parent.parent
+
+# 当前文件所在目录
+PROMPT_DIR = Path(__file__).parent
 
 # TOOL_DESCRIPTIONS = {
 #     "web_search": "网页搜索工具，用于获取最新信息",
@@ -32,7 +34,14 @@ class Prompts:
             Prompts._initialized = True
 
     def _load_prompts(self):
-        prompts_file = PROJECT_ROOT / "app" / "prompts.yaml"
+        # 新的路径：从 agent/prompt/prompts.yaml 加载
+        prompts_file = PROMPT_DIR / "prompts.yaml"
+        
+        # 兼容旧路径：如果新路径不存在，尝试从 app/prompts.yaml 加载
+        if not prompts_file.exists():
+            old_prompts_file = Path(__file__).parent.parent.parent / "app" / "prompts.yaml"
+            if old_prompts_file.exists():
+                prompts_file = old_prompts_file
         
         if prompts_file.exists():
             with open(prompts_file, "r", encoding="utf-8") as f:
@@ -60,7 +69,10 @@ class Prompts:
         return self.CHAT_WELCOME_PROMPT
 
     def get_agent_prompt(self, tool_ids: List[str]) -> str:
-        from agent.chatRouterStream import tools
+        # 新的方式：从 agent 模块获取所有工具
+        from agent import get_all_tools_sync
+        
+        tools = get_all_tools_sync()
         
         base_prompt = self.AGENT_SYSTEM_PROMPT or "你是一个智能Agent助手。"
         tools_desc = []

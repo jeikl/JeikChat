@@ -26,6 +26,34 @@
       }
       @keyframes spin { to { transform: rotate(360deg); } }
     </style>
+    <!-- 缓存清除脚本 - 每次版本更新时修改版本号 -->
+    <script>
+      (function() {
+        const APP_VERSION = '1.0.1'; // 每次发布新版本时更新
+        const storedVersion = localStorage.getItem('app_version');
+        
+        if (storedVersion !== APP_VERSION) {
+          console.log('检测到新版本，清除缓存...');
+          localStorage.setItem('app_version', APP_VERSION);
+          // 清除所有应用相关的缓存
+          const keysToRemove = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            // 保留 session-uuid 相关的键
+            if (key && !key.startsWith('session-uuid-') && key !== 'app_version') {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach(key => {
+            console.log('清除缓存键:', key);
+            localStorage.removeItem(key);
+          });
+          
+          // 可选：强制刷新页面以获取最新资源
+          // location.reload(true);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

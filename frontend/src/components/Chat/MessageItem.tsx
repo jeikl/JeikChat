@@ -303,24 +303,24 @@ const MessageItem = ({ message }: MessageItemProps) => {
                               }
                               return <li className={`text-[13px] md:text-[14px] ${colorClass} leading-relaxed`} {...props} />;
                             },
-                            // 标题层级 - 统一使用主题色系，层次分明
+                            // 标题层级 - 统一使用亮白色，清晰醒目
                             h1: ({ node, ...props }) => (
-                              <h1 className="text-lg font-bold mt-4 mb-2 text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400 border-b border-primary/20 pb-1" {...props} />
+                              <h1 className="text-lg font-bold mt-4 mb-2 text-white bg-white/[0.08] px-3 py-1.5 rounded-lg border-l-4 border-white/40" {...props} />
                             ),
                             h2: ({ node, ...props }) => (
-                              <h2 className="text-base font-bold mt-3 mb-2 text-primary/90 flex items-center gap-2 before:content-['##'] before:text-primary/50 before:text-sm" {...props} />
+                              <h2 className="text-base font-bold mt-3 mb-2 text-white bg-white/[0.05] px-2.5 py-1 rounded-lg border-l-3 border-white/30 flex items-center gap-2" {...props} />
                             ),
                             h3: ({ node, ...props }) => (
-                              <h3 className="text-[15px] font-semibold mt-3 mb-1.5 text-primary/80 flex items-center gap-2 before:content-['###'] before:text-primary/40 before:text-xs" {...props} />
+                              <h3 className="text-[15px] font-semibold mt-3 mb-1.5 text-white flex items-center gap-2 before:content-['▸'] before:text-white/80" {...props} />
                             ),
                             h4: ({ node, ...props }) => (
-                              <h4 className="text-[14px] font-semibold mt-2 mb-1 text-primary/70 flex items-center gap-2 before:content-['####'] before:text-primary/30 before:text-[10px]" {...props} />
+                              <h4 className="text-[14px] font-semibold mt-2 mb-1 text-white/90 flex items-center gap-2 before:content-['▪'] before:text-white/70" {...props} />
                             ),
                             h5: ({ node, ...props }) => (
-                              <h5 className="text-[13px] font-medium mt-2 mb-1 text-primary/60" {...props} />
+                              <h5 className="text-[13px] font-semibold mt-2 mb-1 text-white/80" {...props} />
                             ),
                             h6: ({ node, ...props }) => (
-                              <h6 className="text-[12px] font-medium mt-1.5 mb-1 text-primary/50 uppercase tracking-wider" {...props} />
+                              <h6 className="text-[12px] font-semibold mt-1.5 mb-1 text-white/70 uppercase tracking-wider" {...props} />
                             ),
                             // 引用块 - 左侧主题色边框
                             blockquote: ({ node, ...props }) => (
@@ -464,13 +464,13 @@ const MessageItem = ({ message }: MessageItemProps) => {
                         },
                         // 段落样式
                         p: ({ node, ...props }) => <p className={`my-2 leading-7 text-[15px] md:text-[16px] text-gray-100`} {...props} />,
-                        // 无序列表 - 主题色标记
+                        // 无序列表 - 白色标记
                         ul: ({ node, ...props }) => (
-                          <ul className="my-4 pl-6 list-disc marker:text-primary marker:text-[16px] space-y-2" {...props} />
+                          <ul className="my-4 pl-6 list-disc marker:text-white/70 marker:text-[16px] space-y-2" {...props} />
                         ),
-                        // 有序列表 - 主题色数字
+                        // 有序列表 - 白色数字
                         ol: ({ node, ...props }) => (
-                          <ol className="my-4 pl-6 list-decimal marker:text-primary marker:font-bold space-y-2" {...props} />
+                          <ol className="my-4 pl-6 list-decimal marker:text-white/80 marker:font-bold space-y-2" {...props} />
                         ),
                         // 列表项 - 智能识别
                         li: ({ node, ...props }) => {
@@ -496,24 +496,24 @@ const MessageItem = ({ message }: MessageItemProps) => {
                           
                           return <li className={`text-gray-100 leading-relaxed pl-1 text-[15px] md:text-[16px]`} {...props} />;
                         },
-                        // 标题层级 - 统一主题色系
+                        // 标题层级 - 统一使用亮白色，清晰醒目
                         h1: ({ node, ...props }) => (
-                          <h1 className="text-2xl font-bold my-6 text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400 pb-2 border-b border-primary/20" {...props} />
+                          <h1 className="text-2xl font-bold my-6 text-white bg-white/[0.08] px-4 py-2 rounded-lg border-l-4 border-white/40" {...props} />
                         ),
                         h2: ({ node, ...props }) => (
-                          <h2 className="text-xl font-bold my-5 text-primary/90 flex items-center gap-2 before:content-['##'] before:text-primary/50" {...props} />
+                          <h2 className="text-xl font-bold my-5 text-white bg-white/[0.05] px-3 py-1.5 rounded-lg border-l-3 border-white/30 flex items-center gap-2" {...props} />
                         ),
                         h3: ({ node, ...props }) => (
-                          <h3 className="text-lg font-semibold my-4 text-primary/80 flex items-center gap-2 before:content-['###'] before:text-primary/40 before:text-sm" {...props} />
+                          <h3 className="text-lg font-semibold my-4 text-white flex items-center gap-2 before:content-['▸'] before:text-white/80" {...props} />
                         ),
                         h4: ({ node, ...props }) => (
-                          <h4 className="text-base font-semibold my-3 text-primary/70 flex items-center gap-2 before:content-['####'] before:text-primary/30 before:text-xs" {...props} />
+                          <h4 className="text-base font-semibold my-3 text-white/90 flex items-center gap-2 before:content-['▪'] before:text-white/70" {...props} />
                         ),
                         h5: ({ node, ...props }) => (
-                          <h5 className="text-sm font-medium my-2 text-primary/60" {...props} />
+                          <h5 className="text-sm font-semibold my-2 text-white/80" {...props} />
                         ),
                         h6: ({ node, ...props }) => (
-                          <h6 className="text-xs font-medium my-2 text-primary/50 uppercase tracking-wider" {...props} />
+                          <h6 className="text-xs font-semibold my-2 text-white/70 uppercase tracking-wider" {...props} />
                         ),
                         // 引用块
                         blockquote: ({ node, ...props }) => (

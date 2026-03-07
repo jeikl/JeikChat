@@ -7,7 +7,9 @@ import {
   Trash2,
   MessageSquare,
   Wrench,
-  Edit2
+  Edit2,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 import { useState } from 'react';
@@ -28,33 +30,20 @@ const NAV_ITEMS = [
 
 const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
   const navigate = useNavigate();
-  const { sessions, currentSessionId, setCurrentSession, deleteSession, updateSession } = useChatStore();
+  const { 
+    sessions, 
+    currentSessionId, 
+    setCurrentSession, 
+    deleteSession, 
+    deleteSessionWithApi,
+    updateSession,
+    createNewSession,
+    skipDeleteConfirm,
+    setSkipDeleteConfirm
+  } = useChatStore();
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [logoError, setLogoError] = useState(false);
-
-  // 确保默认对话存在且不可删除
-  // useEffect(() => {
-  //   // 使用 requestAnimationFrame 将状态更新推迟到下一个 tick
-  //   // 避免在渲染过程中直接更新状态
-  //   const timer = requestAnimationFrame(() => {
-  //     const state = useChatStore.getState();
-  //     const hasDefaultSession = state.sessions.some(s => s.id === 'default-session');
-      
-  //     if (!hasDefaultSession) {
-  //       state.addSession({
-  //         id: 'default-session',
-  //         title: '默认对话',
-  //         messages: [],
-  //         createdAt: Date.now(),
-  //         updatedAt: Date.now(),
-  //         isDefault: true // 标记为默认
-  //       });
-  //     }
-  //   });
-
-  //   return () => cancelAnimationFrame(timer);
-  // }, []); // 仅在组件挂载时执行一次
 
   const handleSelectSession = (sessionId: string) => {
     setCurrentSession(sessionId);
@@ -64,16 +53,26 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
     navigate('/chat');
   };
 
-  const createNewSession = () => {
+  const handleCreateNewSession = () => {
+    // 不创建新会话，只是清空当前会话状态
+    // 新会话会在用户发送第一条消息后自动创建
     setCurrentSession(null);
+    
+    // 导航到聊天页面
     navigate('/chat');
+    
+    // 移动端关闭侧边栏
+    if (window.innerWidth < 1024) {
+      onCloseMobile();
+    }
   };
 
-  const handleDeleteSession = (e: React.MouseEvent, sessionId: string) => {
+  const handleDeleteSession = async (e: React.MouseEvent, sessionId: string) => {
     e.stopPropagation();
     if (sessionId === 'default-session') return; // 禁止删除默认对话
-    if (confirm('确定要删除这个对话吗？')) {
-      deleteSession(sessionId);
+    
+    if (skipDeleteConfirm || confirm('确定要删除这个对话吗？')) {
+      await deleteSessionWithApi(sessionId);
     }
   };
 
@@ -162,18 +161,19 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
 
         <div className="px-4 mb-6">
           <button
-            onClick={createNewSession}
+            onClick={handleCreateNewSession}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 border group ${
               !isOpen ? 'justify-center px-0' : ''
             } ${
-              currentSessionId !== 'default-session' && !sessions.find(s => s.id === currentSessionId)?.isDefault
+              // 当前没有选中会话（点击了开启新对话）或者是非默认会话时高亮
+              !currentSessionId || (currentSessionId !== 'default-session' && !sessions.find(s => s.id === currentSessionId)?.isDefault)
                 ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20'
                 : 'bg-bg-tertiary text-text-secondary border-border hover:border-primary/50 hover:bg-bg-tertiary/80'
             }`}
             title="开启新对话"
           >
             <Plus className={`w-5 h-5 ${!isOpen ? 'w-6 h-6' : ''} ${
-              currentSessionId !== 'default-session' && !sessions.find(s => s.id === currentSessionId)?.isDefault 
+              !currentSessionId || (currentSessionId !== 'default-session' && !sessions.find(s => s.id === currentSessionId)?.isDefault)
                 ? 'text-white' 
                 : 'text-primary'
             }`} />
@@ -192,6 +192,8 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
             <div className="space-y-1">
               {sessions
                 .filter(session => session.id !== 'default-session') // 过滤掉默认会话
+                // 反转数组，让最新的会话显示在最上面
+                .reverse()
                 .map((session) => (
                 <div
                   key={session.id}
@@ -253,6 +255,23 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+          
+          {/* 删除不再提示选项 - 放在会话列表底部 */}
+          {isOpen && sessions.filter(s => s.id !== 'default-session').length > 0 && (
+            <div className="py-3 mt-2 border-t border-border/10">
+              <button
+                onClick={() => setSkipDeleteConfirm(!skipDeleteConfirm)}
+                className="flex items-center justify-center w-full gap-2 text-text-tertiary hover:text-text-secondary transition-colors py-2 rounded-lg hover:bg-bg-tertiary/50"
+              >
+                {skipDeleteConfirm ? (
+                  <CheckSquare className="w-4 h-4 text-primary" />
+                ) : (
+                  <Square className="w-4 h-4" />
+                )}
+                <span className="text-xs">删除不再提示</span>
+              </button>
             </div>
           )}
         </div>

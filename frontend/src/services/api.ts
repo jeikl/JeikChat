@@ -38,6 +38,14 @@ export interface ApiResponse<T> {
   msg: string;
 }
 
+// 工具配置对象（用于发送消息时传递工具信息）
+export interface ToolConfig {
+  toolid: string;  // 工具名
+  mcp: number;     // 0=普通工具, 1=MCP工具
+  name?: string;   // 显示名称（可选）
+  description?: string;  // 描述（可选）
+}
+
 // 聊天相关类型
 export interface SendMessageRequest {
   content: string;
@@ -45,7 +53,7 @@ export interface SendMessageRequest {
   model?: string;
   knowledgeBaseIds?: string[];
   stream?: boolean;
-  tools?: string[];
+  tools?: ToolConfig[];  // 改为 ToolConfig 对象列表
 }
 
 export interface SendMessageResponse {
@@ -67,10 +75,21 @@ export interface CreateKnowledgeRequest {
 
 // 工具相关类型
 export interface Tool {
+  toolid: string;  // 工具唯一标识（原名）
+  name: string;    // 显示名称
+  description: string;
+  mcp: number;     // 0=普通工具, 1=MCP工具
+  enabled?: boolean;
+}
+
+// MCP 服务分组类型
+export interface MCPToolService {
   id: string;
   name: string;
   description: string;
-  enabled?: boolean;
+  toolCount: number;
+  tools: Tool[];
+  source: 'built-in' | 'mcp';
 }
 
 // ============================================================
@@ -523,6 +542,70 @@ export const toolsApi = {
    */
   batchSet: async (toolIds: string[], enabled: boolean): Promise<void> => {
     await apiClient.post('/tools/batch-set', { toolIds, enabled });
+  },
+
+  /**
+   * 流式获取工具列表 - 按服务分组返回，提供更好的用户体验
+   * @请求方式 GET /api/tools/stream
+   * @触发位置 AgentToolsPage.tsx - 页面加载时
+   * @返回 SSE流式响应
+   * 
+   * 事件类型：
+   * - status: 状态更新（如"正在连接工具服务..."）
+   * - service: 单个服务数据（包含该服务下的所有工具）
+   * - warning: 警告信息
+   * - complete: 加载完成
+   * - error: 错误信息
+   */
+  listStream: (
+    callbacks: {
+      onStatus?: (message: string) => void;
+      onService?: (service: MCPToolService) => void;
+      onComplete?: (total: number, services: number) => void;
+      onWarning?: (message: string) => void;
+      onError?: (message: string) => void;
+    }
+  ): (() => void) => {
+    const eventSource = new EventSource('/api/tools/stream');
+    
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        switch (data.type) {
+          case 'status':
+            callbacks.onStatus?.(data.message);
+            break;
+          case 'service':
+            callbacks.onService?.(data.service);
+            break;
+          case 'complete':
+            callbacks.onComplete?.(data.total, data.services);
+            eventSource.close();
+            break;
+          case 'warning':
+            callbacks.onWarning?.(data.message);
+            break;
+          case 'error':
+            callbacks.onError?.(data.message);
+            eventSource.close();
+            break;
+        }
+      } catch (error) {
+        console.error('解析流式数据失败:', error);
+      }
+    };
+    
+    eventSource.onerror = (error) => {
+      console.error('SSE连接错误:', error);
+      callbacks.onError?.('连接失败');
+      eventSource.close();
+    };
+    
+    // 返回取消函数
+    return () => {
+      eventSource.close();
+    };
   },
 };
 

@@ -13,11 +13,12 @@ interface ChatState {
   abortController: AbortController | null;
   thinkingMode: 'auto' | 'deep' | 'false';
   selectedKnowledgeBaseIds: string[];
-  selectedToolIds: string[];
+  skipDeleteConfirm: boolean; // 删除不再提示
   
   // Actions
   addSession: (session: ChatSession) => void;
   deleteSession: (sessionId: string) => void;
+  deleteSessionWithApi: (sessionId: string) => Promise<void>; // 调用后端删除
   setCurrentSession: (sessionId: string | null) => void;
   addMessage: (sessionId: string, message: Message) => void;
   updateMessage: (sessionId: string, messageId: string, updates: Partial<Message>) => void;
@@ -27,7 +28,8 @@ interface ChatState {
   setThinkingMode: (mode: 'auto' | 'deep' | 'false') => void;
   updateSession: (sessionId: string, updates: Partial<ChatSession>) => void;
   setSelectedKnowledgeBaseIds: (ids: string[]) => void;
-  setSelectedToolIds: (ids: string[]) => void;
+  setSkipDeleteConfirm: (skip: boolean) => void; // 设置删除不再提示
+  createNewSession: () => ChatSession; // 创建新会话
 }
 
 export const useChatStore = create<ChatState>()(
@@ -40,10 +42,10 @@ export const useChatStore = create<ChatState>()(
       abortController: null,
       thinkingMode: 'auto',
       selectedKnowledgeBaseIds: [],
-      selectedToolIds: [],
+      skipDeleteConfirm: false, // 默认需要确认
       
       addSession: (session) => set((state) => ({
-        sessions: [...state.sessions, session],
+        sessions: [session, ...state.sessions], // 新会话插入到数组开头（顶部）
         currentSessionId: session.id,
       })),
       
@@ -51,6 +53,50 @@ export const useChatStore = create<ChatState>()(
         sessions: state.sessions.filter((s) => s.id !== sessionId),
         currentSessionId: state.currentSessionId === sessionId ? null : state.currentSessionId,
       })),
+      
+      // 调用后端 API 删除会话
+      deleteSessionWithApi: async (sessionId: string) => {
+        const { deleteSession } = get();
+        
+        try {
+          // 获取会话的 UUID
+          const sessionUuid = localStorage.getItem(`session-uuid-${sessionId}`);
+          
+          if (sessionUuid) {
+            // 调用后端删除接口
+            const { chatApi } = await import('@/services/api');
+            await chatApi.deleteSession(sessionUuid);
+            
+            // 清除本地存储的 UUID
+            localStorage.removeItem(`session-uuid-${sessionId}`);
+          }
+          
+          // 从前端状态中删除
+          deleteSession(sessionId);
+        } catch (error) {
+          console.error('删除会话失败:', error);
+          // 即使后端删除失败，也从前端状态中删除
+          deleteSession(sessionId);
+        }
+      },
+      
+      // 创建新会话（发送第一条消息后调用）
+      createNewSession: (content: string) => {
+        const { addSession } = get();
+        // 生成标题：取内容前20字，如果超过20字加省略号
+        const title = content.length > 20 ? content.slice(0, 20) + '...' : content;
+        const newSession: ChatSession = {
+          id: uuidv4(),
+          title: title || '新对话',
+          messages: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        addSession(newSession);
+        return newSession;
+      },
+      
+      setSkipDeleteConfirm: (skip) => set({ skipDeleteConfirm: skip }),
       
       setCurrentSession: (sessionId) => set({ currentSessionId: sessionId }),
       
@@ -90,9 +136,7 @@ export const useChatStore = create<ChatState>()(
       })),
       
       setSelectedKnowledgeBaseIds: (ids) => set({ selectedKnowledgeBaseIds: ids }),
-      
-      setSelectedToolIds: (ids) => set({ selectedToolIds: ids }),
-      
+
       stopGeneration: () => {
         const { abortController } = get();
         if (abortController) {
@@ -106,18 +150,18 @@ export const useChatStore = create<ChatState>()(
           currentSessionId, 
           addSession, 
           addMessage,
+          createNewSession,
+          setCurrentSession,
           thinkingMode,
-          // selectedKnowledgeBaseIds, // 移除这里的解构，使用 KnowledgeStore 中的
-          // selectedToolIds, // 移除这里的解构，使用 SettingsStore 中的
         } = get();
         
         // 从 KnowledgeStore 获取知识库选择状态
         const knowledgeState = useKnowledgeStore.getState();
         const selectedKnowledgeBaseIds = knowledgeState.selectedKnowledgeIds;
-        
-        // 从 SettingsStore 获取工具选择状态
+
+        // 从 SettingsStore 获取工具选择状态（现在是 ToolConfig 对象数组）
         const settingsState = useSettingsStore.getState();
-        const selectedToolIds = settingsState.selectedToolIds;
+        const selectedTools = settingsState.getSelectedTools();
 
         // 获取当前激活的模型配置，如果没有则尝试获取第一个配置，再没有则使用默认值
         const activeConfig = settingsState.getActiveConfig();
@@ -132,23 +176,35 @@ export const useChatStore = create<ChatState>()(
           allConfigs: settingsState.configs
         });
 
-        const targetSessionId = sessionId || currentSessionId;
+        // 优先使用传入的 sessionId，否则使用 currentSessionId
+        let targetSessionId = sessionId || currentSessionId;
         
-        // 如果没有指定会话，创建新会话
+        // 如果当前没有会话（点击了"开启新对话"），创建一个新会话
         if (!targetSessionId) {
-          const newSession: ChatSession = {
-            id: uuidv4(),
-            title: content.slice(0, 30) + (content.length > 30 ? '...' : ''),
-            messages: [],
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-            // 不保存 modelId 到会话中，避免持久化会话级别的设置
-          };
-          addSession(newSession);
-          sessionId = newSession.id;
-        } else {
-          sessionId = targetSessionId;
+          const newSession = createNewSession(content);
+          targetSessionId = newSession.id;
+          setCurrentSession(newSession.id);
+          console.log('创建新会话:', { sessionId: newSession.id, title: newSession.title });
         }
+        
+        // 如果是默认会话且不存在，创建它
+        if (targetSessionId === 'default-session') {
+          const existingDefaultSession = get().sessions.find(s => s.id === 'default-session');
+          if (!existingDefaultSession) {
+            const defaultSession: ChatSession = {
+              id: 'default-session',
+              title: '默认对话',
+              messages: [],
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+              isDefault: true,
+            };
+            addSession(defaultSession);
+            console.log('创建默认会话');
+          }
+        }
+        
+        sessionId = targetSessionId;
         
         // 获取或生成会话的UUID（永久唯一）
         let sessionUuid = null;
@@ -197,8 +253,24 @@ export const useChatStore = create<ChatState>()(
           // 使用全局设置的模型，而不是会话级别的设置
           const modelIdToSend = activeModelId;
           
-          console.log('发送请求:', { content, sessionId, model: modelIdToSend, thinking: thinkingMode, sessionUuid });
-          
+          // 在发送前重新获取最新的状态，避免缓存问题
+          const latestKnowledgeState = useKnowledgeStore.getState();
+          const latestSettingsState = useSettingsStore.getState();
+          const finalKnowledgeIds = latestKnowledgeState.selectedKnowledgeIds;
+          const finalTools = latestSettingsState.getSelectedTools();
+
+          console.log('发送请求调试:', {
+            content,
+            sessionId,
+            model: modelIdToSend,
+            thinking: thinkingMode,
+            sessionUuid,
+            knowledgeBaseIds: finalKnowledgeIds,
+            tools: finalTools,
+            knowledgeStoreState: latestKnowledgeState.selectedKnowledgeIds,
+            settingsStoreState: latestSettingsState.selectedTools
+          });
+
           const response = await fetch('/api/chat/send', {
             method: 'POST',
             headers: {
@@ -208,8 +280,8 @@ export const useChatStore = create<ChatState>()(
               content,
               sessionId,
               model: modelIdToSend,
-              knowledgeBaseIds: selectedKnowledgeBaseIds,
-              tools: selectedToolIds,
+              knowledgeBaseIds: finalKnowledgeIds,
+              tools: finalTools,  // 传递 ToolConfig 对象数组
               stream: true,
               thinking: thinkingMode,
               sessionUuid: sessionUuid,
@@ -286,6 +358,14 @@ export const useChatStore = create<ChatState>()(
                   }
                   
                   if (parsed.done) {
+                    // 保存后端返回的 UUID（如果是后端生成的）
+                    if (parsed.sessionUuid && sessionId) {
+                      const storedUuid = localStorage.getItem(`session-uuid-${sessionId}`);
+                      if (!storedUuid) {
+                        localStorage.setItem(`session-uuid-${sessionId}`, parsed.sessionUuid);
+                        console.log('保存后端生成的 UUID:', { sessionId, sessionUuid: parsed.sessionUuid });
+                      }
+                    }
                     break;
                   }
                   

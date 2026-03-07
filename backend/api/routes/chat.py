@@ -74,10 +74,14 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         request.content, 
     )
     
-    # 记录会话UUID
+    # 记录会话UUID - 如果前端未提供，则后端生成一个
     session_uuid = request.session_uuid
-    logger.info(f"收到前端UUID: {session_uuid}")
-    logger.info(f"完整请求: {request.model_dump()}")
+    if not session_uuid:
+        session_uuid = str(uuid.uuid4())
+        logger.warning(f"前端未提供UUID，后端生成: {session_uuid}")
+    
+    # 记录 UUID 到会话 ID 的映射（用于删除功能）
+    uuid_to_session_map[session_uuid] = session_id
     
     config = {
         "configurable": {
@@ -88,9 +92,11 @@ async def send_message(request: SendMessageRequest, http_request: Request):
     
     model = request.model or "qwen3.5-plus"
     thinking = request.thinking or "auto"
-    tools = request.tools or []
+    # tools 现在是 ToolConfig 对象列表
+    tool_configs = request.tools or []
+    tool_names = [t.toolid for t in tool_configs] if tool_configs else []
 
-    logger.info(f"使用模型: {model}, 思考模式: {thinking}, 工具: {tools}")
+    logger.info(f"使用模型: {model}, 思考模式: {thinking}, 工具: {tool_names}")
     
     task_id = str(uuid.uuid4())
     task = stream_manager.register_task(task_id, session_id)
@@ -99,22 +105,22 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         full_content = ""
         full_reasoning = ""
         client_disconnected = False
-        is_agent_mode = len(tools) > 0
-        logger.info(f"模式判断: is_agent_mode={is_agent_mode}")
+        is_agent_mode = len(tool_configs) > 0
         if is_agent_mode:
             #stream_func = agent_stream
-            system_prompt = prompts.get_agent_prompt(tools)
+            system_prompt = prompts.get_agent_prompt(tool_names)
         else:
             system_prompt = prompts.get_chat_prompt()
 
         msg = build_messages(system_prompt, request.content)
 
         try:
-            async for chunk in agent_stream0(model, msg, thinking, tools, config,task.is_cancelled):
+            # 传递 tool_configs（ToolConfig 对象列表）给 agent_stream0
+            async for chunk in agent_stream0(model, msg, thinking, tool_configs, config, task.is_cancelled):
                 if await http_request.is_disconnected():
                     if not client_disconnected:
-                        logger.info(f"客户端断开连接，后台继续生成: task_id={task_id}")
-                        client_disconnected = True
+                        logger.info(f"客户端断开连接，后台停止: task_id={task_id}")
+                        break
                 
                 if task.is_cancelled:
                     logger.info(f"任务被取消，停止生成: task_id={task_id}")
@@ -144,7 +150,8 @@ async def send_message(request: SendMessageRequest, http_request: Request):
             
             if not client_disconnected:
                 yield sse_format({
-                    "sessionId": session_id, 
+                    "sessionId": session_id,
+                    "sessionUuid": session_uuid,
                     "done": True, 
                     "hasReasoning": bool(full_reasoning),
                     "cancelled": task.is_cancelled
@@ -183,14 +190,43 @@ async def get_session_by_id(session_id: str):
     return success(data=session)
 
 
-@router.delete("/chat/session/{session_id}")
-async def delete_session(session_id: str):
-    """删除会话"""
-    if session_id in sessions:
-        del sessions[session_id]
-        stream_manager.cancel_session_tasks(session_id)
-        return success(msg="删除成功")
-    return success(msg="会话不存在")
+# UUID 到会话 ID 的映射（用于前端通过 UUID 删除会话）
+uuid_to_session_map: dict = {}
+
+
+@router.delete("/chat/history/{session_id}")
+async def delete_session_history(session_id: str):
+    """
+    删除指定会话历史
+    
+    支持两种 ID：
+    1. 前端会话 ID（如 "session-xxx"）
+    2. UUID（如 "550e8400-e29b-41d4-a716-446655440000"）
+    """
+    # 检查是否是 UUID 格式
+    try:
+        uuid.UUID(session_id)
+        # 如果是 UUID，查找对应的会话
+        if session_id in uuid_to_session_map:
+            actual_session_id = uuid_to_session_map[session_id]
+            if actual_session_id in sessions:
+                del sessions[actual_session_id]
+                stream_manager.cancel_session_tasks(actual_session_id)
+                del uuid_to_session_map[session_id]
+                return success(msg="删除成功")
+        return success(msg="会话不存在或已删除")
+    except ValueError:
+        # 不是 UUID，直接作为会话 ID 处理
+        if session_id in sessions:
+            del sessions[session_id]
+            stream_manager.cancel_session_tasks(session_id)
+            # 清理 UUID 映射
+            for uuid_key, sid in list(uuid_to_session_map.items()):
+                if sid == session_id:
+                    del uuid_to_session_map[uuid_key]
+                    break
+            return success(msg="删除成功")
+        return success(msg="会话不存在")
 
 
 @router.post("/chat/stop/{session_id}")

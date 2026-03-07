@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Sparkles, Zap, Ban, Plus, Globe, Mic, Square, Send } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 interface InputAreaProps {
   onSend: (content: string) => void;
@@ -10,20 +11,39 @@ interface InputAreaProps {
 }
 
 const thinkingOptions = [
-  { value: 'auto', label: '自动', icon: Sparkles },
-  { value: 'deep', label: '深度思考', icon: Zap },
-  { value: 'false', label: '关闭思考', icon: Ban },
+  { value: 'auto', label: 'Auto', icon: Sparkles },
+  { value: 'deep', label: 'Thinking', icon: Zap },
+  { value: 'false', label: 'Close', icon: Ban },
 ] as const;
 
 const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) => {
   const [content, setContent] = useState('');
-  const [isWebSearch, setIsWebSearch] = useState(false);
   const [showThinkingDropdown, setShowThinkingDropdown] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const thinkingMode = useChatStore((state) => state.thinkingMode);
   const setThinkingMode = useChatStore((state) => state.setThinkingMode);
+  
+  // 从 settingsStore 获取工具状态
+  const selectedToolIds = useSettingsStore((state) => state.selectedToolIds);
+  const toggleTool = useSettingsStore((state) => state.toggleTool);
+  
+  // 检查是否选中了 web 搜索工具（bing_search 或 web_search）
+  const isWebSearch = selectedToolIds.includes('bing_search') || selectedToolIds.includes('web_search');
+  
+  // 切换 web 搜索工具
+  const handleWebSearchToggle = () => {
+    // 优先切换 bing_search，如果不存在则尝试 web_search
+    if (selectedToolIds.includes('bing_search')) {
+      toggleTool('bing_search');
+    } else if (selectedToolIds.includes('web_search')) {
+      toggleTool('web_search');
+    } else {
+      // 如果没有选中，尝试选中 bing_search
+      toggleTool('bing_search');
+    }
+  };
   
   const currentOption = thinkingOptions.find(o => o.value === thinkingMode) || thinkingOptions[0];
   const CurrentIcon = currentOption.icon;
@@ -132,12 +152,13 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                 </div>
 
                 <button
-                  onClick={() => setIsWebSearch(!isWebSearch)}
+                  onClick={handleWebSearchToggle}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
                     isWebSearch 
                       ? 'bg-primary/10 text-primary' 
                       : 'text-text-quaternary hover:bg-white/5 hover:text-text-primary'
                   }`}
+                  title={isWebSearch ? '点击取消网络搜索' : '点击启用网络搜索'}
                 >
                   <Globe className="w-4 h-4 flex-shrink-0" />
                   <span className="inline whitespace-nowrap">Search</span>

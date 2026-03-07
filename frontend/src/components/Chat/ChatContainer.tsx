@@ -38,12 +38,11 @@ const ChatContainer = () => {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const isUserScrolledUpRef = useRef(false);
 
-  // 进入页面时，如果没有选中会话，自动进入默认会话
+  // 进入页面时，如果没有选中会话且不在新对话状态，自动进入默认会话
   useEffect(() => {
-    if (!currentSessionId) {
-      setCurrentSession('default-session');
-    }
-  }, [currentSessionId, setCurrentSession]);
+    // 注意：不自动设置默认会话，因为用户可能点击了"开启新对话"
+    // 新会话会在用户发送第一条消息时自动创建
+  }, []);
 
   // 监听输入框高度变化
   useEffect(() => {
@@ -128,7 +127,10 @@ const ChatContainer = () => {
   }, [messages.length, currentSessionId]);
 
   const handleSend = async (content: string) => {
-    await sendMessage(content);
+    // 直接调用 sendMessage，让 sendMessage 内部处理会话创建逻辑
+    // 如果 currentSessionId 为 null，sendMessage 会自动创建新会话
+    console.log('handleSend 调用:', { content, currentSessionId });
+    await sendMessage(content, currentSessionId || undefined);
   };
 
   return (
