@@ -63,10 +63,7 @@ async def send_message(request: SendMessageRequest, http_request: Request):
     """
     发送消息 - 流式返回
     """
-    logger.info(f"收到消息: content={request.content[:50]}..., thinking={request.thinking}")
-    
     prompts = get_prompts()
-    # logger.info(f"提示词: {system_prompt}")
 
     
     session_id = get_session(
@@ -96,7 +93,10 @@ async def send_message(request: SendMessageRequest, http_request: Request):
     tool_configs = request.tools or []
     tool_names = [t.toolid for t in tool_configs] if tool_configs else []
 
-    logger.info(f"使用模型: {model}, 思考模式: {thinking}, 工具: {tool_names}")
+    if tool_names:
+        logger.info(f"[Chat] 模型={model}, 工具={tool_names}")
+    else:
+        logger.info(f"[Chat] 模型={model}")
     
     task_id = str(uuid.uuid4())
     task = stream_manager.register_task(task_id, session_id)

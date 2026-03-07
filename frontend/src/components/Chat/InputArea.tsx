@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, Zap, Ban, Plus, Globe, Mic, Square, Send } from 'lucide-react';
+import { Sparkles, Zap, Ban, Plus, Globe, Mic, Square, Send, Loader2 } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 import { useSettingsStore } from '@/stores/settingsStore';
+import { toolsApi } from '@/services/api';
+import type { Tool } from '@/services/api';
 
 interface InputAreaProps {
   onSend: (content: string) => void;
@@ -16,32 +18,96 @@ const thinkingOptions = [
   { value: 'false', label: 'Close', icon: Ban },
 ] as const;
 
+// Web 搜索工具的 toolid 列表
+const WEB_SEARCH_TOOL_IDS = ['bing_search', 'web_search', 'webSearchSogou', 'webSearchQuark', 'webSearchPro', 'webSearchStd'];
+
 const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) => {
   const [content, setContent] = useState('');
   const [showThinkingDropdown, setShowThinkingDropdown] = useState(false);
+  const [isLoadingTools, setIsLoadingTools] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const loadedRef = useRef(false);
   
   const thinkingMode = useChatStore((state) => state.thinkingMode);
   const setThinkingMode = useChatStore((state) => state.setThinkingMode);
   
   // 从 settingsStore 获取工具状态
-  const selectedToolIds = useSettingsStore((state) => state.selectedToolIds);
+  const selectedTools = useSettingsStore((state) => state.selectedTools);
+  const toolServices = useSettingsStore((state) => state.toolServices);
   const toggleTool = useSettingsStore((state) => state.toggleTool);
+  const setToolServices = useSettingsStore((state) => state.setToolServices);
   
-  // 检查是否选中了 web 搜索工具（bing_search 或 web_search）
-  const isWebSearch = selectedToolIds.includes('bing_search') || selectedToolIds.includes('web_search');
+  // 检查是否选中了 web 搜索工具
+  const isWebSearch = selectedTools.some(t => WEB_SEARCH_TOOL_IDS.includes(t.toolid));
+  
+  // 自动加载工具（如果未加载）
+  // 加载工具的函数
+  const loadTools = () => {
+    setIsLoadingTools(true);
+    
+    const loadedServicesList: any[] = [];
+    
+    toolsApi.listStream({
+      onStatus: () => {},
+      onService: (service) => {
+        loadedServicesList.push(service);
+        setToolServices([...loadedServicesList]);
+      },
+      onComplete: () => {
+        setIsLoadingTools(false);
+      },
+      onError: (error) => {
+        console.error('[InputArea] 工具加载失败:', error);
+        setIsLoadingTools(false);
+        // 3秒后重试
+        setTimeout(() => {
+          if (toolServices.length === 0) {
+            console.log('[InputArea] 尝试重新加载工具...');
+            loadTools();
+          }
+        }, 3000);
+      },
+    });
+  };
+  
+  useEffect(() => {
+    if (!loadedRef.current && toolServices.length === 0) {
+      loadedRef.current = true;
+      loadTools();
+    }
+  }, [toolServices.length, setToolServices]);
   
   // 切换 web 搜索工具
   const handleWebSearchToggle = () => {
-    // 优先切换 bing_search，如果不存在则尝试 web_search
-    if (selectedToolIds.includes('bing_search')) {
-      toggleTool('bing_search');
-    } else if (selectedToolIds.includes('web_search')) {
-      toggleTool('web_search');
+    // 获取所有 web 搜索工具
+    const webSearchTools: Tool[] = [];
+    for (const service of toolServices) {
+      for (const tool of service.tools) {
+        if (WEB_SEARCH_TOOL_IDS.includes(tool.toolid)) {
+          webSearchTools.push(tool);
+        }
+      }
+    }
+
+    if (webSearchTools.length === 0) return;
+
+    // 检查当前是否已选中任何 web 搜索工具
+    const hasSelectedWebSearch = selectedTools.some(t =>
+      WEB_SEARCH_TOOL_IDS.includes(t.toolid)
+    );
+
+    if (hasSelectedWebSearch) {
+      // 如果已选中，则取消选中所有 web 搜索工具
+      for (const tool of webSearchTools) {
+        const isSelected = selectedTools.some(t => t.toolid === tool.toolid);
+        if (isSelected) {
+          toggleTool(tool);
+        }
+      }
     } else {
-      // 如果没有选中，尝试选中 bing_search
-      toggleTool('bing_search');
+      // 如果未选中，则选中第一个 web 搜索工具
+      toggleTool(webSearchTools[0]);
     }
   };
   
@@ -152,16 +218,29 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                 </div>
 
                 <button
-                  onClick={handleWebSearchToggle}
+                  onClick={toolServices.length === 0 && !isLoadingTools ? loadTools : handleWebSearchToggle}
+                  disabled={isLoadingTools}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
                     isWebSearch 
                       ? 'bg-primary/10 text-primary' 
-                      : 'text-text-quaternary hover:bg-white/5 hover:text-text-primary'
+                      : isLoadingTools
+                        ? 'text-text-quaternary/50 cursor-not-allowed'
+                        : toolServices.length === 0
+                          ? 'text-text-quaternary/50 hover:text-text-tertiary hover:bg-white/5'
+                          : 'text-text-quaternary hover:bg-white/5 hover:text-text-primary'
                   }`}
-                  title={isWebSearch ? '点击取消网络搜索' : '点击启用网络搜索'}
+                  title={isLoadingTools ? '正在加载工具...' : isWebSearch ? '点击取消网络搜索' : toolServices.length === 0 ? '点击重新加载工具' : '点击启用网络搜索'}
                 >
-                  <Globe className="w-4 h-4 flex-shrink-0" />
-                  <span className="inline whitespace-nowrap">Search</span>
+                  {isLoadingTools ? (
+                    <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin" />
+                  ) : toolServices.length === 0 ? (
+                    <Globe className="w-4 h-4 flex-shrink-0 opacity-50" />
+                  ) : (
+                    <Globe className="w-4 h-4 flex-shrink-0" />
+                  )}
+                  <span className="inline whitespace-nowrap">
+                    {isLoadingTools ? 'Loading...' : toolServices.length === 0 ? 'Retry' : 'Search'}
+                  </span>
                 </button>
               </div>
             </div>

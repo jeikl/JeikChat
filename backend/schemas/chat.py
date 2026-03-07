@@ -44,10 +44,10 @@ class ToolConfig(BaseModel):
 
 class SendMessageRequest(BaseModel):
     content: str
-    session_id: Optional[str] = None
+    session_id: Optional[str] = Field(default=None, alias="sessionId")
     model: Optional[str] = None
     thinking: Optional[str] = "auto"
-    knowledge_base_ids: Optional[List[str]] = None
+    knowledge_base_ids: Optional[List[str]] = Field(default=None, alias="knowledgeBaseIds")
     # tools 改为支持新的格式：工具配置对象列表
     tools: Optional[List[ToolConfig]] = None
     session_uuid: Optional[str] = Field(default=None, alias="sessionUuid")

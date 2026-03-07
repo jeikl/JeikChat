@@ -4,11 +4,14 @@ MCP 工具模块
 """
 
 import asyncio
+import logging
 import os
 import platform
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 from langchain_core.tools import BaseTool
+
+logger = logging.getLogger(__name__)
 
 # 全局单例变量
 _mcp_tools: Optional[List[BaseTool]] = None
@@ -149,6 +152,45 @@ def _get_services_list(config_path: Optional[str] = None) -> List[Dict[str, Any]
     return servers
 
 
+def _customize_mcp_tool(tool: BaseTool, service_name: str) -> BaseTool:
+    """
+    自定义 MCP 工具的名称和描述，帮助大模型更好地理解工具用途
+    
+    Args:
+        tool: 原始工具对象
+        service_name: MCP 服务名称
+        
+    Returns:
+        修改后的工具对象
+    """
+    # 1. 给工具名加上服务前缀，避免不同服务的同名工具冲突
+    # 例如: fork_repository -> github_fork_repository
+    original_name = tool.name
+    prefixed_name = f"{service_name}_{original_name}"
+    tool.name = prefixed_name
+    
+    # 2. 增强工具描述，添加服务来源信息
+    service_prefix_desc = f"【{service_name}】"
+    
+    # 3. 根据服务类型添加特定的使用提示
+    usage_hints = {
+        "github": "此工具用于操作 GitHub 仓库，调用前请确认用户已授权访问。",
+        "bing-search": "此工具用于搜索网络信息，返回结果包括网页标题、URL、摘要等。",
+        "12306-mcp": "此工具用于查询火车票信息，包括车次、余票、价格等。",
+        "zhipu-web-search-sse": "此工具用于搜索网络信息，返回结构化的搜索结果。",
+    }
+    
+    # 获取该服务的特定提示，如果没有则使用通用提示
+    hint = usage_hints.get(service_name, "此工具为 MCP 服务工具，请根据描述正确使用。")
+    
+    # 4. 组装新的描述
+    enhanced_description = f"{service_prefix_desc} {tool.description}\n\n💡 使用提示: {hint}"
+    tool.description = enhanced_description
+    
+    logger.debug(f"[MCP] 工具重命名: {original_name} -> {prefixed_name}")
+    return tool
+
+
 async def _load_service_tools(service_name: str, service_config: Dict[str, Any]) -> List[BaseTool]:
     """
     加载单个服务的工具
@@ -170,14 +212,20 @@ async def _load_service_tools(service_name: str, service_config: Dict[str, Any])
         # 获取该服务的工具
         tools = await client.get_tools()
         
+        # 自定义每个工具的名称和描述
+        customized_tools = []
+        for tool in tools:
+            customized_tool = _customize_mcp_tool(tool, service_name)
+            customized_tools.append(customized_tool)
+        
         # 保存客户端以便后续清理
         _mcp_clients[service_name] = client
         
-        print(f"[MCP] 服务 '{service_name}' 加载了 {len(tools)} 个工具")
-        return tools
+        logger.info(f"[MCP] 服务 '{service_name}' 加载 {len(customized_tools)} 个工具")
+        return customized_tools
         
     except Exception as e:
-        print(f"[MCP] 加载服务 '{service_name}' 失败: {e}")
+        logger.warning(f"[MCP] 服务 '{service_name}' 加载失败: {e}")
         return []
 
 

@@ -29,7 +29,7 @@ const PROMPTS = [
 ];
 
 const ChatContainer = () => {
-  const { sessions, currentSessionId, isLoading, isStreaming, sendMessage, stopGeneration, setCurrentSession } = useChatStore();
+  const { sessions, currentSessionId, isLoading, isStreaming, sendMessage, stopGeneration } = useChatStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
@@ -37,6 +37,9 @@ const ChatContainer = () => {
   const [logoError, setLogoError] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const isUserScrolledUpRef = useRef(false);
+
+  const currentSession = sessions.find(session => session.id === currentSessionId);
+  const messages = currentSession ? currentSession.messages : [];
 
   // 进入页面时，如果没有选中会话且不在新对话状态，自动进入默认会话
   useEffect(() => {
@@ -77,8 +80,18 @@ const ChatContainer = () => {
     }
   }, []);
 
-  const currentSession = sessions.find(session => session.id === currentSessionId);
-  const messages = currentSession ? currentSession.messages : [];
+  // 处理窗口大小变化时保持滚动位置在底部
+  useEffect(() => {
+    const handleResize = () => {
+      // 只有在有消息且用户没有手动上滑时才滚动到底部
+      if (scrollContainerRef.current && messages.length > 0 && !isUserScrolledUpRef.current) {
+        scrollToBottom(true);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [messages.length]);
 
   // 监听全局滚动事件
   const handleGlobalScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -140,10 +153,10 @@ const ChatContainer = () => {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/5 blur-[120px] rounded-full pointer-events-none animate-pulse duration-[15000ms]" />
       
       {/* 消息展示区 - 使用 Spacer 替代 padding-bottom 以避免布局计算问题 */}
-      <div 
-        ref={scrollContainerRef} 
+      <div
+        ref={scrollContainerRef}
         onScroll={handleGlobalScroll}
-        className="absolute inset-0 w-full h-full overflow-y-auto scrollbar-thin z-10"
+        className="absolute inset-0 w-full h-full overflow-y-auto chat-scrollbar z-10"
       >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-2 md:py-12 max-w-6xl mx-auto w-full min-h-full">

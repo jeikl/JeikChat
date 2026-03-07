@@ -337,12 +337,12 @@ const MessageItem = ({ message }: MessageItemProps) => {
                             // 表格 - 现代化样式
                             table: ({ node, ...props }) => (
                               <div className="overflow-x-auto my-3 rounded-xl border border-white/[0.08] bg-white/[0.02] shadow-sm">
-                                <table className="w-full text-[13px] table-auto" {...props} />
+                                <table className="w-full text-[13px] table-fixed border-collapse" {...props} />
                               </div>
                             ),
-                            thead: ({ node, ...props }) => <thead className="bg-primary/10 text-primary/90 text-[12px] font-semibold whitespace-nowrap" {...props} />,
-                            th: ({ node, ...props }) => <th className="px-3 py-2 font-semibold border-b border-primary/20 text-left" {...props} />,
-                            td: ({ node, ...props }) => <td className="px-3 py-2 border-b border-white/[0.05] text-gray-300/80" {...props} />,
+                            thead: ({ node, ...props }) => <thead className="bg-primary/10 text-primary/90 text-[12px] font-semibold" {...props} />,
+                            th: ({ node, ...props }) => <th className="px-3 py-2 font-semibold border-b border-primary/20 text-center align-middle" {...props} />,
+                            td: ({ node, ...props }) => <td className="px-3 py-2 border-b border-white/[0.05] text-gray-300/80 text-center align-middle" {...props} />,
                             tr: ({ node, ...props }) => <tr className="hover:bg-white/[0.03] transition-colors" {...props} />,
                             // 分隔线 - 渐变效果
                             hr: ({ node, ...props }) => <hr className="my-4 border-t border-gradient-to-r from-transparent via-white/10 to-transparent" {...props} />,
@@ -539,12 +539,12 @@ const MessageItem = ({ message }: MessageItemProps) => {
                         // 表格 - 主题色表头
                         table: ({ node, ...props }) => (
                           <div className="overflow-x-auto my-6 rounded-2xl border border-white/[0.08] bg-white/[0.02] shadow-sm">
-                            <table className="w-full text-[14px] md:text-[15px] text-left table-auto" {...props} />
+                            <table className="w-full text-[14px] md:text-[15px] table-fixed border-collapse" {...props} />
                           </div>
                         ),
-                        thead: ({ node, ...props }) => <thead className="bg-primary/10 text-primary/90 text-xs font-semibold tracking-wider whitespace-nowrap" {...props} />,
-                        th: ({ node, ...props }) => <th className="px-4 py-3 font-semibold border-b border-primary/20 text-left" {...props} />,
-                        td: ({ node, ...props }) => <td className="px-4 py-3 border-b border-white/[0.05] text-gray-300/90" {...props} />,
+                        thead: ({ node, ...props }) => <thead className="bg-primary/10 text-primary/90 text-xs font-semibold tracking-wider" {...props} />,
+                        th: ({ node, ...props }) => <th className="px-4 py-3 font-semibold border-b border-primary/20 text-center align-middle" {...props} />,
+                        td: ({ node, ...props }) => <td className="px-4 py-3 border-b border-white/[0.05] text-gray-300/90 text-center align-middle" {...props} />,
                         tr: ({ node, ...props }) => <tr className="hover:bg-white/[0.03] transition-colors" {...props} />,
                         // 分隔线 - 渐变
                         hr: ({ node, ...props }) => <hr className="my-8 border-t border-gradient-to-r from-transparent via-white/10 to-transparent" {...props} />,

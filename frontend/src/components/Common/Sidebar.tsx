@@ -30,14 +30,12 @@ const NAV_ITEMS = [
 
 const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
   const navigate = useNavigate();
-  const { 
-    sessions, 
-    currentSessionId, 
-    setCurrentSession, 
-    deleteSession, 
+  const {
+    sessions,
+    currentSessionId,
+    setCurrentSession,
     deleteSessionWithApi,
     updateSession,
-    createNewSession,
     skipDeleteConfirm,
     setSkipDeleteConfirm
   } = useChatStore();

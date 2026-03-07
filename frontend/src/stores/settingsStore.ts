@@ -100,7 +100,7 @@ export const useSettingsStore = create<SettingsState>()(
               : [...state.selectedTools, toolConfig],
           };
         }),
-      toggleServiceTools: (serviceId, tools) =>
+      toggleServiceTools: (_serviceId, tools) =>
         set((state) => {
           // 检查该服务的工具是否全部选中
           const toolConfigs = tools.map((t): ToolConfig => ({
@@ -147,7 +147,21 @@ export const useSettingsStore = create<SettingsState>()(
       },
     }),
     {
-      name: 'settings-storage',
+      name: 'settings-storage-v4',  // 修改版本号，强制清除旧缓存
+      partialize: (state) => ({
+        // 只持久化这些字段，selectedTools 不保存
+        configs: state.configs,
+        activeConfigId: state.activeConfigId,
+        defaultSystemPrompt: state.defaultSystemPrompt,
+        tools: state.tools,
+        toolServices: state.toolServices,
+      }),
+      onRehydrateStorage: (state) => {
+        // 恢复时清空 selectedTools
+        if (state) {
+          state.selectedTools = [];
+        }
+      },
     }
   )
 );

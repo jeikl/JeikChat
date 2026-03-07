@@ -1,7 +1,7 @@
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
-type ToastType = 'success' | 'error' | 'empty';
+type ToastType = 'success' | 'error' | 'empty' | 'info';
 
 const toastConfig = {
   success: {
@@ -18,6 +18,11 @@ const toastConfig = {
     icon: <AlertCircle className="w-5 h-5 text-gray-400" />,
     style: { borderLeftColor: '#9ca3af' },
     duration: 4000,
+  },
+  info: {
+    icon: <AlertCircle className="w-5 h-5 text-blue-400" />,
+    style: { borderLeftColor: '#3b82f6' },
+    duration: 2000,
   },
 };
 

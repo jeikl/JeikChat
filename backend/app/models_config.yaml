@@ -40,7 +40,6 @@ providers:
     display_name: "${GOOGLE_DISPLAY_NAME:-Google}"
     models:
       - id: "gemini-2.0-flash"
-        
       - id: "gemini-2.0-pro"
       - id: "gemini-1.5-pro"
     enable: false
@@ -51,14 +50,22 @@ providers:
     base_url: "${DOUBAO_BASE_URL}"
     display_name: "${DOUBAO_DISPLAY_NAME:-字节跳动}"
     models:
-      - id: "deepseek-v3-2-251201"
+      - id: doubao-seed-2-0-code-preview-260215
         default: true
+      - id: "deepseek-v3-2-251201"
+        enable: false
       - id: "doubao-seed-2-0-pro-260215"
         enable: false
-      - id: "doubao-seed-2-0-code-preview-260215"
+      - id: deepseek-v3-1-250821
         enable: false
-      - id: "doubao-seed-2-0-lite-260215"
+      - id: doubao-seed-1-6-vision-250815
+        enable: true
+      - id: doubao-seed-1-8-251228
         enable: false
+      - id: Doubao-Seed-1.6-flash
+      - id: doubao-seed-1-6-lite-251015
+      - id: glm-4-7-251222
+        default: true
 
   qwen:
     name: "通义千问"
@@ -66,10 +73,10 @@ providers:
     base_url: "${QWEN_BASE_URL}"
     display_name: "${QWEN_DISPLAY_NAME:-通义千问}"
     models:
-      - id: "qwen3.5-flash"
-      - id: "qwen3-max"
-        enable: false
-      - id: "qwen3-coder-plus"
+      - id: qwen3.5-flash
+      - id: qwen-plus
+      - id: qwen-turbo
+      
 
   moonshot:
     name: "月之暗面"

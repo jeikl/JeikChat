@@ -29,7 +29,7 @@ interface ChatState {
   updateSession: (sessionId: string, updates: Partial<ChatSession>) => void;
   setSelectedKnowledgeBaseIds: (ids: string[]) => void;
   setSkipDeleteConfirm: (skip: boolean) => void; // 设置删除不再提示
-  createNewSession: () => ChatSession; // 创建新会话
+  createNewSession: (content?: string) => ChatSession; // 创建新会话
 }
 
 export const useChatStore = create<ChatState>()(
@@ -81,13 +81,13 @@ export const useChatStore = create<ChatState>()(
       },
       
       // 创建新会话（发送第一条消息后调用）
-      createNewSession: (content: string) => {
+      createNewSession: (content?: string) => {
         const { addSession } = get();
         // 生成标题：取内容前20字，如果超过20字加省略号
-        const title = content.length > 20 ? content.slice(0, 20) + '...' : content;
+        const title = content && content.length > 20 ? content.slice(0, 20) + '...' : (content || '新对话');
         const newSession: ChatSession = {
           id: uuidv4(),
-          title: title || '新对话',
+          title: title,
           messages: [],
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -155,15 +155,8 @@ export const useChatStore = create<ChatState>()(
           thinkingMode,
         } = get();
         
-        // 从 KnowledgeStore 获取知识库选择状态
-        const knowledgeState = useKnowledgeStore.getState();
-        const selectedKnowledgeBaseIds = knowledgeState.selectedKnowledgeIds;
-
-        // 从 SettingsStore 获取工具选择状态（现在是 ToolConfig 对象数组）
+        // 从 SettingsStore 获取当前激活的模型配置，如果没有则尝试获取第一个配置，再没有则使用默认值
         const settingsState = useSettingsStore.getState();
-        const selectedTools = settingsState.getSelectedTools();
-
-        // 获取当前激活的模型配置，如果没有则尝试获取第一个配置，再没有则使用默认值
         const activeConfig = settingsState.getActiveConfig();
         const firstConfig = settingsState.configs?.[0];
         const activeModelId = activeConfig?.model || firstConfig?.model || 'qwen3.5-plus';

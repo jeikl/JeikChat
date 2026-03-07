@@ -19,6 +19,29 @@ interface ToolDetailModalProps {
   onToggleService: (serviceId: string, tools: Tool[]) => void;
 }
 
+// 格式化工具显示名称
+// 后端返回的 toolid 和 name 都是带服务前缀的名称（如: github_fork_repository）
+const formatToolDisplayName = (tool: Tool, serviceSource: string): string => {
+  // 直接显示 name 字段（带服务前缀）
+  return tool.name || tool.toolid;
+};
+
+// 格式化工具描述，提取核心描述（去掉使用提示部分）
+const formatToolDescription = (description: string): string => {
+  if (!description) return '';
+  // 去掉 💡 使用提示部分
+  const hintIndex = description.indexOf('💡');
+  if (hintIndex !== -1) {
+    return description.substring(0, hintIndex).trim();
+  }
+  // 去掉 【服务名】前缀
+  const servicePrefixMatch = description.match(/^【[^】]+】\s*/);
+  if (servicePrefixMatch) {
+    return description.substring(servicePrefixMatch[0].length).trim();
+  }
+  return description;
+};
+
 const ToolDetailModal = ({
   service,
   isOpen,
@@ -83,6 +106,8 @@ const ToolDetailModal = ({
         <div className="overflow-y-auto max-h-[50vh] p-4 space-y-2">
           {service.tools.map((tool) => {
             const isSelected = selectedTools.find(t => t.toolid === tool.toolid) !== undefined;
+            const displayName = formatToolDisplayName(tool, service.source);
+            const displayDescription = formatToolDescription(tool.description);
             return (
               <div
                 key={tool.toolid}
@@ -96,15 +121,26 @@ const ToolDetailModal = ({
                 `}
               >
                 <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h4 className={`font-medium ${isSelected ? 'text-primary' : 'text-text-primary'}`}>
-                      {tool.name}
-                    </h4>
-                    <p className={`text-sm mt-1 ${isSelected ? 'text-blue-400' : 'text-text-secondary'}`}>
-                      {tool.description}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className={`font-medium truncate ${isSelected ? 'text-primary' : 'text-text-primary'}`}>
+                        {displayName}
+                      </h4>
+                      {service.source === 'mcp' && (
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-500 shrink-0">
+                          MCP
+                        </span>
+                      )}
+                    </div>
+                    <p className={`text-sm mt-1.5 line-clamp-2 ${isSelected ? 'text-blue-400/80' : 'text-text-secondary'}`}>
+                      {displayDescription}
+                    </p>
+                    {/* 显示原始 toolid（用于调试） */}
+                    <p className="text-xs text-text-quaternary mt-2 font-mono">
+                      ID: {tool.toolid}
                     </p>
                   </div>
-                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ml-3 ${
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ml-3 shrink-0 ${
                     isSelected
                       ? 'border-primary bg-primary'
                       : 'border-text-quaternary'
@@ -145,6 +181,7 @@ interface ServiceCardProps {
 }
 
 const ServiceCard = ({ service, selectedTools, onToggleService, onOpenDetail }: ServiceCardProps) => {
+  // 计算选中的工具数量
   const selectedCount = service.tools.filter(tool => selectedTools.find(t => t.toolid === tool.toolid)).length;
   const isAllSelected = selectedCount === service.tools.length && service.tools.length > 0;
   const isPartialSelected = selectedCount > 0 && !isAllSelected;
@@ -202,29 +239,57 @@ const ServiceCard = ({ service, selectedTools, onToggleService, onOpenDetail }: 
         </button>
       </div>
 
-      {/* 工具数量信息 */}
-      <div className="mt-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className={`text-xs px-2 py-1 rounded-full ${
-            service.source === 'built-in' 
-              ? 'bg-blue-500/10 text-blue-500' 
-              : 'bg-purple-500/10 text-purple-500'
-          }`}>
-            {service.source === 'built-in' ? '内置' : 'MCP'}
-          </span>
-          <span className="text-sm text-text-tertiary">
-            {selectedCount > 0 ? (
-              <span className="text-primary font-medium">{selectedCount}</span>
-            ) : (
-              <span>{service.toolCount}</span>
-            )}
-            <span className="text-text-quaternary"> / {service.toolCount} 个工具</span>
-          </span>
-        </div>
+      {/* 工具数量信息和预览 */}
+      <div className="mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2 py-1 rounded-full ${
+              service.source === 'built-in' 
+                ? 'bg-blue-500/10 text-blue-500' 
+                : 'bg-purple-500/10 text-purple-500'
+            }`}>
+              {service.source === 'built-in' ? '内置' : 'MCP'}
+            </span>
+            <span className="text-sm text-text-tertiary">
+              <span className={selectedCount > 0 ? "text-primary font-medium" : ""}>
+                {selectedCount}
+              </span>
+              <span className="text-text-quaternary"> / {service.toolCount} 个工具</span>
+            </span>
+          </div>
 
-        <div className="flex items-center gap-1 text-text-tertiary group-hover:text-primary transition-colors">
-          <span className="text-sm">查看详情</span>
-          <ChevronRight className="w-4 h-4" />
+          <div className="flex items-center gap-1 text-text-tertiary group-hover:text-primary transition-colors">
+            <span className="text-sm">查看详情</span>
+            <ChevronRight className="w-4 h-4" />
+          </div>
+        </div>
+        
+        {/* 工具名称预览 */}
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {service.tools.slice(0, 5).map((tool) => {
+            const isToolSelected = selectedTools.find(t => t.toolid === tool.toolid) !== undefined;
+            const displayName = formatToolDisplayName(tool, service.source);
+            return (
+              <span
+                key={tool.toolid}
+                className={`
+                  text-xs px-2 py-0.5 rounded border truncate max-w-[120px]
+                  ${isToolSelected 
+                    ? 'bg-primary/10 border-primary/30 text-primary' 
+                    : 'bg-bg-tertiary/50 border-border/50 text-text-tertiary'
+                  }
+                `}
+                title={displayName}
+              >
+                {displayName}
+              </span>
+            );
+          })}
+          {service.tools.length > 5 && (
+            <span className="text-xs px-2 py-0.5 rounded bg-bg-tertiary/50 text-text-quaternary">
+              +{service.tools.length - 5}
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -246,8 +311,6 @@ const AgentToolsPage = () => {
     type: 'connecting'
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [loadedServices, setLoadedServices] = useState(0);
-  const [expectedServices, setExpectedServices] = useState(0);
   const [selectedService, setSelectedService] = useState<MCPToolService | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -291,23 +354,21 @@ const AgentToolsPage = () => {
       
       onService: (service) => {
         loadedServicesList.push(service);
-        setLoadedServices(loadedServicesList.length);
-        
+
         // 实时更新服务列表
         setToolServices([...loadedServicesList]);
-        
-        setLoadingStatus({ 
-          message: `已加载 ${service.name}...`, 
-          type: 'loading' 
+
+        setLoadingStatus({
+          message: `已加载 ${service.name}...`,
+          type: 'loading'
         });
       },
-      
+
       onComplete: (total, services) => {
         setIsLoading(false);
-        setExpectedServices(services);
-        setLoadingStatus({ 
-          message: `共加载 ${services} 个服务，${total} 个工具`, 
-          type: 'complete' 
+        setLoadingStatus({
+          message: `共加载 ${services} 个服务，${total} 个工具`,
+          type: 'complete'
         });
         
         if (services > 0) {
@@ -340,6 +401,8 @@ const AgentToolsPage = () => {
       }
     };
   }, [loadToolsStream]);
+
+
 
   // 获取状态图标
   const getStatusIcon = () => {

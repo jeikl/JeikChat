@@ -24,7 +24,7 @@ CACHE_FILE = os.path.join(os.path.dirname(__file__), "mcpcache.json")
 @dataclass
 class ToolInfo:
     """工具信息数据结构"""
-    name: str
+    name: str           # 带服务前缀的名称 (如: github_fork_repository)
     description: str
     service_id: str
     service_name: str
@@ -74,7 +74,7 @@ class ToolCache:
         # 尝试从文件加载缓存
         if not force_reload and self._load_from_file():
             self._initialized = True
-            return
+            return  # 这里必须返回，避免继续加载服务
 
         # 从 MCP 服务加载
         await self._load_from_services()
@@ -249,11 +249,12 @@ class ToolCache:
             for name, info in data.get("services", {}).items():
                 self.services[name] = ServiceInfo(**info)
 
-            print(f"[MCP] 从缓存加载 {len(self.all_tools)} 个MCP工具")
+            # 重要：从文件加载时，LangChain 工具对象为空
+            # 但我们需要设置 tool_names，以便后续按需加载
+            logger.info(f"[MCP] 缓存加载 {len(self.all_tools)} 个工具")
             return True
 
         except Exception as e:
-            logger.debug(f"[MCP] 从文件加载缓存失败: {e}")
             return False
     
     async def refresh(self):
@@ -327,11 +328,13 @@ async def get_tool_by_name(tool_name: str) -> Optional[BaseTool]:
     """
     通过工具名快速获取工具（O(1) 时间复杂度）
     
+    tool_name 是带服务前缀的名称（如: github_fork_repository）
+    
     如果缓存中没有该工具（从文件加载时 LangChain 工具对象为空），
     则动态连接到对应 MCP 服务获取。
     
     Args:
-        tool_name: 工具名称
+        tool_name: 工具名称（带服务前缀）
         
     Returns:
         BaseTool 对象，如果不存在则返回 None
@@ -345,6 +348,7 @@ async def get_tool_by_name(tool_name: str) -> Optional[BaseTool]:
     
     # 如果缓存中没有，检查是否有该工具的信息
     tool_info = cache.get_tool_info(tool_name)
+    
     if not tool_info:
         return None
     

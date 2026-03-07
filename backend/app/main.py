@@ -10,6 +10,9 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
+# 为 agent.chatRouterStream 模块设置更详细的日志级别
+logging.getLogger("agent.chatRouterStream").setLevel(logging.INFO)
+
 from app.config import get_settings
 from api.routes import chat, knowledge, model, tools, tools_stream
 

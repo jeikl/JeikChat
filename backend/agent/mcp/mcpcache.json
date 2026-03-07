@@ -1,281 +1,281 @@
 {
   "all_tools": {
-    "bing_search": {
-      "name": "bing_search",
-      "description": "使用必应中文搜索引擎搜索信息。返回搜索结果包括标题、链接和摘要。",
+    "bing-search_bing_search": {
+      "name": "bing-search_bing_search",
+      "description": "【bing-search】 使用必应中文搜索引擎搜索信息。返回搜索结果包括标题、链接和摘要。\n\n💡 使用提示: 此工具用于搜索网络信息，返回结果包括网页标题、URL、摘要等。",
       "service_id": "bing-search",
       "service_name": "bing-search",
       "args_schema": null
     },
-    "crawl_webpage": {
-      "name": "crawl_webpage",
-      "description": "根据搜索结果的UUID抓取网页内容。支持批量抓取多个网页。会自动过滤黑名单中的网站(如知乎、小红书等)。",
+    "bing-search_crawl_webpage": {
+      "name": "bing-search_crawl_webpage",
+      "description": "【bing-search】 根据搜索结果的UUID抓取网页内容。支持批量抓取多个网页。会自动过滤黑名单中的网站(如知乎、小红书等)。\n\n💡 使用提示: 此工具用于搜索网络信息，返回结果包括网页标题、URL、摘要等。",
       "service_id": "bing-search",
       "service_name": "bing-search",
       "args_schema": null
     },
-    "get-current-date": {
-      "name": "get-current-date",
-      "description": "获取当前日期，以上海时区（Asia/Shanghai, UTC+8）为准，返回格式为 \"yyyy-MM-dd\"。主要用于解析用户提到的相对日期（如“明天”、“下周三”），提供准确的日期输入。",
+    "12306-mcp_get-current-date": {
+      "name": "12306-mcp_get-current-date",
+      "description": "【12306-mcp】 获取当前日期，以上海时区（Asia/Shanghai, UTC+8）为准，返回格式为 \"yyyy-MM-dd\"。主要用于解析用户提到的相对日期（如“明天”、“下周三”），提供准确的日期输入。\n\n💡 使用提示: 此工具用于查询火车票信息，包括车次、余票、价格等。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "get-stations-code-in-city": {
-      "name": "get-stations-code-in-city",
-      "description": "通过中文城市名查询该城市 **所有** 火车站的名称及其对应的 `station_code`，结果是一个包含多个车站信息的列表。",
+    "12306-mcp_get-stations-code-in-city": {
+      "name": "12306-mcp_get-stations-code-in-city",
+      "description": "【12306-mcp】 通过中文城市名查询该城市 **所有** 火车站的名称及其对应的 `station_code`，结果是一个包含多个车站信息的列表。\n\n💡 使用提示: 此工具用于查询火车票信息，包括车次、余票、价格等。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "get-station-code-of-citys": {
-      "name": "get-station-code-of-citys",
-      "description": "通过中文城市名查询代表该城市的 `station_code`。此接口主要用于在用户提供**城市名**作为出发地或到达地时，为接口准备 `station_code` 参数。",
+    "12306-mcp_get-station-code-of-citys": {
+      "name": "12306-mcp_get-station-code-of-citys",
+      "description": "【12306-mcp】 通过中文城市名查询代表该城市的 `station_code`。此接口主要用于在用户提供**城市名**作为出发地或到达地时，为接口准备 `station_code` 参数。\n\n💡 使用提示: 此工具用于查询火车票信息，包括车次、余票、价格等。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "get-station-code-by-names": {
-      "name": "get-station-code-by-names",
-      "description": "通过具体的中文车站名查询其 `station_code` 和车站名。此接口主要用于在用户提供**具体车站名**作为出发地或到达地时，为接口准备 `station_code` 参数。",
+    "12306-mcp_get-station-code-by-names": {
+      "name": "12306-mcp_get-station-code-by-names",
+      "description": "【12306-mcp】 通过具体的中文车站名查询其 `station_code` 和车站名。此接口主要用于在用户提供**具体车站名**作为出发地或到达地时，为接口准备 `station_code` 参数。\n\n💡 使用提示: 此工具用于查询火车票信息，包括车次、余票、价格等。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "get-station-by-telecode": {
-      "name": "get-station-by-telecode",
-      "description": "通过车站的 `station_telecode` 查询车站的详细信息，包括名称、拼音、所属城市等。此接口主要用于在已知 `telecode` 的情况下获取更完整的车站数据，或用于特殊查询及调试目的。一般用户对话流程中较少直接触发。",
+    "12306-mcp_get-station-by-telecode": {
+      "name": "12306-mcp_get-station-by-telecode",
+      "description": "【12306-mcp】 通过车站的 `station_telecode` 查询车站的详细信息，包括名称、拼音、所属城市等。此接口主要用于在已知 `telecode` 的情况下获取更完整的车站数据，或用于特殊查询及调试目的。一般用户对话流程中较少直接触发。\n\n💡 使用提示: 此工具用于查询火车票信息，包括车次、余票、价格等。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "get-tickets": {
-      "name": "get-tickets",
-      "description": "查询12306余票信息。",
+    "12306-mcp_get-tickets": {
+      "name": "12306-mcp_get-tickets",
+      "description": "【12306-mcp】 查询12306余票信息。\n\n💡 使用提示: 此工具用于查询火车票信息，包括车次、余票、价格等。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "get-interline-tickets": {
-      "name": "get-interline-tickets",
-      "description": "查询12306中转余票信息。尚且只支持查询前十条。",
+    "12306-mcp_get-interline-tickets": {
+      "name": "12306-mcp_get-interline-tickets",
+      "description": "【12306-mcp】 查询12306中转余票信息。尚且只支持查询前十条。\n\n💡 使用提示: 此工具用于查询火车票信息，包括车次、余票、价格等。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "get-train-route-stations": {
-      "name": "get-train-route-stations",
-      "description": "查询特定列车车次在指定区间内的途径车站、到站时间、出发时间及停留时间等详细经停信息。当用户询问某趟具体列车的经停站时使用此接口。",
+    "12306-mcp_get-train-route-stations": {
+      "name": "12306-mcp_get-train-route-stations",
+      "description": "【12306-mcp】 查询特定列车车次在指定区间内的途径车站、到站时间、出发时间及停留时间等详细经停信息。当用户询问某趟具体列车的经停站时使用此接口。\n\n💡 使用提示: 此工具用于查询火车票信息，包括车次、余票、价格等。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "create_or_update_file": {
-      "name": "create_or_update_file",
-      "description": "Create or update a single file in a GitHub repository",
+    "github-mcp_create_or_update_file": {
+      "name": "github-mcp_create_or_update_file",
+      "description": "【github-mcp】 Create or update a single file in a GitHub repository\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "search_repositories": {
-      "name": "search_repositories",
-      "description": "Search for GitHub repositories",
+    "github-mcp_search_repositories": {
+      "name": "github-mcp_search_repositories",
+      "description": "【github-mcp】 Search for GitHub repositories\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "create_repository": {
-      "name": "create_repository",
-      "description": "Create a new GitHub repository in your account",
+    "github-mcp_create_repository": {
+      "name": "github-mcp_create_repository",
+      "description": "【github-mcp】 Create a new GitHub repository in your account\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "get_file_contents": {
-      "name": "get_file_contents",
-      "description": "Get the contents of a file or directory from a GitHub repository",
+    "github-mcp_get_file_contents": {
+      "name": "github-mcp_get_file_contents",
+      "description": "【github-mcp】 Get the contents of a file or directory from a GitHub repository\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "push_files": {
-      "name": "push_files",
-      "description": "Push multiple files to a GitHub repository in a single commit",
+    "github-mcp_push_files": {
+      "name": "github-mcp_push_files",
+      "description": "【github-mcp】 Push multiple files to a GitHub repository in a single commit\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "create_issue": {
-      "name": "create_issue",
-      "description": "Create a new issue in a GitHub repository",
+    "github-mcp_create_issue": {
+      "name": "github-mcp_create_issue",
+      "description": "【github-mcp】 Create a new issue in a GitHub repository\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "create_pull_request": {
-      "name": "create_pull_request",
-      "description": "Create a new pull request in a GitHub repository",
+    "github-mcp_create_pull_request": {
+      "name": "github-mcp_create_pull_request",
+      "description": "【github-mcp】 Create a new pull request in a GitHub repository\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "fork_repository": {
-      "name": "fork_repository",
-      "description": "Fork a GitHub repository to your account or specified organization",
+    "github-mcp_fork_repository": {
+      "name": "github-mcp_fork_repository",
+      "description": "【github-mcp】 Fork a GitHub repository to your account or specified organization\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "create_branch": {
-      "name": "create_branch",
-      "description": "Create a new branch in a GitHub repository",
+    "github-mcp_create_branch": {
+      "name": "github-mcp_create_branch",
+      "description": "【github-mcp】 Create a new branch in a GitHub repository\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "list_commits": {
-      "name": "list_commits",
-      "description": "Get list of commits of a branch in a GitHub repository",
+    "github-mcp_list_commits": {
+      "name": "github-mcp_list_commits",
+      "description": "【github-mcp】 Get list of commits of a branch in a GitHub repository\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "list_issues": {
-      "name": "list_issues",
-      "description": "List issues in a GitHub repository with filtering options",
+    "github-mcp_list_issues": {
+      "name": "github-mcp_list_issues",
+      "description": "【github-mcp】 List issues in a GitHub repository with filtering options\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "update_issue": {
-      "name": "update_issue",
-      "description": "Update an existing issue in a GitHub repository",
+    "github-mcp_update_issue": {
+      "name": "github-mcp_update_issue",
+      "description": "【github-mcp】 Update an existing issue in a GitHub repository\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "add_issue_comment": {
-      "name": "add_issue_comment",
-      "description": "Add a comment to an existing issue",
+    "github-mcp_add_issue_comment": {
+      "name": "github-mcp_add_issue_comment",
+      "description": "【github-mcp】 Add a comment to an existing issue\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "search_code": {
-      "name": "search_code",
-      "description": "Search for code across GitHub repositories",
+    "github-mcp_search_code": {
+      "name": "github-mcp_search_code",
+      "description": "【github-mcp】 Search for code across GitHub repositories\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "search_issues": {
-      "name": "search_issues",
-      "description": "Search for issues and pull requests across GitHub repositories",
+    "github-mcp_search_issues": {
+      "name": "github-mcp_search_issues",
+      "description": "【github-mcp】 Search for issues and pull requests across GitHub repositories\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "search_users": {
-      "name": "search_users",
-      "description": "Search for users on GitHub",
+    "github-mcp_search_users": {
+      "name": "github-mcp_search_users",
+      "description": "【github-mcp】 Search for users on GitHub\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "get_issue": {
-      "name": "get_issue",
-      "description": "Get details of a specific issue in a GitHub repository.",
+    "github-mcp_get_issue": {
+      "name": "github-mcp_get_issue",
+      "description": "【github-mcp】 Get details of a specific issue in a GitHub repository.\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "get_pull_request": {
-      "name": "get_pull_request",
-      "description": "Get details of a specific pull request",
+    "github-mcp_get_pull_request": {
+      "name": "github-mcp_get_pull_request",
+      "description": "【github-mcp】 Get details of a specific pull request\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "list_pull_requests": {
-      "name": "list_pull_requests",
-      "description": "List and filter repository pull requests",
+    "github-mcp_list_pull_requests": {
+      "name": "github-mcp_list_pull_requests",
+      "description": "【github-mcp】 List and filter repository pull requests\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "create_pull_request_review": {
-      "name": "create_pull_request_review",
-      "description": "Create a review on a pull request",
+    "github-mcp_create_pull_request_review": {
+      "name": "github-mcp_create_pull_request_review",
+      "description": "【github-mcp】 Create a review on a pull request\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "merge_pull_request": {
-      "name": "merge_pull_request",
-      "description": "Merge a pull request",
+    "github-mcp_merge_pull_request": {
+      "name": "github-mcp_merge_pull_request",
+      "description": "【github-mcp】 Merge a pull request\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "get_pull_request_files": {
-      "name": "get_pull_request_files",
-      "description": "Get the list of files changed in a pull request",
+    "github-mcp_get_pull_request_files": {
+      "name": "github-mcp_get_pull_request_files",
+      "description": "【github-mcp】 Get the list of files changed in a pull request\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "get_pull_request_status": {
-      "name": "get_pull_request_status",
-      "description": "Get the combined status of all status checks for a pull request",
+    "github-mcp_get_pull_request_status": {
+      "name": "github-mcp_get_pull_request_status",
+      "description": "【github-mcp】 Get the combined status of all status checks for a pull request\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "update_pull_request_branch": {
-      "name": "update_pull_request_branch",
-      "description": "Update a pull request branch with the latest changes from the base branch",
+    "github-mcp_update_pull_request_branch": {
+      "name": "github-mcp_update_pull_request_branch",
+      "description": "【github-mcp】 Update a pull request branch with the latest changes from the base branch\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "get_pull_request_comments": {
-      "name": "get_pull_request_comments",
-      "description": "Get the review comments on a pull request",
+    "github-mcp_get_pull_request_comments": {
+      "name": "github-mcp_get_pull_request_comments",
+      "description": "【github-mcp】 Get the review comments on a pull request\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "get_pull_request_reviews": {
-      "name": "get_pull_request_reviews",
-      "description": "Get the reviews on a pull request",
+    "github-mcp_get_pull_request_reviews": {
+      "name": "github-mcp_get_pull_request_reviews",
+      "description": "【github-mcp】 Get the reviews on a pull request\n\n💡 使用提示: 此工具为 MCP 服务工具，请根据描述正确使用。",
       "service_id": "github-mcp",
       "service_name": "github-mcp",
       "args_schema": null
     },
-    "webSearchSogou": {
-      "name": "webSearchSogou",
-      "description": "搜索网络信息，返回结果包括网页标题、网页URL、网页摘要、网站名称、网站图标等。",
+    "zhipu-web-search-sse_webSearchSogou": {
+      "name": "zhipu-web-search-sse_webSearchSogou",
+      "description": "【zhipu-web-search-sse】 搜索网络信息，返回结果包括网页标题、网页URL、网页摘要、网站名称、网站图标等。\n\n💡 使用提示: 此工具用于搜索网络信息，返回结构化的搜索结果。",
       "service_id": "zhipu-web-search-sse",
       "service_name": "zhipu-web-search-sse",
       "args_schema": null
     },
-    "webSearchQuark": {
-      "name": "webSearchQuark",
-      "description": "搜索网络信息，返回结果包括网页标题、网页URL、网页摘要、网站名称、网站图标等。",
+    "zhipu-web-search-sse_webSearchQuark": {
+      "name": "zhipu-web-search-sse_webSearchQuark",
+      "description": "【zhipu-web-search-sse】 搜索网络信息，返回结果包括网页标题、网页URL、网页摘要、网站名称、网站图标等。\n\n💡 使用提示: 此工具用于搜索网络信息，返回结构化的搜索结果。",
       "service_id": "zhipu-web-search-sse",
       "service_name": "zhipu-web-search-sse",
       "args_schema": null
     },
-    "webSearchPro": {
-      "name": "webSearchPro",
-      "description": "搜索网络信息，返回结果包括网页标题、网页URL、网页摘要、网站名称、网站图标等。",
+    "zhipu-web-search-sse_webSearchPro": {
+      "name": "zhipu-web-search-sse_webSearchPro",
+      "description": "【zhipu-web-search-sse】 搜索网络信息，返回结果包括网页标题、网页URL、网页摘要、网站名称、网站图标等。\n\n💡 使用提示: 此工具用于搜索网络信息，返回结构化的搜索结果。",
       "service_id": "zhipu-web-search-sse",
       "service_name": "zhipu-web-search-sse",
       "args_schema": null
     },
-    "webSearchStd": {
-      "name": "webSearchStd",
-      "description": "搜索网络信息，返回结果包括网页标题、网页URL、网页摘要、网站名称、网站图标等。",
+    "zhipu-web-search-sse_webSearchStd": {
+      "name": "zhipu-web-search-sse_webSearchStd",
+      "description": "【zhipu-web-search-sse】 搜索网络信息，返回结果包括网页标题、网页URL、网页摘要、网站名称、网站图标等。\n\n💡 使用提示: 此工具用于搜索网络信息，返回结构化的搜索结果。",
       "service_id": "zhipu-web-search-sse",
       "service_name": "zhipu-web-search-sse",
       "args_schema": null
@@ -296,8 +296,8 @@
         ]
       },
       "tool_names": [
-        "bing_search",
-        "crawl_webpage"
+        "bing-search_bing_search",
+        "bing-search_crawl_webpage"
       ]
     },
     "12306-mcp": {
@@ -314,14 +314,14 @@
         ]
       },
       "tool_names": [
-        "get-current-date",
-        "get-stations-code-in-city",
-        "get-station-code-of-citys",
-        "get-station-code-by-names",
-        "get-station-by-telecode",
-        "get-tickets",
-        "get-interline-tickets",
-        "get-train-route-stations"
+        "12306-mcp_get-current-date",
+        "12306-mcp_get-stations-code-in-city",
+        "12306-mcp_get-station-code-of-citys",
+        "12306-mcp_get-station-code-by-names",
+        "12306-mcp_get-station-by-telecode",
+        "12306-mcp_get-tickets",
+        "12306-mcp_get-interline-tickets",
+        "12306-mcp_get-train-route-stations"
       ]
     },
     "github-mcp": {
@@ -341,32 +341,32 @@
         }
       },
       "tool_names": [
-        "create_or_update_file",
-        "search_repositories",
-        "create_repository",
-        "get_file_contents",
-        "push_files",
-        "create_issue",
-        "create_pull_request",
-        "fork_repository",
-        "create_branch",
-        "list_commits",
-        "list_issues",
-        "update_issue",
-        "add_issue_comment",
-        "search_code",
-        "search_issues",
-        "search_users",
-        "get_issue",
-        "get_pull_request",
-        "list_pull_requests",
-        "create_pull_request_review",
-        "merge_pull_request",
-        "get_pull_request_files",
-        "get_pull_request_status",
-        "update_pull_request_branch",
-        "get_pull_request_comments",
-        "get_pull_request_reviews"
+        "github-mcp_create_or_update_file",
+        "github-mcp_search_repositories",
+        "github-mcp_create_repository",
+        "github-mcp_get_file_contents",
+        "github-mcp_push_files",
+        "github-mcp_create_issue",
+        "github-mcp_create_pull_request",
+        "github-mcp_fork_repository",
+        "github-mcp_create_branch",
+        "github-mcp_list_commits",
+        "github-mcp_list_issues",
+        "github-mcp_update_issue",
+        "github-mcp_add_issue_comment",
+        "github-mcp_search_code",
+        "github-mcp_search_issues",
+        "github-mcp_search_users",
+        "github-mcp_get_issue",
+        "github-mcp_get_pull_request",
+        "github-mcp_list_pull_requests",
+        "github-mcp_create_pull_request_review",
+        "github-mcp_merge_pull_request",
+        "github-mcp_get_pull_request_files",
+        "github-mcp_get_pull_request_status",
+        "github-mcp_update_pull_request_branch",
+        "github-mcp_get_pull_request_comments",
+        "github-mcp_get_pull_request_reviews"
       ]
     },
     "zhipu-web-search-sse": {
@@ -377,10 +377,10 @@
         "url": "https://open.bigmodel.cn/api/mcp/web_search/sse?Authorization=834213e9b3cb42769cf3f5d4641a8df1.4xDerkV5c9x4PopI"
       },
       "tool_names": [
-        "webSearchSogou",
-        "webSearchQuark",
-        "webSearchPro",
-        "webSearchStd"
+        "zhipu-web-search-sse_webSearchSogou",
+        "zhipu-web-search-sse_webSearchQuark",
+        "zhipu-web-search-sse_webSearchPro",
+        "zhipu-web-search-sse_webSearchStd"
       ]
     }
   }

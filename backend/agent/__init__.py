@@ -41,12 +41,10 @@ async def get_all_tools() -> List[BaseTool]:
         # 1. 获取普通工具
         from agent.tools import get_regular_tools
         regular_tools = get_regular_tools()
-        print(f"[Agent] 普通工具: {[t.name for t in regular_tools]}")
         
         # 2. 获取 MCP 工具（使用新的缓存系统）
         from agent.mcp.mcp_cache import get_all_cached_tools
         mcp_tools = await get_all_cached_tools()
-        print(f"[Agent] MCP 工具: {[t.name for t in mcp_tools]}")
         
         # 3. 合并工具列表
         _all_tools = list(regular_tools)
@@ -57,8 +55,6 @@ async def get_all_tools() -> List[BaseTool]:
             if tool.name not in existing_names:
                 _all_tools.append(tool)
                 existing_names.add(tool.name)
-        
-        print(f"[Agent] 合并后共 {len(_all_tools)} 个工具: {[t.name for t in _all_tools]}")
     
     return _all_tools
 
@@ -92,8 +88,6 @@ async def get_all_tools_async() -> List[BaseTool]:
             if tool.name not in existing_names:
                 _all_tools_sync.append(tool)
                 existing_names.add(tool.name)
-        
-        print(f"[Agent] 异步加载共 {len(_all_tools_sync)} 个工具")
     
     return _all_tools_sync
 
@@ -128,8 +122,6 @@ def get_all_tools_sync() -> List[BaseTool]:
             if tool.name not in existing_names:
                 _all_tools_sync.append(tool)
                 existing_names.add(tool.name)
-        
-        print(f"[Agent] 同步加载共 {len(_all_tools_sync)} 个工具")
     
     return _all_tools_sync
 

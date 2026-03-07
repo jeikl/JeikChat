@@ -33,6 +33,7 @@ async def stream_tools_generator():
             for tool in regular_tools:
                 builtin_tools_data.append({
                     'toolid': tool.name,
+                    'name': tool.name,
                     'description': tool.description,
                     'mcp': 0,  # 0 表示普通工具
                     'enabled': True
@@ -77,6 +78,7 @@ async def stream_tools_generator():
                         if tool_info:
                             tools_data.append({
                                 'toolid': tool_info.name,
+                                'name': tool_info.name,
                                 'description': tool_info.description,
                                 'mcp': 1,  # 1 表示 MCP 工具
                                 'enabled': True

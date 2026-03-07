@@ -69,18 +69,34 @@ class Prompts:
         return self.CHAT_WELCOME_PROMPT
 
     def get_agent_prompt(self, tool_ids: List[str]) -> str:
-        # 新的方式：从 agent 模块获取所有工具
-        from agent import get_all_tools_sync
+        # 优化：从缓存中获取工具信息，避免连接 MCP 服务
+        from agent.mcp.mcp_cache import ToolCache
+        from agent.tools import get_regular_tools
         
-        tools = get_all_tools_sync()
+        # 获取普通工具（内存中的，不连接外部服务）
+        regular_tools = get_regular_tools()
+        
+        # 直接从缓存文件加载工具信息（同步，不连接服务）
+        cache = ToolCache()
+        cache._load_from_file()  # 同步加载，不触发服务连接
         
         base_prompt = self.AGENT_SYSTEM_PROMPT or "你是一个智能Agent助手。"
         tools_desc = []
+        
         for tid in tool_ids:
-            for tool in tools:
+            found = False
+            # 先在普通工具中查找
+            for tool in regular_tools:
                 if tool.name == tid:
                     tools_desc.append(f"- {tool.name}: {tool.description}")
+                    found = True
                     break
+            
+            # 再在 MCP 缓存中查找
+            if not found:
+                tool_info = cache.get_tool_info(tid)
+                if tool_info:
+                    tools_desc.append(f"- {tool_info.name}: {tool_info.description}")
         
         if tools_desc:
             tools_list = "你目前可用的工具：\n" + "\n".join(tools_desc)

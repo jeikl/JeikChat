@@ -8,8 +8,10 @@ async def get_tool_list():
     """
     获取工具列表，优先从缓存加载
     返回格式包含 mcp 标记，用于前端区分 MCP 工具和普通工具
+    
+    对于 MCP 工具，toolid 和 name 都使用带服务前缀的名称（如: github_fork_repository）
     """
-    from agent.mcp.mcp_cache import get_tool_cache, get_all_cached_tools
+    from agent.mcp.mcp_cache import get_tool_cache
     from agent.tools import get_regular_tools
 
     # 获取缓存实例（确保已初始化）
@@ -18,10 +20,6 @@ async def get_tool_list():
     # 获取普通工具（内置工具）
     regular_tools = get_regular_tools()
     regular_tool_names = {t.name for t in regular_tools}
-
-    # 获取 MCP 工具（从缓存）
-    mcp_tools = await get_all_cached_tools()
-    mcp_tool_names = {t.name for t in mcp_tools}
 
     # 合并所有工具
     all_tools = []
@@ -36,13 +34,15 @@ async def get_tool_list():
             "enabled": True
         })
 
-    # 添加 MCP 工具（mcp=1）
-    for tool in mcp_tools:
-        if tool.name not in regular_tool_names:
+    # 添加 MCP 工具（mcp=1）- 从缓存的工具信息中获取
+    # 注意：从文件加载时，LangChain 工具对象为空，但工具信息是可用的
+    for tool_name, tool_info in cache.all_tools.items():
+        if tool_name not in regular_tool_names:
+            # toolid 和 name 都使用带服务前缀的名称
             all_tools.append({
-                "toolid": tool.name,
-                "name": tool.name,
-                "description": tool.description,
+                "toolid": tool_info.name,      # 带服务前缀的名称
+                "name": tool_info.name,        # 带服务前缀的名称
+                "description": tool_info.description,
                 "mcp": 1,  # 1 表示 MCP 工具
                 "enabled": True
             })
