@@ -302,7 +302,7 @@ async def _get_mcp_tools_with_cached_connection(tool_configs: List) -> List:
         try:
             # 注意：langchain-mcp-adapters 0.1.0+ 不支持 async with
             client = MultiServerMCPClient(configs_to_connect)
-            logger.info(f"[DEBUG-MCP] MultiServerMCPClient 创建成功，即将获取工具...")
+            #logger.info(f"[DEBUG-MCP] MultiServerMCPClient 创建成功，即将获取工具...")
             mcp_tools = await client.get_tools()
             logger.info(f"[DEBUG-MCP] 获取到 {len(mcp_tools)} 个工具")
             
@@ -632,7 +632,7 @@ async def agent_stream1(
 
 
 
-async def example_with_agent3(
+async def agent_stream3(
         llm: str,
         msg,
         thinking: str,
@@ -745,7 +745,7 @@ async def example_with_agent3(
         
     
     try:
-        async for mode, data in graph.astream(msg, stream_mode=["messages", "updates"]):
+        async for mode, data in graph.astream(input_state, stream_mode=["messages", "updates"]):
 
             # --- 情况 A: 细粒度流处理 (messages) ---
             if mode == "messages":

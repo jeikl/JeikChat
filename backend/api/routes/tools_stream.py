@@ -76,8 +76,10 @@ async def stream_tools_generator():
                     for tool_name in service_info.tool_names:
                         tool_info = cache.all_tools.get(tool_name)
                         if tool_info:
+                            # 返回带服务前缀的 toolid，与前端期望的格式一致
+                            toolid_with_prefix = f"{service_name}_{tool_info.name}"
                             tools_data.append({
-                                'toolid': tool_info.name,
+                                'toolid': toolid_with_prefix,
                                 'name': tool_info.name,
                                 'description': tool_info.description,
                                 'mcp': 1,  # 1 表示 MCP 工具

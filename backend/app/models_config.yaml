@@ -35,14 +35,15 @@ providers:
 
   google:
     name: "Google"
-    api_key: "${GOOGLE_API_KEY}"
-    base_url: "${GOOGLE_BASE_URL}"
-    display_name: "${GOOGLE_DISPLAY_NAME:-Google}"
+    api_key: "AIzaSyA019RbXD38eMgriKa9OzZfjChW3vjWCTY"
     models:
-      - id: "gemini-2.0-flash"
+      - id: "gemini-3-flash-preview"
+      - id: "gemini-3.1-flash-lite-preview"
+      - id: "gemini-2.5-flash"
       - id: "gemini-2.0-pro"
       - id: "gemini-1.5-pro"
-    enable: false
+      - id: "gemini-1.5-flash"
+    enable: true
 
   doubao:
     name: "字节跳动"
@@ -114,17 +115,14 @@ providers:
     enable: false
 
   xfyun:
-    name: "讯飞星火"
-    api_key: "${XFYUN_API_KEY}"
-    secret_key: "${XFYUN_SECRET_KEY}"
-    app_id: "${XFYUN_APP_ID}"
-    base_url: "${XFYUN_BASE_URL}"
-    display_name: "${XFYUN_DISPLAY_NAME:-讯飞星火}"
+    name: "腾讯混元"
+    api_key: sk-Fr3erPZxK7aZKKzsYrgJmCVyeNCohehBVDfwFsBCAzDE6bHA
+    base_url: https://api.hunyuan.cloud.tencent.com/v1/
+    display_name: 腾讯混元
     models:
-      - id: "spark-4.5-ultra"
-      - id: "spark-v4.0"
-      - id: "spark-v3.5"
-    enable: false
+      - id: hunyuan-turbos-latest
+
+    #enable: false
 
   ollama:
     name: "Ollama"

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 from schemas.chat import SendMessageRequest
 from api.response import success, sse_format, sse_done
 from services.stream import get_stream_manager
-from agent.chatRouterStream import agent_stream0,agent_stream1,example_with_agent3
+from agent.chatRouterStream import agent_stream0,agent_stream1,agent_stream3
 from agent.prompt import get_prompts, build_messages
 
 router = APIRouter()
