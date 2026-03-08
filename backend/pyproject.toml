@@ -28,6 +28,12 @@ dependencies = [
     "tenacity",
     "langgraph-checkpoint-postgres",
     "psycopg[binary,pool]",
+    "langchain-deepseek>=1.0.1",
+    "asyncio>=4.0.0",
+    "dict>=2018.11.19",
+    "any>=0.0.2",
+    "node>=2.0.0",
+    "langchain-google-genai>=4.2.1",
 ]
 
 [project.optional-dependencies]

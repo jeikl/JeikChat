@@ -2,8 +2,13 @@
 Chat Router with Streaming Support
 """
 
+from langgraph.graph import StateGraph, START, END #状态图 开始 结束
+from langgraph.graph.message import MessagesState #基础状态图
+from langgraph.prebuilt import ToolNode, tools_condition #工具节点 工具条件
+from .tools.ToolsProtect import McpToolNode
 
-from langchain_core.messages import ToolMessage # 确保导入
+
+from langchain_core.messages import ToolMessage,AIMessage# 确保导入
 from typing import Any, List, Optional, Dict, Callable, AsyncGenerator
 
 from langchain.agents.middleware import wrap_model_call, ModelRequest, ModelResponse
@@ -435,5 +440,190 @@ async def agent_stream0(
             # 不再抛出异常
             return
 
+
+async def agent_stream1(
+        llm: str,
+        msg,
+        thinking: str,
+        tool_configs: List,
+        history,
+        should_stop: Optional[Callable[[], bool]] = None,
+) -> AsyncGenerator[dict, None]:
+    """代理流式响应 - 深度兼容 LangGraph 结构化消息流"""
+
+    # 1. 基础工具加载提示
+    tool_names = [_get_toolid_from_config(c) for c in (tool_configs or []) if _get_toolid_from_config(c)]
+    if tool_names:
+        yield {"reasoning": f"\n\n🛠️ 已选择工具: {', '.join(tool_names)}\n\n"}
+
+    yield {"reasoning": f"⏳ 正在连接服务...\n\n"}
+    selected_tools = await _get_tools_by_configs(tool_configs)
+    yield {"reasoning": f"✅️ MCP服务连接成功...\n\n"}
+    async with AsyncPostgresSaver.from_conn_string(DB_URL) as checkpoint:
+        model = create_client(llm, thinking)
+        #agent = create_agent(client, checkpointer=checkpoint)
+        model_with_tools=model.bind_tools(selected_tools)
+        async def call_model(state: MessagesState):#ainvoke的包装类
+            """
+            Agent 节点核心逻辑
+
+            Args:
+                state: MessagesState，
+
+            Returns:
+                包含 LLM 响应的状态更新
+            """
+            #print(" 调用大模型中 .")
+            response = await model_with_tools.ainvoke(state["messages"]) #执行工具
+            #print("  [DEBUG] LLM 调用完成")
+            return {"messages": [response]}
+        mcptoolNode=McpToolNode(selected_tools)
+
+        #工作流开始定义
+        workflow=StateGraph(MessagesState)
+        workflow.add_node("tools",mcptoolNode)
+        workflow.add_node("agent",call_model)
+        workflow.add_edge(START,"agent")
+    # 添加条件边
+        workflow.add_conditional_edges(
+            "agent",
+            tools_condition,
+            {"tools": "tools", END: END}  # 有工具调用 返回的字符串state为tools则映射到tools节点，否则→结束
+        )
+        graph=workflow.compile(checkpointer=checkpoint)#添加记忆点
+
+        last_message_type = "reasoning"
+
+
+    try:
+        # 使用新的 ["messages", "updates"] 模式进行流式读取
+        # 这样可以更清晰地区分消息和节点状态更新
+        async for mode, data in graph.astream(msg, config=history, stream_mode=["messages", "updates"]):
+            if should_stop and should_stop():
+                break
+
+            # --- 情况 A: 处理细粒度的消息流 (mode == "messages") ---
+            if mode == "messages":
+                chunk, metadata = data # data 是 (chunk, metadata) 元组
+
+                # 1. 提取推理内容 (Reasoning / Thinking)
+                # 兼容 deepseek 等模型的思维链字段
+                reasoning_content = chunk.additional_kwargs.get("reasoning_content", "")
+                if reasoning_content:
+                    yield {"reasoning": f"{reasoning_content}"}
+
+                # 2. 提取正式回答内容
+                if hasattr(chunk, "content") and chunk.content:
+                    # 根据消息类型决定yield的key
+                    if isinstance(chunk, ToolMessage):
+                        # ToolMessage 通常是工具的返回结果，可以作为推理的一部分展示
+                        yield {"reasoning": f"\n\n✅ 工具返回数据成功: {chunk.content[:50]}...\n"} # 限制长度
+                        print(f"工具返回数据: {chunk.content}\n")
+                    else:
+                        # 普通AIMessage等，作为主要内容输出
+                        yield {"content": chunk.content}
+
+            # --- 情况 B: 处理节点状态更新流 (mode == "updates") ---
+            elif mode == "updates":
+                # data 是一个字典，{node_name: new_state}
+                for node_name, state_snapshot in data.items():
+
+                    if node_name == "agent":
+                        # 检查 agent 节点的状态快照，看是否有待执行的工具调用
+                        # 通常，工具调用信息会附加在最新的消息上
+                        messages_in_state = state_snapshot.get("messages", [])
+                        if messages_in_state:
+                            last_msg = messages_in_state[-1]
+                            if hasattr(last_msg, "tool_calls") and last_msg.tool_calls:
+                                # 发现待执行的工具调用
+                                tool_name = last_msg.tool_calls[0]['name']
+                                yield {"reasoning": f"\n\n🧠 正在调用工具: {tool_name} ...\n"}
+                                print(f"[系统动作] 正在调用工具: {tool_name}...")
+
+                    elif node_name == "tools":
+                        # 当 tools 节点有更新时，意味着工具执行完毕
+                        yield {"reasoning": f"\n\n✅ 工具执行完毕，正在处理返回数据...\n"}
+                        print(f"[系统动作] 工具执行完毕，获取到数据。")
+
+
+    except Exception as e:
+        yield {"content": f"\n\n❌ 模型调用失败: {str(e)}\n\n建议：请尝试重新提问或创建新会话。\n"}
+
+
+
+
+
+
+
+
+
+
+
+
+
+        # try:
+        #     yield {"reasoning": "🔄 正在思考...\n\n"}
+        #
+        #     # 使用 messages 模式流式读取
+        #     async for token, metadata in graph.astream(msg, config=history, stream_mode="messages"):
+        #         if should_stop and should_stop(): break
+        #         node = metadata.get("langgraph_node", "")
+        #
+        #
+        #         if hasattr(token, "tool_call_chunks"):
+        #             for chunk in token.tool_call_chunks:
+        #                 if chunk.get("id"):
+        #                     if not any(tc["id"] == chunk["id"] for tc in active_tool_calls):
+        #                         #active_tool_calls.append({"id": chunk["id"], "name": chunk.get("name")})
+        #                         yield {"reasoning": f"\n\n🧠 正在调用工具: {chunk.get('name') or 'unknown'} ...\n"}
+        #                         last_message_type = "reasoning"
+        #
+        #         blocks = []
+        #         if isinstance(token.content, list):
+        #             blocks = token.content
+        #         elif isinstance(token.content, str) and token.content:
+        #             # 兼容普通字符串 content
+        #             blocks = [{"type": "text", "text": token.content}]
+        #
+        #         for block in blocks:
+        #             if not isinstance(block, dict): continue
+        #
+        #             b_type = block.get("type")
+        #
+        #             # 1. 处理文本块
+        #             if b_type == "text":
+        #                 text = block.get("text", "")
+        #                 if not text: continue
+        #
+        #                 if node == "tools":
+        #                     # 工具节点的输出一般代表数据获取成功
+        #                     yield {"reasoning": f"\n\n✅ 工具返回数据成功\n\n"}
+        #                     print(f"工具返回数据:{text}\n")
+        #
+        #                     active_tool_calls = [] # 成功执行，清除挂起
+        #                     last_message_type = "reasoning"
+        #                 else:
+        #                     # 模型节点的普通文本输出
+        #                     if last_message_type == "reasoning":
+        #                         text = f"\n\n{text}"
+        #                     yield {"content": text}
+        #                     last_message_type = "content"
+        #
+        #             # 2. 处理推理块 (针对某些特定模型的 reasoning 字段)
+        #             elif b_type == "reasoning":
+        #                 yield {"reasoning": block.get("reasoning", "")}
+        #                 last_message_type = "reasoning"
+        #
+        #         # ------------------------------------------
+        #         # C. 兜底处理 additional_kwargs 中的推理
+        #         # ------------------------------------------
+        #         reasoning_content = token.additional_kwargs.get("reasoning_content")
+        #         if reasoning_content:
+        #             yield {"reasoning": reasoning_content}
+        #             last_message_type = "reasoning"
+        #
+        #
+        # except Exception as e:
+        #     yield {"content": f"\n\n❌ 模型调用失败: {str(e)}\n\n建议：请尝试重新提问或创建新会话。\n"}
 
 

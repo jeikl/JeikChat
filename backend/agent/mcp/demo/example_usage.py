@@ -1,193 +1,263 @@
-"""
-MCP 工具使用示例 - 官方风格
-使用新的单例模式导入
-"""
 
-import asyncio
-import os
-import sys
 
-# 添加后端路径
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
-from langchain.agents import create_agent
-from backend.agent.mcp import get_mcptools, get_server_configs
-from langchain_deepseek import ChatDeepSeek
+import httpx
+import node
 
-async def example_basic():
-    """基本用法示例"""
-    print("=" * 50)
-    print("示例: 基本用法")
-    print("=" * 50)
-    
-    # 获取服务器配置
-    configs = get_server_configs()
-    print(f"\n配置: {configs}")
-    
-    # 获取工具（使用单例模式）
-    tools = await get_mcptools()
-    print(f"\n工具列表: {[t.name for t in tools]}")
-    
-    return tools
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langgraph.graph import StateGraph, START, END #状态图 开始 结束
+from langgraph.prebuilt import ToolNode, tools_condition #工具节点 工具条件
+from langgraph.graph.message import MessagesState #基础状态图
+from langchain_core.messages import AIMessage, ToolMessage # 基础消息类型 工具消息类型
+from langchain_deepseek import ChatDeepSeek # 深度求索模型
+from typing import Dict, Any # 字典 任意类型
 
+
+
+
+
+
+class GuardedToolNode(ToolNode):
+    """
+    带守卫机制的工具节点
+
+    继承自 ToolNode，增加参数校验逻辑
+    防止 LLM 生成无效的工具调用参数
+    """
+    async def ainvoke(self, input: Dict[str, Any], config: Dict[str, Any] = None):
+        """
+        异步调用工具节点
+
+        Args:
+            input: 包含 messages 的状态字典
+            config: 可选配置字典
+
+        Returns:
+            包含工具响应消息的字典
+        """
+        print("  [DEBUG] 进入 tools 节点")
+
+        # 提取最后一条消息
+        if "messages" in input:
+            last_msg = input["messages"][-1]
+        else:
+            last_msg = input
+
+        # 检查是否为 AI 消息且有工具调用
+        if not isinstance(last_msg, AIMessage) or not last_msg.tool_calls:
+            return {"messages": []}
+
+        responses = []
+        # 遍历所有工具调用
+        for tc in last_msg.tool_calls:
+            name = tc["name"]  # 工具名称
+            args = tc.get("args", {})  # 工具参数
+            tid = tc.get("id", "no-id")  # 工具调用 ID
+
+            # 守卫机制：bing_search 工具的 query 参数校验
+            if "bing" in name.lower():
+                query = args.get("query", "")
+                # 检查 query 有效性
+                if not query or not isinstance(query, str) or not query.strip():
+                    print(f"  [DEBUG] 守卫拦截：query 无效 {args}")
+                    responses.append(ToolMessage(
+                        content="工具调用失败：'query' 参数为空或无效。请重新生成完整参数。",
+                        tool_call_id=tid,
+                        name=name,
+                        status="error"
+                    ))
+                    continue  # 跳过本次循环
+
+            # 执行工具调用
+            try:
+                print(f"  [DEBUG] 执行工具 {name} with args {args}")
+                tool = self.tools_by_name[name]  # 获取工具实例
+                result = await tool.ainvoke(args)  # 异步调用
+                responses.append(ToolMessage(
+                    content=str(result),
+                    tool_call_id=tid,
+                    name=name
+                ))
+            except httpx.RemoteProtocolError as e:
+                # MCP 服务器连接异常
+                print(f"  [ERROR] MCP 服务器异常关闭连接：{str(e)}")
+                responses.append(ToolMessage(
+                    content=(
+                        f"bing_search 工具调用失败：服务器连接中断（RemoteProtocolError: {str(e)}）。\n"
+                        "可能原因：参数无效、服务器临时问题或配额限制。\n"
+                        "请尝试修改 query（简化或换关键词）后重新调用，或稍后重试。"
+                    ),
+                    tool_call_id=tid,
+                    name=name,
+                    status="error"
+                ))
+            except Exception as e:
+                # 其他异常
+                print(f"  [ERROR] 其他工具执行异常：{str(e)}")
+                responses.append(ToolMessage(
+                    content=f"工具执行失败：{str(e)}。请检查参数。",
+                    tool_call_id=tid,
+                    name=name,
+                    status="error"
+                ))
+
+        print("  [DEBUG] tools 节点完成")
+        return {"messages": responses}
 
 async def example_with_agent():
-    """在 Agent 中使用 MCP 工具"""
+    """
+    Agent 使用示例主函数
+    
+    演示完整流程：
+    1. 初始化 MCP 客户端
+    2. 配置 LLM 并绑定工具
+    3. 构建 LangGraph 工作流
+    4. 执行对话并流式输出
+    """
     print("\n" + "=" * 50)
-    print("示例: 在 Agent 中使用")
+    print("示例：在 Agent 中使用（修复版 LangGraph + Guarded ToolNode）")
     print("=" * 50)
-    
-    
- 
-    # 获取 MCP 工具（使用单例模式）
-    tools = await get_mcptools()
-    
+
+    # 初始化 MCP 多服务器客户端
+    client = MultiServerMCPClient({
+        "bing-cn-mcp-server": {
+            "transport": "streamable_http",  # HTTP 流式传输
+            "url": "https://mcp.api-inference.modelscope.net/7fcb19ec6e704b/mcp",
+        }
+    })
+
+    # 获取所有可用工具
+    tools = await client.get_tools()
     if not tools:
         print("⚠️ 没有可用的 MCP 工具")
         return
-    print("MCP获取222工具成功")
+    print("MCP 获取工具成功")
 
-    # 创建 LLM
+    # 初始化 DeepSeek 模型
     llm = ChatDeepSeek(
-        model="doubao-seed-2-0-pro-260215", 
-        api_key="6246ef67-931a-4f19-9409-89b42fc04a91", 
-        api_base="https://ark.cn-beijing.volces.com/api/v3"
-    )
-    agent=create_agent(
-        llm,
-        tools
+        model="qwen3.5-flash",
+        api_key="sk-0bcb72d37754406c80b74211c3402d5d",
+        api_base="https://dashscope.aliyuncs.com/compatible-mode/v1",
     )
 
+    # 将工具绑定到 LLM
+    llm_with_tools = llm.bind_tools(tools)
+
+    # 定义 Agent 节点函数
+    async def call_model(state: MessagesState):
+        """
+        Agent 节点核心逻辑
+        
+        Args:
+            state: MessagesState，包含历史消息
+            
+        Returns:
+            包含 LLM 响应的状态更新
+        """
+        print("  [DEBUG] 进入 agent 节点，正在调用 LLM...")
+        response = await llm_with_tools.ainvoke(state["messages"])
+        print("  [DEBUG] LLM 调用完成")
+        return {"messages": [response]}
+
+    # 创建守卫工具节点  拓展tools功能 重写aiinvoke
+    tool_node = GuardedToolNode(tools)
+
+    # 构建 LangGraph 工作流
+    #设定状态图
+    workflow = StateGraph(MessagesState)
+
+    #workflow.add_node(Node名, 对应函数或Lambda表达式)  # Agent：思考决策
+
+    # 添加节点
+    #大模型核心代理节点
+    workflow.add_node("agent", call_model)  # Agent：思考决策
+
+
+    #工具节点
+    workflow.add_node("tools", tool_node)   # Tools：执行工具
+
+    # 设置入口
+    workflow.add_edge(START, "agent")
+
+    # 添加条件边
+    workflow.add_conditional_edges(
+        "agent",
+        tools_condition,
+        {"tools": "tools", END: END}  # 有工具调用 返回的字符串state为tools则映射到tools节点，否则→结束
+    )
+
+    # 添加工具回路
+    workflow.add_edge("tools", "agent")  # 工具完成后回 Agent
+
+    # 编译工作流
+    graph = workflow.compile()
+
+    # 准备初始对话
     messages = [
-        {"role": "system", "content": "你是一个可以调用各种工具的助手"},
-        {"role": "user", "content": "请帮我查一下北京的最新资讯?"}
+        {"role": "system", "content": """你是一个新闻助手。
+        1. 搜索时优先关注结果的时间戳。
+        2. 如果连续两次搜索都没有找到当日的具体新闻条目，请直接告诉用户目前网络搜索结果多为旅游资讯，并提供已找到的相关动态。
+        3. 严禁陷入无限重复搜索的死循环。最多尝试 2 次不同关键词 就可以总结了。"""},
+        {"role": "user", "content": "请帮我查一下北京的最新资讯？"}
     ]
     
-    msg={"messages": messages}
-
-
-    # 流式调用
-    # for chunk in agent.stream(messages):
-    #     print(chunk.content, end="", flush=True)
-
-    print("M")
-    async for token, metadata in agent.astream(msg, stream_mode="messages"):
-
-        node = metadata.get("langgraph_node", "")
-
-        # ==========================================
-        # 1. 提取推理过程 (Reasoning)
-        # ==========================================
-        reasoning = token.additional_kwargs.get("reasoning_content")
-        if reasoning:
-            print(reasoning, end="", flush=True)
-
-        # ==========================================
-        # 2. 提取工具调用动作 (Tool Calls)
-        # ==========================================
-        # 💡 核心技巧: LangChain 的 tool_call_chunks 在流式传输时，
-        # 只有工具发出的"第一帧"会包含 'name' 字段。
-        # 我们利用这一点，无需任何状态变量就能实现"只提示一次工具调用"。
-        for tc_chunk in getattr(token, "tool_call_chunks", []):
-            if tc_chunk.get("name"): 
-                print(f"\n\n🧠 正在调用工具: {tc_chunk['name']} ...\n", end="", flush=True)
-
-        # ==========================================
-        # 3. 提取常规文本与工具返回结果 (Content)
-        # ==========================================
-        # LangChain 默认会将生成的文本放在 token.content 中
-        if token.content:
-            text = token.content
-            
-            # 兼容某些模型 content 返回 list(dict) 的情况
-            if isinstance(text, list):
-                text = "".join([b.get("text", "") for b in text if isinstance(b, dict) and b.get("type") == "text"])
-
-            if text:
-                if node == "tools":
-                    print(f"\n🛠️ 工具返回: {text}\n", end="", flush=True)
-                elif node == "model":
-                    print(text, end="", flush=True)
-
-
-
-
-    # agent = create_openai_functions_agent(llm, tools, prompt)
-    # agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+    input_state = {"messages": messages}
     
-    # # 运行 Agent
-    # query = "帮我搜索一下 2026 年最新的 AI 行业趋势"
-    # print(f"\n用户查询: {query}")
-    
-    # result = await agent_executor.ainvoke({
-    #     "input": query,
-    #     "chat_history": []
-    # })
-    
-    # print(f"\nAgent 回答: {result['output']}")
-
-
-async def example_direct_usage():
-    """直接使用 MultiServerMCPClient（官方示例风格）"""
-    print("\n" + "=" * 50)
-    print("示例: 直接使用 MultiServerMCPClient")
-    print("=" * 50)
-    
-    from langchain_mcp_adapters.client import MultiServerMCPClient
-    from langchain.agents import create_openai_functions_agent, AgentExecutor
-    from langchain_openai import ChatOpenAI
-    from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-    
-    # 获取配置
-    server_configs = get_server_configs()
-    
-    # 创建客户端
-    client = MultiServerMCPClient(server_configs)
-    
-    # 获取工具
-    tools = await client.get_tools()
-    print(f"加载了 {len(tools)} 个工具: {[t.name for t in tools]}")
-    
-    # 创建 Agent（与官方示例一致）
-    if os.environ.get("OPENAI_API_KEY") and tools:
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    print("M")  # 标记开始
         
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", "你是一个有用的助手。"),
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ])
+    # 配置递归限制（防止无限循环）
+    #config = {"recursion_limit": 10}  # 最多 10 次循环
         
-        agent = create_openai_functions_agent(llm, tools, prompt)
-        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=False)
-        
-        # 测试查询
-        response = await agent_executor.ainvoke({
-            "input": "你好，请介绍一下你自己",
-            "chat_history": []
-        })
-        
-        print(f"\n响应: {response['output'][:200]}...")
-
-
-async def main():
-    """运行所有示例"""
-    try:
-        await example_basic()
-    except Exception as e:
-        print(f"基本示例失败: {e}")
-    
-    try:
-        await example_with_agent()
-    except Exception as e:
-        print(f"Agent 示例失败: {e}")
-    
     # try:
-    #     await example_direct_usage()
+    #     # 流式执行工作流
+    #     # stream_mode=["messages", "updates"] 返回消息和节点更新
+    #     async for stream_mode, chunk in graph.astream(
+    #             input_state,
+    #             config=config,
+    #             stream_mode=["messages", "updates"]
+    #     ):
+    #         print(f"stream_mode: {stream_mode}")
+    #         print(f"content: {chunk}")
+    #         print("\n")
     # except Exception as e:
-    #     print(f"直接用法示例失败: {e}")
+    #     print(f"astream 整体异常：{str(e)}")
+    try:
+        async for mode, data in graph.astream(input_state, stream_mode=["messages", "updates"]):
+
+            # --- 情况 A: 细粒度流处理 (messages) ---
+            if mode == "messages":
+                chunk, _ = data
+
+                # 1. 提取推理内容 (Reasoning / Thinking)
+                # 兼容 deepseek 等模型的思维链字段
+                if hasattr(chunk, "additional_kwargs"):
+                    reasoning = chunk.additional_kwargs.get("reasoning_content", "")
+                    if reasoning:
+                        print(f"{reasoning}", end="", flush=True)
+
+                # 2. 提取正式回答内容
+                if hasattr(chunk, "content") and chunk.content:
+                    print(chunk.content, end="", flush=True)
+
+            # --- 情况 B: 节点状态处理 (updates) ---
+            elif mode == "updates":
+                for node, state in data.items():
+                    if node == "agent":
+                        # 检查是否有工具调用动作
+                        msgs = state.get("messages", [])
+                        if msgs and hasattr(msgs[-1], "tool_calls") and msgs[-1].tool_calls:
+                            tool_name = msgs[-1].tool_calls[0]['name']
+                            print(f"\n\n🛠️  [系统动作] 正在调用工具: {tool_name}...")
+
+                    elif node == "tools":
+                        print(f"✅ [系统动作] 工具执行完毕，获取到数据。")
+                        #print("\n--- 正在生成最终回答 ---\n")
+
+    except Exception as e:
+        print(f"\n❌ 运行中断: {e}")
 
 
+# 程序入口
 if __name__ == "__main__":
-    asyncio.run(main())
+    import asyncio
+    asyncio.run(example_with_agent())  # 运行异步函数
