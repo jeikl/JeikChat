@@ -1,12 +1,18 @@
 # MCP 服务配置
 servers:
+  # HTTP Streamable 模式 - bing-search
   - name: bing-search
-    transport: stdio
-    command: npx
-    args: [-y, bing-cn-mcp]
-    windows:
-      command: cmd
-      args: [/c, npx, -y, bing-cn-mcp]
+    transport: streamable_http
+    url: https://mcp.api-inference.modelscope.net/7fcb19ec6e704b/mcp
+
+  # STDIO 模式 - 已注释
+  # - name: bing-search
+  #   transport: stdio
+  #   command: npx
+  #   args: [-y, bing-cn-mcp]
+  #   windows:
+  #     command: cmd
+  #     args: [/c, npx, -y, bing-cn-mcp]
 
   - name: 12306-mcp
     transport: stdio

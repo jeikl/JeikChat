@@ -68,26 +68,20 @@ class Prompts:
     def get_welcome_prompt(self) -> str:
         return self.CHAT_WELCOME_PROMPT
 
-    def get_agent_prompt(self, tool_ids: List[str]) -> str:
-        # 优化：从缓存中获取工具信息，避免连接 MCP 服务
+    async def get_agent_prompt(self, tool_ids: List[str]) -> str:
+        """异步获取Agent提示词（修复死锁问题）"""
         from agent.mcp.cache_manager import get_cache_manager
         from agent.tools import get_regular_tools
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"[DEBUG-PROMPT] get_agent_prompt 开始，工具IDs={tool_ids}")
         
         # 获取普通工具（内存中的，不连接外部服务）
         regular_tools = get_regular_tools()
         
-        # 从缓存获取工具信息（不连接服务）
-        import asyncio
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # 在异步环境中
-                cache = asyncio.run_coroutine_threadsafe(get_cache_manager(), loop).result()
-            else:
-                cache = loop.run_until_complete(get_cache_manager())
-        except RuntimeError:
-            # 没有事件循环，创建新的
-            cache = asyncio.run(get_cache_manager())
+        # 异步获取缓存（使用await，不会阻塞事件循环）
+        cache = await get_cache_manager()
         
         base_prompt = self.AGENT_SYSTEM_PROMPT or "你是一个智能Agent助手。"
         tools_desc = []
@@ -103,7 +97,13 @@ class Prompts:
             
             # 再在 MCP 缓存中查找
             if not found:
-                tool_info = cache.get_tool_info(tid)
+                # MCP 工具：分割前缀获取实际工具名
+                # 格式: service_name_tool_name (如: bing-search_bing_search)
+                actual_tool_name = tid
+                if "_" in tid:
+                    actual_tool_name = tid.split("_", 1)[1]
+                
+                tool_info = cache.get_tool_info(actual_tool_name)
                 if tool_info:
                     tools_desc.append(f"- {tool_info.name}: {tool_info.description}")
         

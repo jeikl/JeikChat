@@ -68,21 +68,19 @@ class MCPConnectionManager:
                 tool_infos = []
                 
                 for tool in tools:
+                    # 使用原始工具名，不添加前缀
+                    # 这样LLM看到的和调用的都是原始名称
                     original_name = tool.name
-                    prefixed_name = f"{service_id}_{original_name}"
                     
-                    # 修改工具名称
-                    tool.name = prefixed_name
-                    
-                    # 增强描述
+                    # 仅增强描述，不修改名称
                     enhanced_desc = f"【{service_id}】 {tool.description}"
                     tool.description = enhanced_desc
                     
                     customized_tools.append(tool)
                     
-                    # 创建工具信息
+                    # 创建工具信息 - 使用原始名称
                     tool_info = MCPToolInfo(
-                        name=prefixed_name,
+                        name=original_name,  # 无前缀
                         original_name=original_name,
                         description=enhanced_desc,
                         service_id=service_id,

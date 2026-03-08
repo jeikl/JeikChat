@@ -2,7 +2,14 @@
 
 
 import httpx
-import node
+import sys
+from pathlib import Path
+
+# 添加 backend 目录到路径
+backend_dir = Path(__file__).parent.parent.parent.parent
+sys.path.insert(0, str(backend_dir))
+
+from agent.tools.ToolsProtect import McpToolNode
 
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.graph import StateGraph, START, END #状态图 开始 结束
@@ -105,15 +112,7 @@ class GuardedToolNode(ToolNode):
         return {"messages": responses}
 
 async def example_with_agent():
-    """
-    Agent 使用示例主函数
-    
-    演示完整流程：
-    1. 初始化 MCP 客户端
-    2. 配置 LLM 并绑定工具
-    3. 构建 LangGraph 工作流
-    4. 执行对话并流式输出
-    """
+
     print("\n" + "=" * 50)
     print("示例：在 Agent 中使用（修复版 LangGraph + Guarded ToolNode）")
     print("=" * 50)
@@ -135,7 +134,7 @@ async def example_with_agent():
 
     # 初始化 DeepSeek 模型
     llm = ChatDeepSeek(
-        model="qwen3.5-flash",
+        model="qwen-plus",
         api_key="sk-0bcb72d37754406c80b74211c3402d5d",
         api_base="https://dashscope.aliyuncs.com/compatible-mode/v1",
     )
@@ -160,8 +159,8 @@ async def example_with_agent():
         return {"messages": [response]}
 
     # 创建守卫工具节点  拓展tools功能 重写aiinvoke
-    tool_node = GuardedToolNode(tools)
-
+    #tool_node = GuardedToolNode(tools)
+    tool_node = McpToolNode(tools)
     # 构建 LangGraph 工作流
     #设定状态图
     workflow = StateGraph(MessagesState)
@@ -205,22 +204,7 @@ async def example_with_agent():
     
     print("M")  # 标记开始
         
-    # 配置递归限制（防止无限循环）
-    #config = {"recursion_limit": 10}  # 最多 10 次循环
-        
-    # try:
-    #     # 流式执行工作流
-    #     # stream_mode=["messages", "updates"] 返回消息和节点更新
-    #     async for stream_mode, chunk in graph.astream(
-    #             input_state,
-    #             config=config,
-    #             stream_mode=["messages", "updates"]
-    #     ):
-    #         print(f"stream_mode: {stream_mode}")
-    #         print(f"content: {chunk}")
-    #         print("\n")
-    # except Exception as e:
-    #     print(f"astream 整体异常：{str(e)}")
+    
     try:
         async for mode, data in graph.astream(input_state, stream_mode=["messages", "updates"]):
 

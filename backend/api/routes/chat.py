@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 from schemas.chat import SendMessageRequest
 from api.response import success, sse_format, sse_done
 from services.stream import get_stream_manager
-from agent.chatRouterStream import agent_stream0,agent_stream1
+from agent.chatRouterStream import agent_stream0,agent_stream1,example_with_agent3
 from agent.prompt import get_prompts, build_messages
 
 router = APIRouter()
@@ -109,7 +109,7 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         is_agent_mode = len(tool_configs) > 0
         if is_agent_mode:
             #stream_func = agent_stream
-            system_prompt = prompts.get_agent_prompt(tool_names)
+            system_prompt = await prompts.get_agent_prompt(tool_names)
         else:
             system_prompt = prompts.get_chat_prompt()
 
@@ -118,6 +118,7 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         try:
             # 传递 tool_configs（ToolConfig 对象列表）给 agent_stream0
             async for chunk in agent_stream1(model, msg, thinking, tool_configs, config, task.is_cancelled):
+            #async for chunk in example_with_agent3(model, msg, thinking, tool_configs, system_prompt, task.is_cancelled):
                 if await http_request.is_disconnected():
                     if not client_disconnected:
                         logger.info(f"客户端断开连接，后台停止: task_id={task_id}")
