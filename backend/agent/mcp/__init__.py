@@ -1,340 +1,281 @@
 """
-MCP 工具模块
-提供单例模式的 MCP 工具管理
+MCP 工具模块 - 重构版
+提供按需连接的 MCP 工具管理
+
+使用方式:
+1. 启动时调用 initialize_mcp() 加载配置信息（不创建连接）
+2. 使用 get_all_mcp_info() 获取所有 MCP 服务信息
+3. 使用 connect_mcp_service() 按需连接指定服务
+4. 使用 get_mcp_tool() 获取具体工具
 """
 
 import asyncio
-import logging
-import os
-import platform
 from typing import List, Optional, Dict, Any
-from dataclasses import dataclass
 from langchain_core.tools import BaseTool
 
-logger = logging.getLogger(__name__)
+# 导入模型
+from .models import (
+    MCPServerConfig,
+    MCPToolInfo,
+    MCPServiceInfo,
+    TransportType,
+)
 
-# 全局单例变量
-_mcp_tools: Optional[List[BaseTool]] = None
-_mcp_tools_by_service: Optional[Dict[str, List[BaseTool]]] = None
-_mcp_clients: Dict[str, Any] = {}
+# 导入配置加载
+from .config_loader import (
+    load_server_configs,
+    get_server_config_dict,
+    load_config,
+)
 
-# 异步锁，防止并发加载
-_mcp_load_lock = asyncio.Lock()
+# 导入缓存管理
+from .cache_manager import (
+    get_cache_manager,
+    get_tool_cache,
+    refresh_tool_cache,
+)
 
-
-@dataclass
-class MCPService:
-    """MCP 服务对象"""
-    name: str
-    transport: str
-    config: Dict[str, Any]
-    tools: List[BaseTool]
-
-
-def _get_config_path() -> str:
-    """获取 MCP 配置文件路径"""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    yaml_path = os.path.join(current_dir, "mcp.yaml")
-    json_path = os.path.join(current_dir, "mcp.json")
-    
-    if os.path.exists(yaml_path):
-        return yaml_path
-    return json_path
-
-
-def _load_yaml_config(config_path: str) -> Dict[str, Any]:
-    """加载 YAML 配置文件"""
-    try:
-        import yaml
-        with open(config_path, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f)
-    except ImportError:
-        print("[MCP] 请安装 pyyaml: pip install pyyaml")
-        return {}
-    except Exception as e:
-        print(f"[MCP] 读取 YAML 配置失败: {e}")
-        return {}
+# 导入连接管理
+from .connection_manager import (
+    get_connection_manager,
+    load_service_tools,
+    get_mcp_tool,
+    disconnect_all_mcp,
+)
 
 
-def _load_json_config(config_path: str) -> Dict[str, Any]:
-    """加载 JSON 配置文件"""
-    import json
-    try:
-        with open(config_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        print(f"[MCP] 读取 JSON 配置失败: {e}")
-        return {}
+# ============== 主要 API ==============
 
-
-def _load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
-    """加载配置文件"""
-    if config_path is None:
-        config_path = _get_config_path()
-    
-    if not os.path.exists(config_path):
-        print(f"[MCP] 配置文件不存在: {config_path}")
-        return {}
-    
-    if config_path.endswith('.yaml') or config_path.endswith('.yml'):
-        return _load_yaml_config(config_path)
-    else:
-        return _load_json_config(config_path)
-
-
-def _get_server_configs(config_path: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
+async def initialize_mcp(warmup: bool = False):
     """
-    获取 MCP 服务器配置（用于 MultiServerMCPClient）
-    
-    Returns:
-        {服务名: 配置字典}
-    """
-    config = _load_config(config_path)
-    servers = config.get("servers", [])
-    
-    if isinstance(servers, dict):
-        # 旧格式：字典
-        servers_list = []
-        for name, cfg in servers.items():
-            cfg['name'] = name
-            servers_list.append(cfg)
-        servers = servers_list
-    
-    is_windows = platform.system() == "Windows"
-    result = {}
-    
-    for server in servers:
-        name = server.get('name')
-        if not name:
-            continue
-            
-        # 复制配置
-        processed_config = dict(server)
-        processed_config.pop('name', None)
-        
-        # 处理平台特定配置
-        if is_windows and "windows" in server:
-            processed_config.update(server["windows"])
-        elif not is_windows and "linux" in server:
-            processed_config.update(server["linux"])
-        elif not is_windows and "macos" in server:
-            processed_config.update(server["macos"])
-        
-        # 移除平台特定键
-        for key in ["windows", "linux", "macos"]:
-            processed_config.pop(key, None)
-        
-        result[name] = processed_config
-    
-    return result
-
-
-def _get_services_list(config_path: Optional[str] = None) -> List[Dict[str, Any]]:
-    """
-    获取服务列表（新格式：列表）
-    
-    Returns:
-        [{name, transport, config}, ...]
-    """
-    config = _load_config(config_path)
-    servers = config.get("servers", [])
-    
-    if isinstance(servers, dict):
-        # 旧格式转换为列表
-        result = []
-        for name, cfg in servers.items():
-            result.append({
-                'name': name,
-                **cfg
-            })
-        return result
-    
-    return servers
-
-
-def _customize_mcp_tool(tool: BaseTool, service_name: str) -> BaseTool:
-    """
-    自定义 MCP 工具的名称和描述，帮助大模型更好地理解工具用途
+    初始化 MCP 模块
     
     Args:
-        tool: 原始工具对象
-        service_name: MCP 服务名称
+        warmup: 如果为 True，则连接所有服务获取工具列表（首次启动时使用）
+    
+    默认仅加载配置信息，不创建实际连接
+    """
+    cache = await get_cache_manager()
+    
+    # 如果缓存为空且 warmup=True，则连接所有服务获取工具
+    if warmup and len(cache.all_tools) == 0:
+        print("[MCP] 缓存为空，正在连接所有服务获取工具列表...")
+        await warmup_all_services()
+    
+    print("[MCP] 初始化完成（仅加载配置，未创建连接）")
+
+
+async def warmup_all_services():
+    """
+    预热所有 MCP 服务
+    连接所有服务获取工具列表，并更新缓存
+    
+    注意：这会在启动时创建所有连接，可能会增加启动时间
+    建议在首次部署或缓存被清除后使用
+    """
+    from .config_loader import load_server_configs
+    
+    configs = load_server_configs()
+    total_tools = 0
+    connected_services = 0
+    
+    print(f"[MCP Warmup] 开始预热 {len(configs)} 个服务...")
+    
+    for cfg in configs:
+        if not cfg.enabled:
+            print(f"[MCP Warmup] 跳过禁用服务: {cfg.name}")
+            continue
+        
+        try:
+            tools = await connect_mcp_service(cfg.name)
+            if tools:
+                connected_services += 1
+                total_tools += len(tools)
+                print(f"[MCP Warmup] ✓ {cfg.name}: {len(tools)} 个工具")
+            else:
+                print(f"[MCP Warmup] ✗ {cfg.name}: 连接失败")
+        except Exception as e:
+            print(f"[MCP Warmup] ✗ {cfg.name}: {e}")
+    
+    print(f"[MCP Warmup] 完成: {connected_services}/{len(configs)} 个服务, {total_tools} 个工具")
+
+
+async def get_all_mcp_info() -> Dict[str, MCPServiceInfo]:
+    """
+    获取所有 MCP 服务信息（不创建连接）
+    
+    Returns:
+        {服务ID: MCPServiceInfo}
+    """
+    cache = await get_cache_manager()
+    return cache.get_all_services()
+
+
+async def get_mcp_info_by_id(service_id: str) -> Optional[MCPServiceInfo]:
+    """
+    获取指定 MCP 服务信息（不创建连接）
+    
+    Args:
+        service_id: 服务ID
         
     Returns:
-        修改后的工具对象
+        MCPServiceInfo 或 None
     """
-    # 1. 给工具名加上服务前缀，避免不同服务的同名工具冲突
+    cache = await get_cache_manager()
+    return cache.get_service_info(service_id)
+
+
+async def get_all_mcp_tools_info() -> Dict[str, MCPToolInfo]:
+    """
+    获取所有 MCP 工具信息（从缓存，不创建连接）
+    
+    Returns:
+        {工具名: MCPToolInfo}
+    """
+    cache = await get_cache_manager()
+    return cache.get_all_tools()
+
+
+async def get_mcp_tool_info(tool_name: str) -> Optional[MCPToolInfo]:
+    """
+    获取指定工具信息（从缓存，不创建连接）
+    
+    Args:
+        tool_name: 工具名称（带服务前缀）
+        
+    Returns:
+        MCPToolInfo 或 None
+    """
+    cache = await get_cache_manager()
+    return cache.get_tool_info(tool_name)
+
+
+async def connect_mcp_service(service_id: str) -> Optional[List[BaseTool]]:
+    """
+    连接指定 MCP 服务并获取工具
+    
+    Args:
+        service_id: 服务ID
+        
+    Returns:
+        工具列表，连接失败返回 None
+    """
+    return await load_service_tools(service_id)
+
+
+async def get_mcp_tool_by_name(tool_name: str) -> Optional[BaseTool]:
+    """
+    根据工具名称获取工具（按需连接）
+    
+    支持两种格式:
+    1. 带服务前缀的名称 (如: github_fork_repository)
+    2. 原始名称 (如: fork_repository) - 会尝试匹配
+    
+    Args:
+        tool_name: 工具名称
+        
+    Returns:
+        BaseTool 或 None
+    """
+    cache = await get_cache_manager()
+    
+    # 1. 尝试直接获取工具信息
+    tool_info = cache.get_tool_info(tool_name)
+    
+    if tool_info and tool_info.service_id:
+        # 知道所属服务，直接连接
+        manager = await get_connection_manager()
+        return await manager.get_tool(tool_info.service_id, tool_name)
+    
+    # 2. 尝试通过原始名称查找带前缀的名称
     # 例如: fork_repository -> github_fork_repository
-    original_name = tool.name
-    prefixed_name = f"{service_name}_{original_name}"
-    tool.name = prefixed_name
+    for cached_tool_name in cache.get_all_tools().keys():
+        if cached_tool_name.endswith(f"_{tool_name}"):
+            tool_info = cache.get_tool_info(cached_tool_name)
+            if tool_info and tool_info.service_id:
+                manager = await get_connection_manager()
+                return await manager.get_tool(tool_info.service_id, cached_tool_name)
     
-    # 2. 增强工具描述，添加服务来源信息
-    service_prefix_desc = f"【{service_name}】"
+    # 3. 不知道所属服务，遍历所有服务查找
+    services = cache.get_all_services()
+    for service_id in services.keys():
+        manager = await get_connection_manager()
+        tool = await manager.get_tool(service_id, tool_name)
+        if tool:
+            return tool
     
-    # 3. 根据服务类型添加特定的使用提示
-    usage_hints = {
-        "github": "此工具用于操作 GitHub 仓库，调用前请确认用户已授权访问。",
-        "bing-search": "此工具用于搜索网络信息，返回结果包括网页标题、URL、摘要等。",
-        "12306-mcp": "此工具用于查询火车票信息，包括车次、余票、价格等。",
-        "zhipu-web-search-sse": "此工具用于搜索网络信息，返回结构化的搜索结果。",
-    }
-    
-    # 获取该服务的特定提示，如果没有则使用通用提示
-    hint = usage_hints.get(service_name, "此工具为 MCP 服务工具，请根据描述正确使用。")
-    
-    # 4. 组装新的描述
-    enhanced_description = f"{service_prefix_desc} {tool.description}\n\n💡 使用提示: {hint}"
-    tool.description = enhanced_description
-    
-    logger.debug(f"[MCP] 工具重命名: {original_name} -> {prefixed_name}")
-    return tool
+    return None
 
 
-async def _load_service_tools(service_name: str, service_config: Dict[str, Any]) -> List[BaseTool]:
+async def get_mcp_tools_by_service(service_id: str) -> List[BaseTool]:
     """
-    加载单个服务的工具
+    获取指定服务的所有工具
     
     Args:
-        service_name: 服务名称
-        service_config: 服务配置
+        service_id: 服务ID
         
     Returns:
-        该服务的工具列表
+        工具列表
     """
-    try:
-        from langchain_mcp_adapters.client import MultiServerMCPClient
-        
-        # 创建单服务客户端
-        single_config = {service_name: service_config}
-        client = MultiServerMCPClient(single_config)
-        
-        # 获取该服务的工具
-        tools = await client.get_tools()
-        
-        # 自定义每个工具的名称和描述
-        customized_tools = []
-        for tool in tools:
-            customized_tool = _customize_mcp_tool(tool, service_name)
-            customized_tools.append(customized_tool)
-        
-        # 保存客户端以便后续清理
-        _mcp_clients[service_name] = client
-        
-        logger.info(f"[MCP] 服务 '{service_name}' 加载 {len(customized_tools)} 个工具")
-        return customized_tools
-        
-    except Exception as e:
-        logger.warning(f"[MCP] 服务 '{service_name}' 加载失败: {e}")
-        return []
+    manager = await get_connection_manager()
+    return await manager.get_tools_by_service(service_id)
 
 
-async def _load_all_services() -> Dict[str, MCPService]:
+async def disconnect_mcp_service(service_id: str):
     """
-    加载所有 MCP 服务及其工具
+    断开指定 MCP 服务连接
     
-    Returns:
-        {服务名: MCPService对象}
+    Args:
+        service_id: 服务ID
     """
-    services_list = _get_services_list()
-    server_configs = _get_server_configs()
-    
-    if not services_list:
-        print("[MCP] 没有可用的 MCP 服务器配置")
-        return {}
-    
-    services = {}
-    
-    for service_info in services_list:
-        name = service_info.get('name')
-        if not name:
-            continue
-        
-        transport = service_info.get('transport', 'stdio')
-        config = server_configs.get(name, {})
-        
-        # 加载该服务的工具
-        tools = await _load_service_tools(name, config)
-        
-        services[name] = MCPService(
-            name=name,
-            transport=transport,
-            config=config,
-            tools=tools
-        )
-    
-    return services
+    manager = await get_connection_manager()
+    await manager.disconnect_service(service_id)
 
 
-async def get_mcptools_by_service() -> Dict[str, List[BaseTool]]:
-    """
-    按 MCP 服务分组获取工具
-    每个服务单独连接，直接获取属于自己的工具
-    
-    Returns:
-        按服务名称分组的工具字典 {服务名: [工具列表]}
-    """
-    global _mcp_tools_by_service
-    
-    if _mcp_tools_by_service is not None:
-        return _mcp_tools_by_service
-    
-    async with _mcp_load_lock:
-        if _mcp_tools_by_service is not None:
-            return _mcp_tools_by_service
-        
-        services = await _load_all_services()
-        
-        _mcp_tools_by_service = {
-            name: service.tools 
-            for name, service in services.items()
-        }
-        
-        return _mcp_tools_by_service
+async def clear_mcp_cache():
+    """清除 MCP 缓存"""
+    cache = await get_cache_manager()
+    await cache.clear()
+    await disconnect_all_mcp()
 
 
-def get_mcptools_by_service_sync() -> Dict[str, List[BaseTool]]:
-    """同步按服务分组获取 MCP 工具"""
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(asyncio.run, get_mcptools_by_service())
-                return future.result()
-        else:
-            return loop.run_until_complete(get_mcptools_by_service())
-    except RuntimeError:
-        return asyncio.run(get_mcptools_by_service())
+async def refresh_mcp():
+    """刷新 MCP 配置和缓存"""
+    await clear_mcp_cache()
+    await initialize_mcp()
+
+
+# ============== 兼容旧接口 ==============
+
+_mcp_tools_cache: Optional[List[BaseTool]] = None
+_mcp_tools_by_service_cache: Optional[Dict[str, List[BaseTool]]] = None
 
 
 async def get_mcptools() -> List[BaseTool]:
     """
-    异步获取所有 MCP 工具（不分组）
+    异步获取所有 MCP 工具（按需连接所有服务）
+    注意：这会连接所有服务，建议按需连接
     
     Returns:
         所有 MCP 工具列表
     """
-    global _mcp_tools
+    global _mcp_tools_cache
     
-    if _mcp_tools is not None:
-        return _mcp_tools
+    if _mcp_tools_cache is not None:
+        return _mcp_tools_cache
     
-    async with _mcp_load_lock:
-        if _mcp_tools is not None:
-            return _mcp_tools
-        
-        services = await _load_all_services()
-        
-        # 合并所有服务的工具
-        all_tools = []
-        for service in services.values():
-            all_tools.extend(service.tools)
-        
-        _mcp_tools = all_tools
-        
-        print(f"[MCP] 总共加载 {len(all_tools)} 个工具")
-        return all_tools
+    # 获取所有服务并连接
+    cache = await get_cache_manager()
+    services = cache.get_all_services()
+    
+    all_tools = []
+    for service_id in services.keys():
+        tools = await connect_mcp_service(service_id)
+        if tools:
+            all_tools.extend(tools)
+    
+    _mcp_tools_cache = all_tools
+    return all_tools
 
 
 def get_mcptools_sync() -> List[BaseTool]:
@@ -352,42 +293,64 @@ def get_mcptools_sync() -> List[BaseTool]:
         return asyncio.run(get_mcptools())
 
 
+async def get_mcptools_by_service() -> Dict[str, List[BaseTool]]:
+    """
+    按 MCP 服务分组获取工具（按需连接所有服务）
+    
+    Returns:
+        按服务名称分组的工具字典 {服务名: [工具列表]}
+    """
+    global _mcp_tools_by_service_cache
+    
+    if _mcp_tools_by_service_cache is not None:
+        return _mcp_tools_by_service_cache
+    
+    # 获取所有服务并连接
+    cache = await get_cache_manager()
+    services = cache.get_all_services()
+    
+    result = {}
+    for service_id in services.keys():
+        tools = await connect_mcp_service(service_id)
+        if tools:
+            result[service_id] = tools
+    
+    _mcp_tools_by_service_cache = result
+    return result
+
+
+def get_mcptools_by_service_sync() -> Dict[str, List[BaseTool]]:
+    """同步按服务分组获取 MCP 工具"""
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(asyncio.run, get_mcptools_by_service())
+                return future.result()
+        else:
+            return loop.run_until_complete(get_mcptools_by_service())
+    except RuntimeError:
+        return asyncio.run(get_mcptools_by_service())
+
+
 def clear_mcptools_cache():
-    """清除 MCP 工具缓存"""
-    global _mcp_tools, _mcp_tools_by_service, _mcp_clients
-    _mcp_tools = None
-    _mcp_tools_by_service = None
-    
-    # 关闭所有客户端连接
-    for client in _mcp_clients.values():
-        try:
-            if hasattr(client, 'close'):
-                asyncio.create_task(client.close())
-        except:
-            pass
-    
-    _mcp_clients = {}
-    print("[MCP] 工具缓存已清除")
+    """清除 MCP 工具缓存（兼容旧接口）"""
+    global _mcp_tools_cache, _mcp_tools_by_service_cache
+    _mcp_tools_cache = None
+    _mcp_tools_by_service_cache = None
 
 
 async def reload_mcptools() -> List[BaseTool]:
-    """重新加载 MCP 工具"""
+    """重新加载 MCP 工具（兼容旧接口）"""
     clear_mcptools_cache()
+    await refresh_mcp()
     return await get_mcptools()
 
 
 async def merge_tools(*tool_lists: List[BaseTool]) -> List[BaseTool]:
-    """
-    异步合并多个工具列表（包含 MCP 工具）
-    
-    Args:
-        *tool_lists: 多个工具列表
-        
-    Returns:
-        合并后的工具列表
-    """
+    """异步合并多个工具列表"""
     mcp_tools = await get_mcptools()
-    
     merged = list(mcp_tools)
     
     for tools in tool_lists:
@@ -402,22 +365,12 @@ async def merge_tools(*tool_lists: List[BaseTool]) -> List[BaseTool]:
             seen.add(tool.name)
             unique_tools.append(tool)
     
-    print(f"[MCP] 合并后共 {len(unique_tools)} 个工具")
     return unique_tools
 
 
 def merge_tools_sync(*tool_lists: List[BaseTool]) -> List[BaseTool]:
-    """
-    同步合并多个工具列表
-    
-    Args:
-        *tool_lists: 多个工具列表
-        
-    Returns:
-        合并后的工具列表
-    """
+    """同步合并多个工具列表"""
     mcp_tools = get_mcptools_sync()
-    
     merged = list(mcp_tools)
     
     for tools in tool_lists:
@@ -437,13 +390,40 @@ def merge_tools_sync(*tool_lists: List[BaseTool]) -> List[BaseTool]:
 
 # 导出主要功能
 __all__ = [
-    'MCPService',                   # MCP 服务对象
-    'get_mcptools',                 # 异步获取 MCP 工具
-    'get_mcptools_sync',            # 同步获取 MCP 工具
-    'get_mcptools_by_service',      # 异步按服务分组获取
-    'get_mcptools_by_service_sync', # 同步按服务分组获取
-    'merge_tools',                  # 异步合并工具
-    'merge_tools_sync',             # 同步合并工具
-    'clear_mcptools_cache',         # 清除缓存
-    'reload_mcptools',              # 重新加载
+    # 模型类
+    'MCPServerConfig',
+    'MCPToolInfo',
+    'MCPServiceInfo',
+    'TransportType',
+    
+    # 配置加载
+    'load_server_configs',
+    'get_server_config_dict',
+    'load_config',
+    
+    # 主要 API
+    'initialize_mcp',
+    'get_all_mcp_info',
+    'get_mcp_info_by_id',
+    'get_all_mcp_tools_info',
+    'get_mcp_tool_info',
+    'connect_mcp_service',
+    'get_mcp_tool_by_name',
+    'get_mcp_tools_by_service',
+    'disconnect_mcp_service',
+    'disconnect_all_mcp',
+    'clear_mcp_cache',
+    'refresh_mcp',
+    
+    # 兼容旧接口
+    'get_mcptools',
+    'get_mcptools_sync',
+    'get_mcptools_by_service',
+    'get_mcptools_by_service_sync',
+    'clear_mcptools_cache',
+    'reload_mcptools',
+    'merge_tools',
+    'merge_tools_sync',
+    'get_tool_cache',
+    'refresh_tool_cache',
 ]

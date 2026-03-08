@@ -70,15 +70,24 @@ class Prompts:
 
     def get_agent_prompt(self, tool_ids: List[str]) -> str:
         # 优化：从缓存中获取工具信息，避免连接 MCP 服务
-        from agent.mcp.mcp_cache import ToolCache
+        from agent.mcp.cache_manager import get_cache_manager
         from agent.tools import get_regular_tools
         
         # 获取普通工具（内存中的，不连接外部服务）
         regular_tools = get_regular_tools()
         
-        # 直接从缓存文件加载工具信息（同步，不连接服务）
-        cache = ToolCache()
-        cache._load_from_file()  # 同步加载，不触发服务连接
+        # 从缓存获取工具信息（不连接服务）
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # 在异步环境中
+                cache = asyncio.run_coroutine_threadsafe(get_cache_manager(), loop).result()
+            else:
+                cache = loop.run_until_complete(get_cache_manager())
+        except RuntimeError:
+            # 没有事件循环，创建新的
+            cache = asyncio.run(get_cache_manager())
         
         base_prompt = self.AGENT_SYSTEM_PROMPT or "你是一个智能Agent助手。"
         tools_desc = []

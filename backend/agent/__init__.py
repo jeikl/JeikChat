@@ -21,7 +21,7 @@ async def get_all_tools() -> List[BaseTool]:
     获取所有工具列表（普通工具 + MCP 工具）
     
     单例模式：首次调用时加载并合并，后续返回缓存
-    MCP 工具使用 ToolCache 系统，O(1) 查询
+    MCP 工具使用按需连接
     
     Returns:
         完整的工具列表
@@ -42,21 +42,17 @@ async def get_all_tools() -> List[BaseTool]:
         from agent.tools import get_regular_tools
         regular_tools = get_regular_tools()
         
-        # 2. 获取 MCP 工具（使用新的缓存系统）
-        from agent.mcp.mcp_cache import get_all_cached_tools
-        mcp_tools = await get_all_cached_tools()
+        # 2. 获取 MCP 工具信息（从缓存，不连接）
+        from agent.mcp.cache_manager import get_cache_manager
+        cache = await get_cache_manager()
         
         # 3. 合并工具列表
         _all_tools = list(regular_tools)
         
-        # 添加 MCP 工具，去重
-        existing_names = {t.name for t in _all_tools}
-        for tool in mcp_tools:
-            if tool.name not in existing_names:
-                _all_tools.append(tool)
-                existing_names.add(tool.name)
-    
-    return _all_tools
+        # 注意：这里只返回工具信息，实际工具对象在按需连接时获取
+        # 如果需要实际工具对象，请使用 get_mcp_tool_by_name 或 connect_mcp_service
+        
+        return _all_tools
 
 
 async def get_all_tools_async() -> List[BaseTool]:
@@ -64,32 +60,11 @@ async def get_all_tools_async() -> List[BaseTool]:
     异步获取所有工具列表（在同步环境中使用）
     
     用于在已经运行的事件循环中获取工具
-    MCP 工具使用 ToolCache 系统，O(1) 查询
     
     Returns:
         完整的工具列表
     """
-    global _all_tools_sync
-    
-    if _all_tools_sync is None:
-        # 1. 获取普通工具
-        from agent.tools import get_regular_tools
-        regular_tools = get_regular_tools()
-        
-        # 2. 获取 MCP 工具（使用新的缓存系统）
-        from agent.mcp.mcp_cache import get_all_cached_tools
-        mcp_tools = await get_all_cached_tools()
-        
-        # 3. 合并
-        _all_tools_sync = list(regular_tools)
-        
-        existing_names = {t.name for t in _all_tools_sync}
-        for tool in mcp_tools:
-            if tool.name not in existing_names:
-                _all_tools_sync.append(tool)
-                existing_names.add(tool.name)
-    
-    return _all_tools_sync
+    return await get_all_tools()
 
 
 def get_all_tools_sync() -> List[BaseTool]:

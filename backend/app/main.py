@@ -31,13 +31,13 @@ async def lifespan(app: FastAPI):
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs("./vector_store", exist_ok=True)
     
-    # 初始化 MCP 工具缓存（关键优化：启动时预加载）
-    from agent.mcp.mcp_cache import get_tool_cache
+    # 初始化 MCP 工具缓存
+    # 如果缓存为空，warmup=True 会自动连接所有服务获取工具列表
+    from agent.mcp import initialize_mcp
     try:
-        cache = await get_tool_cache()
-        # 日志已在 mcp_cache 中输出，这里不再重复
+        await initialize_mcp(warmup=True)
     except Exception as e:
-        print(f"[Startup] MCP 缓存初始化失败: {e}")
+        print(f"[Startup] MCP 初始化失败: {e}")
     
     from services.llm import _warmup_all_models#预热模型
     asyncio.create_task(_warmup_all_models())

@@ -25,6 +25,7 @@ router = APIRouter()
 stream_manager = get_stream_manager()
 
 sessions: dict = {}
+uuid_to_session_map: dict = {}  # UUID 到会话 ID 的映射
 
 
 def get_session(session_id: Optional[str], content: str):
@@ -87,7 +88,7 @@ async def send_message(request: SendMessageRequest, http_request: Request):
     }
     save_message(session_id, "user", request.content)
     
-    model = request.model or "qwen3.5-plus"
+    model = request.model or "qwen3.5-flah"
     thinking = request.thinking or "auto"
     # tools 现在是 ToolConfig 对象列表
     tool_configs = request.tools or []

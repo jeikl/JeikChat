@@ -16,8 +16,9 @@ from agent.mcp import (
     get_mcptools_by_service_sync,
     get_mcptools,
     get_mcptools_sync,
-    _get_services_list,
-    MCPService
+    load_server_configs,
+    get_all_mcp_info,
+    MCPServiceInfo,
 )
 
 
@@ -68,10 +69,6 @@ async def test_cache():
     print(f"工具数量: {len(tools2)}")
     print(f"是否是同一个对象: {tools1 is tools2}")
     
-    # # 清除缓存
-    # print("\n清除缓存...")
-    # clear_tools_cache()
-    
     # 第三次获取（重新加载）
     print("第三次获取（重新加载）...")
     tools3 = await get_all_tools()
@@ -79,21 +76,25 @@ async def test_cache():
 
 
 async def test_grouped_tools():
-    """测试按服务分组获取工具（新架构：每个服务独立连接）"""
+    """测试按服务分组获取工具（新架构：按需连接）"""
     print("\n" + "=" * 60)
-    print("测试: 按服务分组获取工具（每个服务独立连接）")
+    print("测试: 按服务分组获取工具（按需连接）")
     print("=" * 60)
     
-    # 1. 显示配置文件中的服务
+    # 1. 显示配置文件中的服务（不连接）
     print("\n1. 配置文件中的服务:")
-    services_list = _get_services_list()
-    for service in services_list:
-        name = service.get('name', 'unknown')
-        transport = service.get('transport', 'stdio')
-        print(f"   - {name} (transport: {transport})")
+    configs = load_server_configs()
+    for cfg in configs:
+        print(f"   - {cfg.name} (transport: {cfg.transport.value})")
     
-    # 2. 获取分组后的工具
-    print("\n2. 按服务分组结果:")
+    # 2. 获取服务信息（不连接）
+    print("\n2. 从缓存获取服务信息（不连接）:")
+    services = await get_all_mcp_info()
+    for service_id, service_info in services.items():
+        print(f"   - {service_id}: {service_info.transport.value}, 状态: {service_info.status}")
+    
+    # 3. 按需连接获取分组后的工具
+    print("\n3. 按需连接获取分组结果:")
     grouped = await get_mcptools_by_service()
     
     total_tools = 0
@@ -105,7 +106,7 @@ async def test_grouped_tools():
     
     print(f"\n   总计: {len(grouped)} 个服务，{total_tools} 个工具")
     
-    # 3. 验证所有工具都已分组
+    # 4. 验证所有工具都已分组
     all_tools = await get_mcptools()
     if len(all_tools) == total_tools:
         print(f"\n   ✅ 所有工具都已正确分组 ({len(all_tools)} / {total_tools})")
@@ -132,22 +133,30 @@ def test_sync_grouped_tools():
 
 
 async def test_individual_services():
-    """测试单独获取每个服务的工具"""
+    """测试按需连接获取每个服务的工具"""
     print("\n" + "=" * 60)
-    print("测试: 单独获取每个服务的工具")
+    print("测试: 按需连接获取每个服务的工具")
     print("=" * 60)
     
-    from agent.mcp import _load_all_services
+    from agent.mcp import connect_mcp_service
     
-    services = await _load_all_services()
+    # 获取所有服务信息（不连接）
+    services = await get_all_mcp_info()
     
-    for name, service in services.items():
-        print(f"\n   服务: {name}")
-        print(f"   传输方式: {service.transport}")
-        print(f"   工具数量: {len(service.tools)}")
-        print(f"   工具列表:")
-        for tool in service.tools:
-            print(f"      - {tool.name}")
+    for service_id, service_info in services.items():
+        print(f"\n   服务: {service_id}")
+        print(f"   传输方式: {service_info.transport.value}")
+        print(f"   初始状态: {service_info.status}")
+        
+        # 按需连接该服务
+        tools = await connect_mcp_service(service_id)
+        if tools:
+            print(f"   连接后工具数量: {len(tools)}")
+            print(f"   工具列表:")
+            for tool in tools:
+                print(f"      - {tool.name}")
+        else:
+            print(f"   ⚠️ 连接失败或无工具")
 
 
 async def main():
@@ -158,7 +167,7 @@ async def main():
         ("缓存机制", test_cache),
         ("按服务分组获取工具", test_grouped_tools),
         ("同步按服务分组获取工具", test_sync_grouped_tools),
-        ("单独获取每个服务的工具", test_individual_services),
+        ("按需连接获取每个服务的工具", test_individual_services),
     ]
     
     for test_name, test_func in tests:

@@ -11,11 +11,11 @@ async def get_tool_list():
     
     对于 MCP 工具，toolid 和 name 都使用带服务前缀的名称（如: github_fork_repository）
     """
-    from agent.mcp.mcp_cache import get_tool_cache
+    from agent.mcp.cache_manager import get_cache_manager
     from agent.tools import get_regular_tools
 
     # 获取缓存实例（确保已初始化）
-    cache = await get_tool_cache()
+    cache = await get_cache_manager()
 
     # 获取普通工具（内置工具）
     regular_tools = get_regular_tools()
@@ -77,7 +77,7 @@ async def batch_set_tools(tools: list):
 @router.post("/tools/cache/refresh")
 async def refresh_tools_cache():
     """刷新 MCP 工具缓存（当 MCP 服务配置变更时调用）"""
-    from agent.mcp.mcp_cache import refresh_tool_cache
+    from agent.mcp.cache_manager import refresh_tool_cache
     await refresh_tool_cache()
     return success(data=None, msg="工具缓存已刷新")
 
@@ -85,8 +85,8 @@ async def refresh_tools_cache():
 @router.get("/tools/cache/status")
 async def get_tools_cache_status():
     """获取工具缓存状态"""
-    from agent.mcp.mcp_cache import get_tool_cache
-    cache = await get_tool_cache()
+    from agent.mcp.cache_manager import get_cache_manager
+    cache = await get_cache_manager()
     
     return success(data={
         "initialized": cache.is_initialized(),

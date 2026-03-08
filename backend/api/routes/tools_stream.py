@@ -58,8 +58,8 @@ async def stream_tools_generator():
         await asyncio.sleep(0.2)
 
         try:
-            from agent.mcp.mcp_cache import get_tool_cache
-            cache = await get_tool_cache()
+            from agent.mcp.cache_manager import get_cache_manager
+            cache = await get_cache_manager()
 
             # 获取所有服务和工具
             services = cache.get_all_services()
@@ -110,8 +110,8 @@ async def stream_tools_generator():
         total_services = 1 if regular_tools else 0  # 内置工具服务
         total_tools = len(regular_tools)
         try:
-            from agent.mcp.mcp_cache import get_tool_cache
-            cache = await get_tool_cache()
+            from agent.mcp.cache_manager import get_cache_manager
+            cache = await get_cache_manager()
             services = cache.get_all_services()
             total_services += len(services)
             total_tools += len(cache.all_tools)
