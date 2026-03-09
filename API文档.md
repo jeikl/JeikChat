@@ -1,13 +1,46 @@
 # JeikChat 智能客服系统 - API 接口文档
 
+<p align="center">
+  <strong>基于大语言模型的智能客服系统 API 文档</strong>
+</p>
+
+---
+
 ## 目录
 
+- [概述](#概述)
 - [启动配置说明](#启动配置说明)
 - [基础配置 API (Config)](#基础配置-api-config)
 - [模型服务 API (Model)](#模型服务-api-model)
 - [聊天服务 API (Chat)](#聊天服务-api-chat)
 - [知识库服务 API (Knowledge)](#知识库服务-api-knowledge)
 - [工具服务 API (Tools)](#工具服务-api-tools)
+- [附录](#附录)
+
+---
+
+## 概述
+
+本文档详细描述了 JeikChat 智能客服系统的所有 API 接口，包括请求方式、参数说明、返回格式等。
+
+### 基础信息
+
+- **基础URL**: `http://localhost:8000/api`
+- **文档地址**: `http://localhost:8000/docs` (Swagger UI)
+- **数据格式**: JSON
+- **认证方式**: 暂无 (开发中)
+
+### 通用返回格式
+
+所有 API 统一返回以下格式：
+
+```json
+{
+  "status": 1,        // 1=成功, 0=失败
+  "data": {...},      // 业务数据
+  "msg": "操作成功"    // 提示信息
+}
+```
 
 ---
 

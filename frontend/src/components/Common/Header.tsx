@@ -49,9 +49,6 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
           });
         }
 
-        const currentActiveConfig = useSettingsStore.getState().activeConfigId;
-        const currentActiveModel = useSettingsStore.getState().configs.find(c => c.id === currentActiveConfig)?.model;
-
         // 优先使用服务器返回的默认模型
         const serverDefaultModel = result.data.default_model;
         // console.log('[DEBUG] Server default model:', serverDefaultModel);

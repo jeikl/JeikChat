@@ -21,7 +21,7 @@ interface ToolDetailModalProps {
 
 // 格式化工具显示名称
 // 后端返回的 toolid 和 name 都是带服务前缀的名称（如: github_fork_repository）
-const formatToolDisplayName = (tool: Tool, serviceSource: string): string => {
+const formatToolDisplayName = (tool: Tool, _serviceSource: string): string => {
   // 直接显示 name 字段（带服务前缀）
   return tool.name || tool.toolid;
 };
