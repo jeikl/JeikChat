@@ -1,6 +1,4 @@
-# langchain-JeikChat 全能AI助手 
-
-# 无缝集成各种生态 MCP API Tools 多语言混合调用
+# langchain-JeikChat 全能AI助手 无缝集成各种生态 MCP API Tools 多语言混合调用
 
 
 <p align="center">
