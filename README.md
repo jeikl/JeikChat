@@ -1,5 +1,10 @@
-# JeikChat 全能AI助手 无缝集成各种生态
+# JeikChat 全能AI助手 无缝集成各种生态 MCP API Tools 多语言混合调用
 
+# !!!注意 MCP集成功能 需要较新的模型才能使用 推荐用2025年中旬以后发布的模型 即可使用 快速集成构建你的智能助手!!!
+
+# Python开发 由于Python是解释性语言 所以模型加载和工具的第一次初始化会比较慢 但第一次以后平台会带缓存机制 几乎所有功能都带缓存机制
+
+# 本项目全程采用Langchain+langgraph+python+vue开发 UI美观大气上档次 任何模型 都可以集成 openai形API的大模型和MCP服务更是可以一秒无缝集成!
 <p align="center">
   <img src="frontend/public/logo.png" alt="JeikChat Logo" width="120">
 </p>
@@ -25,6 +30,21 @@ JeikChat 是一个基于langchain和langgraph开发的功能完善的全能AI助
 **作者**: jeikliu@outlook.com
 
 ---
+
+## 开发计划
+
+- ✅️ 基础聊天功能
+- ✅️ 数据库记忆
+- ✅️ 多模型支持
+- [x] RAG知识库
+- ✅️  MCP工具系统
+- [ ] 语音对话
+- [ ] 用户认证系统
+- [ ] 对话历史持久化
+- ✅️ 多语言支持
+
+---
+
 
 ## 功能特性
 
@@ -436,21 +456,6 @@ settings:
 - **工具服务 API**: `/api/tools/*`
 
 在线文档: http://localhost:8000/docs (启动后访问)
-
----
-
-## 开发计划
-
-- [x] 基础聊天功能
-- [x] 多模型支持
-- [x] RAG知识库
-- [x] MCP工具系统
-- [ ] 语音对话
-- [ ] 用户认证系统
-- [ ] 对话历史持久化
-- [ ] 多语言支持
-
----
 
 ## 贡献指南
 
