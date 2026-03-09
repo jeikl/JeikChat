@@ -87,7 +87,7 @@ JeikChat 是一个基于langchain和langgraph开发的功能完善的全能AI助
 | FastAPI | 0.109+ | Web框架 |
 | SQLAlchemy | 2.x | ORM |
 | Pydantic | 2.x | 数据验证 |
-| LangChain | 0.1.x | LLM框架 |
+| LangChain | 1.2 最新版本 | LLM框架 |
 | LangGraph | 最新 | 工作流编排 |
 | ChromaDB | 0.4.x | 向量数据库 |
 | sentence-transformers | 2.x | 文本向量 |
@@ -101,9 +101,10 @@ JeikChat 是一个基于langchain和langgraph开发的功能完善的全能AI助
 - **字节跳动**: 豆包 (Doubao)
 - **Moonshot**: 月之暗面 (Kimi)
 - **DeepSeek**: DeepSeek Chat
+- **Hunyuan**: 腾讯混元
 - **本地部署**: Ollama (LLaMA2, Qwen, Mistral等)
 
-### 支持的向量数据库
+### 支持的向量数据库(开发中)
 
 - **ChromaDB** (默认, 轻量级)
 - **Milvus** (企业级)
