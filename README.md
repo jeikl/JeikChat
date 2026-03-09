@@ -1,4 +1,9 @@
-# langchain-JeikChat 全能AI助手 无缝集成各种生态 MCP API Tools 多语言混合调用 # 
+<div align="center" style="background-color: #f6f8fa; padding: 10px; border-radius: 5px;">
+
+# langchain-JeikChat 全能AI助手 
+# 无缝集成各种生态 MCP API Tools 多语言混合调用
+
+</div>
 
 
 <p align="center">
