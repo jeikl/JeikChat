@@ -28,7 +28,6 @@ providers:
     display_name: "${ANTHROPIC_DISPLAY_NAME:-Anthropic}"
     models:
       - id: "claude-3-5-sonnet-20241022"
-        
       - id: "claude-3-opus-20240229"
       - id: "claude-3-sonnet-20240229"
     enable: false
@@ -38,11 +37,19 @@ providers:
     api_key: "AIzaSyA019RbXD38eMgriKa9OzZfjChW3vjWCTY"
     models:
       - id: "gemini-3-flash-preview"
+        tags: ["限流", "快速"]
       - id: "gemini-3.1-flash-lite-preview"
+        tags: ["限流", "轻量"]
       - id: "gemini-2.5-flash"
+        tags: ["text", "快速"]
+      - id: "gemini-2.5-flash-lite"
+        tags: ["text", "轻量"]
+      - id: "gemini-2.5-pro"
+        tags: ["多模态", "推理强"]
       - id: "gemini-2.0-pro"
-      - id: "gemini-1.5-pro"
+        tags: ["多模态"]
       - id: "gemini-1.5-flash"
+        tags: ["多模态", "快速"]
     enable: true
 
   doubao:
@@ -52,7 +59,7 @@ providers:
     display_name: "${DOUBAO_DISPLAY_NAME:-字节跳动}"
     models:
       - id: doubao-seed-2-0-code-preview-260215
-        default: true
+        enable: false
       - id: "deepseek-v3-2-251201"
         enable: false
       - id: "doubao-seed-2-0-pro-260215"
@@ -60,13 +67,15 @@ providers:
       - id: deepseek-v3-1-250821
         enable: false
       - id: doubao-seed-1-6-vision-250815
-        enable: true
+        enable: false
       - id: doubao-seed-1-8-251228
         enable: false
       - id: Doubao-Seed-1.6-flash
+        enable: false
       - id: doubao-seed-1-6-lite-251015
+        enable: false
       - id: glm-4-7-251222
-        default: true
+
 
   qwen:
     name: "通义千问"
@@ -75,9 +84,10 @@ providers:
     display_name: "${QWEN_DISPLAY_NAME:-通义千问}"
     models:
       - id: qwen3.5-flash
+        enable: false
       - id: qwen-plus
       - id: qwen-turbo
-      
+    enable: false
 
   moonshot:
     name: "月之暗面"
@@ -133,6 +143,31 @@ providers:
       - id: "llama3:8b"
       - id: "gemma:7b"
     enable: false
+
+
+  ollama:
+    name: 魔塔
+    base_url: https://api-inference.modelscope.cn/v1
+    api_key: ms-1722d753-a473-4a8a-bb51-8dc77bd86c24
+    display_name: 魔塔
+    models:
+      - id: "Qwen/Qwen3.5-35B-A3B"
+        tags: ["文字","推理"]
+      - id: Qwen/Qwen3.5-397B-A17B
+        tags: ["多模态"]
+      - id: moonshotai/Kimi-K2.5
+        default: true
+        tags: ["K2.5"]
+      - id: ZhipuAI/GLM-5
+        tags: ["GLM-5"]
+      - id: "Qwen/Qwen3.5-35B-A3B"
+        tags: ["35B", "A3B"]
+      - id: MiniMax/MiniMax-M2.5
+        tags: ["M2.5"]
+      - id: deepseek-ai/DeepSeek-V3.2
+        tags: ["推理"]
+    
+
 
 # 模型ID到提供商的映射
 # 用于根据模型ID快速查找对应的配置

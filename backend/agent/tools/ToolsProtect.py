@@ -36,9 +36,9 @@ class McpToolNode(ToolNode):
 
         responses = []
         # 遍历所有工具调用
-        print(f"  [DEBUG] 工具调用数量: {len(last_msg.tool_calls)}")
-        print(f"  [DEBUG] 可用工具: {list(self.tools_by_name.keys())}")
-        print(f"  [DEBUG] last_msg.tool_calls: {last_msg.tool_calls}")
+        # print(f"  [DEBUG] 工具调用数量: {len(last_msg.tool_calls)}")
+        # print(f"  [DEBUG] 可用工具: {list(self.tools_by_name.keys())}")
+        # print(f"  [DEBUG] last_msg.tool_calls: {last_msg.tool_calls}")
         
         # 预处理：合并损坏的 tool_calls
         # 有些模型会生成 name 和 args 分开的 tool_calls
@@ -84,18 +84,18 @@ class McpToolNode(ToolNode):
                         "error": "无法匹配到对应的工具名称"
                     }
         
-        print(f"  [DEBUG] 合并后的 tool_calls: {list(merged_calls.values())}")
+        # print(f"  [DEBUG] 合并后的 tool_calls: {list(merged_calls.values())}")
         
         for tc in merged_calls.values():
             name = tc.get("name", "")
             args = tc.get("args", {})
             tid = tc.get("id", "no-id")
             error_msg = tc.get("error", "")
-            print(f"  [DEBUG] 处理工具调用: name='{name}', args={args}, tid={tid}")
+            # print(f"  [DEBUG] 处理工具调用: name='{name}', args={args}, tid={tid}")
 
             # 处理特殊错误标记
             if name == "__error__":
-                print(f"  [DEBUG] 处理合并错误: {error_msg}")
+                # print(f"  [DEBUG] 处理合并错误: {error_msg}")
                 responses.append(ToolMessage(
                     content=f"工具调用参数解析错误：{error_msg}。请重新调用工具。",
                     tool_call_id=tid,
@@ -106,7 +106,7 @@ class McpToolNode(ToolNode):
 
             # 检查工具名称是否为空
             if not name:
-                print(f"  [DEBUG] 工具名称为空，返回错误")
+                # print(f"  [DEBUG] 工具名称为空，返回错误")
                 responses.append(ToolMessage(
                     content="工具调用失败：工具名称为空",
                     tool_call_id=tid,
@@ -117,7 +117,7 @@ class McpToolNode(ToolNode):
 
             # 检查工具是否在可用列表中
             if name not in self.tools_by_name:
-                print(f"  [DEBUG] 工具 '{name}' 不在可用工具列表中: {list(self.tools_by_name.keys())}")
+                # print(f"  [DEBUG] 工具 '{name}' 不在可用工具列表中: {list(self.tools_by_name.keys())}")
                 responses.append(ToolMessage(
                     content=f"工具调用失败：工具 '{name}' 不可用",
                     tool_call_id=tid,
@@ -131,7 +131,7 @@ class McpToolNode(ToolNode):
                 query = args.get("query", "")
                 # 检查 query 有效性
                 if not query or not isinstance(query, str) or not query.strip():
-                    print(f"  [DEBUG] 守卫拦截：query 无效 {args}")
+                    # print(f"  [DEBUG] 守卫拦截：query 无效 {args}")
                     responses.append(ToolMessage(
                         content="工具调用失败：'query' 参数为空或无效。请重新生成完整参数。",
                         tool_call_id=tid,
@@ -147,7 +147,7 @@ class McpToolNode(ToolNode):
             
             while retry_count < max_retries:
                 try:
-                    print(f"  [DEBUG] 执行工具 {name} with args {args} (尝试 {retry_count + 1}/{max_retries})")
+                    # print(f"  [DEBUG] 执行工具 {name} with args {args} (尝试 {retry_count + 1}/{max_retries})")
                     tool = self.tools_by_name[name]  # 获取工具实例
                     result = await tool.ainvoke(args)  # 异步调用
                     responses.append(ToolMessage(

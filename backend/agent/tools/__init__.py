@@ -29,6 +29,7 @@ def get_regular_tools():
 __all__ = [
     'get_weather',
     'get_current_time',
+    'get_current_date',
     'calculate',
     'REGULAR_TOOLS',
     'get_regular_tools',

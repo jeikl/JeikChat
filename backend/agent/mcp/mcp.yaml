@@ -22,6 +22,8 @@ servers:
       command: cmd
       args: [/c, npx, -y, 12306-mcp]
 
+
+
   - name: github-mcp
     transport: stdio
     command: npx
@@ -35,6 +37,10 @@ servers:
   - name: zhipu-web-search-sse
     transport: sse
     url: https://open.bigmodel.cn/api/mcp/web_search/sse?Authorization=834213e9b3cb42769cf3f5d4641a8df1.4xDerkV5c9x4PopI
+
+  - name: github
+    transport: streamable_http
+    url: https://mcp.api-inference.modelscope.net/0c4606c9a3914c/mcp
 
 settings:
   timeout: 30

@@ -196,6 +196,7 @@ class ModelConfig:
     """单个模型配置"""
     id: str
     provider: str
+    tags: List[str] = field(default_factory=list)
     default: bool = False
     enabled: bool = True
     
@@ -345,27 +346,21 @@ class ModelsConfigManager:
                 if m.get("enable", True)  # 只包含启用的模型
             ]
             
-            # 处理default逻辑：确保只有一个default模型
-            # 如果没有指定default，则第一个模型为default
+            # 处理default逻辑：只有明确标记为default的模型才是默认模型
+            # 不再自动将第一个模型设为默认
             models = []
-            has_default = any(m.get("default", False) for m in raw_models)
             
-            for idx, m in enumerate(raw_models):
-                is_default = False
-                if has_default:
-                    # 有指定default，只取第一个标记为default的
-                    is_default = m.get("default", False) and not any(
-                        model.default for model in models
-                    )
-                else:
-                    # 没有指定default，第一个为default
-                    is_default = (idx == 0)
+            for m in raw_models:
+                is_default = m.get("default", False) and not any(
+                    model.default for model in models
+                )
                 
                 models.append(ModelConfig(
                     id=m["id"],
                     provider=key,
                     default=is_default,
-                    enabled=True  # 已经过滤过enable了
+                    enabled=True,  # 已经过滤过enable了
+                    tags=m.get("tags", [])  # 读取标签字段
                 ))
         
         return ProviderConfig(
@@ -389,11 +384,11 @@ class ModelsConfigManager:
         }
     
     def get_enabled_providers(self) -> Dict[str, ProviderConfig]:
-        """获取已启用的提供商（enable=true且有API Key或Ollama）"""
+        """获取已启用的提供商（enable=true且有API Key）"""
         all_providers = self.get_all_providers()
         return {
             key: provider for key, provider in all_providers.items()
-            if provider.enabled and (provider.api_key or key == "ollama")
+            if provider.enabled and provider.api_key
         }
     
     def get_model_config(self, model_id: str) -> Optional[ModelConfig]:

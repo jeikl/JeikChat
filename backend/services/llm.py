@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(project_root, ".env"), override=True)
 
 from app.config import get_models_config
-from api.routes.model import get_dynamic_model_options
+from api.routes.model import get_all_enabled_models
 
 _client_cache = {}
 _cache_lock = threading.Lock()
@@ -31,15 +31,13 @@ _CACHE_TTL = float('inf')
 async def _warmup_all_models():
     """预热所有模型"""
     try:
-        model_options, _ = get_dynamic_model_options()
-        if not model_options:
+        all_models_data, _ = get_all_enabled_models()
+        if not all_models_data:
             print("⚠️ 未找到模型配置，跳过预热")
             return
 
-        all_models = []
-        for provider_data in model_options.values():
-            if "models" in provider_data:
-                all_models.extend(provider_data["models"])
+        # 直接提取所有模型ID
+        all_models = [model["id"] for model in all_models_data]
 
         if not all_models:
              print("⚠️ 模型列表为空，跳过预热")

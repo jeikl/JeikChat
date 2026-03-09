@@ -25,33 +25,43 @@ class ModelConfigRequest(BaseModel):
     enabled: bool = True
 
 
-def get_dynamic_model_options():
-    """根据YAML配置文件动态生成模型选项"""
+def get_all_enabled_models():
+    """获取所有启用的模型列表（扁平化，不包含提供商层级）"""
     models_config = get_models_config()
     enabled_providers = models_config.get_enabled_providers()
     
-    model_options = {}
-    global_default_model = None
+    # import logging
+    # logger = logging.getLogger(__name__)
+    # logger.info(f"[DEBUG] Enabled providers: {list(enabled_providers.keys())}")
     
+    all_models = []
+    default_model = None
+    
+    # 遍历所有启用的提供商，收集所有模型
     for provider_key, provider in enabled_providers.items():
-        if provider.models:
-            # 找出该提供商的默认模型
-            provider_default = None
-            for model in provider.models:
-                if model.default:
-                    provider_default = model.id
-                    # 记录全局默认模型（第一个提供商的默认模型）
-                    if global_default_model is None:
-                        global_default_model = model.id
-                    break
-            
-            model_options[provider_key] = {
-                "name": provider.display_name or provider.name,
-                "models": [model.id for model in provider.models],
-                "default_model": provider_default,  # 该提供商的默认模型
+        for model in provider.models:
+            # logger.info(f"[DEBUG] Model {model.id} from {provider_key}: default={model.default}")
+            model_data = {
+                "id": model.id,
+                "name": model.name,
+                "tags": model.tags,
+                "default": model.default,
+                "provider": provider_key
             }
+            all_models.append(model_data)
+            
+            # 记录第一个标记为 default 的模型
+            if model.default and default_model is None:
+                default_model = model.id
+                # logger.info(f"[DEBUG] Found default model: {default_model}")
     
-    return model_options, global_default_model
+    # 如果没有找到标记为 default 的模型，使用第一个模型
+    if default_model is None and all_models:
+        default_model = all_models[0]["id"]
+        # logger.info(f"[DEBUG] No default model found, using first: {default_model}")
+    
+    # logger.info(f"[DEBUG] Returning default_model: {default_model}")
+    return all_models, default_model
 
 
 def get_provider_info(provider_key: str) -> Optional[Dict[str, Any]]:
@@ -74,7 +84,8 @@ def get_provider_info(provider_key: str) -> Optional[Dict[str, Any]]:
             {
                 "id": model.id,
                 "name": model.name,
-                "default": model.default
+                "default": model.default,
+                "tags": model.tags  # 包含标签
             }
             for model in provider.models
         ]
@@ -111,29 +122,26 @@ EMBEDDING_MODELS = [
 
 @router.get("/models/list")
 async def list_models():
-    """获取模型提供商列表"""
-    model_options, global_default_model = get_dynamic_model_options()
+    """获取模型列表（扁平化）"""
+    all_models, default_model = get_all_enabled_models()
 
-    if not model_options:
-        test_providers = {
-            "test": {
-                "name": "测试模型",
-                "models": ["gpt4(测)", "deepseek(测)", "claude3(测)", "gemini(测)"],
-                "default_model": "gpt4(测)"
-            }
-        }
+    if not all_models:
+        test_models = [
+            {"id": "gpt-4o", "name": "GPT-4o", "tags": [], "default": True, "provider": "openai"},
+            {"id": "deepseek-chat", "name": "DeepSeek", "tags": [], "default": False, "provider": "deepseek"},
+        ]
         return success(data={
-            "providers": test_providers,
+            "models": test_models,
             "embedding_models": EMBEDDING_MODELS,
             "has_configured_models": False,
-            "default_model": "gpt4(测)"
+            "default_model": "gpt-4o"
         }, msg="服务器未配置模型，此处展示测试模型")
 
     return success(data={
-        "providers": model_options,
+        "models": all_models,
         "embedding_models": EMBEDDING_MODELS,
         "has_configured_models": True,
-        "default_model": global_default_model  # 全局默认模型，用于前端首次加载
+        "default_model": default_model  # 全局默认模型，用于前端首次加载
     }, msg="获取成功")
 
 

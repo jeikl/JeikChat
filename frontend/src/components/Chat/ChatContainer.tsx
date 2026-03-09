@@ -186,15 +186,17 @@ const ChatContainer = () => {
               
               <div className="text-center mb-6 md:mb-12">
                 <h1 className="text-lg md:text-4xl lg:text-5xl font-extrabold mb-1.5 md:mb-4 tracking-tight">
-                  <span className="text-text-primary">您好，我是 </span>
+                  <span className="text-text-primary"> </span>
                   <span className="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
                     JeikChat
                   </span>
                 </h1>
                 <p className="text-text-secondary text-[11px] md:text-base max-w-lg mx-auto leading-relaxed opacity-90">
                   超越对话，开启智能交互的新维度。
-                  <br className="hidden md:block" />
-                  我是您的全能 AI 助手，随时准备为您提供帮助。
+                  <br />
+                  全能 AI 助手，可快速集成tools、MCP、API等三方服务。
+                  <br />
+                  随时为您服务
                 </p>
               </div>
               

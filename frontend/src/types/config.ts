@@ -9,6 +9,7 @@ export interface LLMConfig {
   maxTokens: number;
   topP: number;
   enabled: boolean;
+  tags?: string[];  // 模型标签，如 ["多模态", "文生图"]
 }
 
 export type LLMProvider = 

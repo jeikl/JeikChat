@@ -33,54 +33,47 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
         const newConfigs: LLMConfig[] = [];
         let configId = 1;
 
-        for (const [providerKey, providerInfo] of Object.entries(result.data.providers)) {
-          const provider = providerInfo as any;
-          for (const model of provider.models) {
-            newConfigs.push({
-              id: `config_${configId++}`,
-              name: model,
-              provider: toLLMProvider(providerKey),
-              model: model,
-              temperature: 0.7,
-              maxTokens: 4096,
-              topP: 0.9,
-              enabled: true
-            });
-          }
+        // 新的 API 直接返回扁平化的模型列表
+        const models = result.data.models || [];
+        for (const model of models) {
+          newConfigs.push({
+            id: `config_${configId++}`,
+            name: model.name || model.id,
+            provider: toLLMProvider(model.provider),
+            model: model.id,
+            temperature: 0.7,
+            maxTokens: 4096,
+            topP: 0.9,
+            enabled: true,
+            tags: model.tags || []
+          });
         }
 
         const currentActiveConfig = useSettingsStore.getState().activeConfigId;
         const currentActiveModel = useSettingsStore.getState().configs.find(c => c.id === currentActiveConfig)?.model;
 
-        let newActiveConfigId = currentActiveConfig;
-        if (currentActiveModel) {
-          // 如果之前有选中的模型，尝试保持选中
-          const matchedConfig = newConfigs.find(c => c.model === currentActiveModel);
-          if (matchedConfig) {
-            newActiveConfigId = matchedConfig.id;
-          } else if (newConfigs.length > 0) {
-            // 之前的模型不在新列表中，使用服务器推荐的默认模型
-            const serverDefaultModel = result.data.default_model;
-            const defaultConfig = newConfigs.find(c => c.model === serverDefaultModel);
-            newActiveConfigId = defaultConfig ? defaultConfig.id : newConfigs[0].id;
-          } else {
-            newActiveConfigId = null;
-          }
+        // 优先使用服务器返回的默认模型
+        const serverDefaultModel = result.data.default_model;
+        // console.log('[DEBUG] Server default model:', serverDefaultModel);
+        // console.log('[DEBUG] Available models:', newConfigs.map(c => c.model));
+        
+        const defaultConfig = newConfigs.find(c => c.model === serverDefaultModel);
+        // console.log('[DEBUG] Found default config:', defaultConfig);
+        
+        let newActiveConfigId: string | null = null;
+        if (defaultConfig) {
+          newActiveConfigId = defaultConfig.id;
         } else if (newConfigs.length > 0) {
-          // 首次加载，没有选中过模型，使用服务器推荐的默认模型
-          const serverDefaultModel = result.data.default_model;
-          const defaultConfig = newConfigs.find(c => c.model === serverDefaultModel);
-          newActiveConfigId = defaultConfig ? defaultConfig.id : newConfigs[0].id;
-        } else {
-          newActiveConfigId = null;
+          newActiveConfigId = newConfigs[0].id;
         }
+        // console.log('[DEBUG] Selected config ID:', newActiveConfigId);
 
         useSettingsStore.setState({
           configs: newConfigs,
           activeConfigId: newActiveConfigId
         });
 
-        const totalModels = Object.values(result.data.providers).reduce((sum: number, p: any) => sum + (p.models?.length || 0), 0);
+        const totalModels = models.length;
         showToast(`获取到 ${totalModels} 个模型`, 'success');
       } else {
         showToast('获取模型列表失败，请稍后重试', 'error');
@@ -166,7 +159,7 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
           </div>
 
           {showModelSelector && (
-            <div className="absolute top-full right-0 mt-2 w-64 bg-[#1E1E1E] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50 overflow-x-auto max-w-[90vw]">
+            <div className="absolute top-full right-0 mt-2 w-64 bg-[#1E1E1E] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50 max-w-[90vw]">
               <div className="px-4 py-2 mb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-widest">选择模型</div>
               {configs.length === 0 ? (
                 <div className="px-4 py-8 text-sm text-text-tertiary text-center flex flex-col items-center gap-2">
@@ -174,7 +167,7 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
                   {isLoading ? '正在获取模型列表...' : '暂无模型，请刷新'}
                 </div>
               ) : (
-                <div className="space-y-0.5 px-1.5 min-w-full">
+                <div className="space-y-0.5 px-1.5 min-w-full max-h-[60vh] overflow-y-auto custom-scrollbar">
                   {configs.map(config => (
                     <button
                       key={config.id}
@@ -183,17 +176,36 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
                         setShowModelSelector(false);
                       }}
                       className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center justify-between group/item ${
-                        activeConfigId === config.id 
-                          ? 'bg-primary/10 text-primary font-bold' 
+                        activeConfigId === config.id
+                          ? 'bg-primary/10 text-primary font-bold'
                           : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <Bot className={`w-4 h-4 ${activeConfigId === config.id ? 'text-primary' : 'text-text-quaternary group/item:text-text-primary'}`} />
-                        <span className="truncate">{config.name}</span>
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Bot className={`w-4 h-4 flex-shrink-0 ${activeConfigId === config.id ? 'text-primary' : 'text-text-quaternary group/item:text-text-primary'}`} />
+                        <div className="flex flex-col gap-1 min-w-0 flex-1">
+                          <span className="truncate">{config.name}</span>
+                          {/* 显示模型标签 */}
+                          {config.tags && config.tags.length > 0 && (
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {config.tags.map((tag, idx) => (
+                                <span
+                                  key={idx}
+                                  className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                    activeConfigId === config.id
+                                      ? 'bg-primary/20 text-primary'
+                                      : 'bg-bg-tertiary text-text-quaternary'
+                                  }`}
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       {activeConfigId === config.id && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(99,102,241,0.6)] flex-shrink-0 ml-2" />
                       )}
                     </button>
                   ))}
