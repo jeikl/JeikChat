@@ -8,165 +8,157 @@
 
 providers:
   openai:
-    name: "OpenAI"
-    api_key: "${OPENAI_API_KEY}"
-    base_url: "${OPENAI_BASE_URL}"
-    display_name: "${OPENAI_DISPLAY_NAME:-OpenAI}"
-    # enable: true  # 可选，默认为true
+    name: ""
+    api_key: ""
+    base_url: ""
+    display_name: ""
     models:
-      - id: "gpt-4o-mini"
-        
-      - id: "gpt-4o"
-        # enable: true  # 可选，默认为true
-      - id: "gpt-4-turbo"
+      - id: ""
+      - id: ""
+      - id: ""
     enable: false
 
   anthropic:
-    name: "Anthropic"
-    api_key: "${ANTHROPIC_API_KEY}"
-    base_url: "${ANTHROPIC_BASE_URL}"
-    display_name: "${ANTHROPIC_DISPLAY_NAME:-Anthropic}"
+    name: ""
+    api_key: ""
+    base_url: ""
+    display_name: ""
     models:
-      - id: "claude-3-5-sonnet-20241022"
-      - id: "claude-3-opus-20240229"
-      - id: "claude-3-sonnet-20240229"
+      - id: ""
+      - id: ""
+      - id: ""
     enable: false
 
   google:
-    name: "Google"
-    api_key: "AIzaSyA019RbXD38eMgriKa9OzZfjChW3vjWCTY"
+    name: ""
+    api_key: ""
     models:
-      - id: "gemini-3-flash-preview"
-        tags: ["限流", "快速"]
-      - id: "gemini-3.1-flash-lite-preview"
-        tags: ["限流", "轻量"]
-      - id: "gemini-2.5-flash"
-        tags: ["text", "快速"]
-      - id: "gemini-2.5-flash-lite"
-        tags: ["text", "轻量"]
-      - id: "gemini-2.5-pro"
-        tags: ["多模态", "推理强"]
-      - id: "gemini-2.0-pro"
-        tags: ["多模态"]
-      - id: "gemini-1.5-flash"
-        tags: ["多模态", "快速"]
-    enable: true
+      - id: ""
+        tags: []
+      - id: ""
+        tags: []
+      - id: ""
+        tags: []
+      - id: ""
+        tags: []
+      - id: ""
+        tags: []
+      - id: ""
+        tags: []
+      - id: ""
+        tags: []
+    enable: false
 
   doubao:
-    name: "字节跳动"
-    api_key: "${DOUBAO_API_KEY}"
-    base_url: "${DOUBAO_BASE_URL}"
-    display_name: "${DOUBAO_DISPLAY_NAME:-字节跳动}"
+    name: ""
+    api_key: ""
+    base_url: ""
+    display_name: ""
     models:
-      - id: doubao-seed-2-0-code-preview-260215
+      - id: ""
         enable: false
-      - id: "deepseek-v3-2-251201"
+      - id: ""
         enable: false
-      - id: "doubao-seed-2-0-pro-260215"
+      - id: ""
         enable: false
-      - id: deepseek-v3-1-250821
+      - id: ""
         enable: false
-      - id: doubao-seed-1-6-vision-250815
+      - id: ""
         enable: false
-      - id: doubao-seed-1-8-251228
+      - id: ""
         enable: false
-      - id: Doubao-Seed-1.6-flash
+      - id: ""
         enable: false
-      - id: doubao-seed-1-6-lite-251015
+      - id: ""
         enable: false
-      - id: glm-4-7-251222
-
+      - id: ""
+    enable: false
 
   qwen:
-    name: "通义千问"
-    api_key: "${QWEN_API_KEY}"
-    base_url: "${QWEN_BASE_URL}"
-    display_name: "${QWEN_DISPLAY_NAME:-通义千问}"
+    name: ""
+    api_key: ""
+    base_url: ""
+    display_name: ""
     models:
-      - id: qwen3.5-flash
+      - id: ""
         enable: false
-      - id: qwen-plus
-      - id: qwen-turbo
+      - id: ""
+      - id: ""
     enable: false
 
   moonshot:
-    name: "月之暗面"
-    api_key: "${MOONSHOT_API_KEY}"
-    base_url: "${MOONSHOT_BASE_URL}"
-    display_name: "${MOONSHOT_DISPLAY_NAME:-月之暗面}"
+    name: ""
+    api_key: ""
+    base_url: ""
+    display_name: ""
     models:
-      - id: "moonshot-v1-8k"
-      - id: "moonshot-v1-32k"
-      - id: "moonshot-v1-128k"
+      - id: ""
+      - id: ""
+      - id: ""
     enable: false
 
   zhipu:
-    name: "智谱AI"
-    api_key: "${ZHIPU_API_KEY}"
-    base_url: "${ZHIPU_BASE_URL}"
-    display_name: "${ZHIPU_DISPLAY_NAME:-智谱AI}"
+    name: ""
+    api_key: ""
+    base_url: ""
+    display_name: ""
     models:
-      - id: "glm-4-air"
-        
-      - id: "glm-4"
-      - id: "glm-4-flash"
+      - id: ""
+      - id: ""
+      - id: ""
     enable: false
 
   baidu:
-    name: "文心一言"
-    api_key: "${BAIDU_API_KEY}"
-    secret_key: "${BAIDU_SECRET_KEY}"
-    base_url: "${BAIDU_BASE_URL}"
-    display_name: "${BAIDU_DISPLAY_NAME:-文心一言}"
+    name: ""
+    api_key: ""
+    secret_key: ""
+    base_url: ""
+    display_name: ""
     models:
-      - id: "ernie-bot-4.5"
-      - id: "ernie-bot-4"
-      - id: "ernie-bot-turbo"
+      - id: ""
+      - id: ""
+      - id: ""
     enable: false
 
   xfyun:
-    name: "腾讯混元"
-    api_key: sk-Fr3erPZxK7aZKKzsYrgJmCVyeNCohehBVDfwFsBCAzDE6bHA
-    base_url: https://api.hunyuan.cloud.tencent.com/v1/
-    display_name: 腾讯混元
+    name: ""
+    api_key: ""
+    base_url: ""
+    display_name: ""
     models:
-      - id: hunyuan-turbos-latest
-
-    #enable: false
-
-  ollama:
-    name: "Ollama"
-    base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
-    display_name: "${OLLAMA_DISPLAY_NAME:-Ollama}"
-    models:
-      - id: "qwen2:7b"
-      - id: "llama3:8b"
-      - id: "gemma:7b"
+      - id: ""
     enable: false
 
-
   ollama:
-    name: 魔塔
-    base_url: https://api-inference.modelscope.cn/v1
-    api_key: ms-1722d753-a473-4a8a-bb51-8dc77bd86c24
-    display_name: 魔塔
+    name: ""
+    base_url: ""
+    display_name: ""
     models:
-      - id: "Qwen/Qwen3.5-35B-A3B"
-        tags: ["文字","推理"]
-      - id: Qwen/Qwen3.5-397B-A17B
-        tags: ["多模态"]
-      - id: moonshotai/Kimi-K2.5
+      - id: ""
+      - id: ""
+      - id: ""
+    enable: false
+
+  custom:
+    name: ""
+    base_url: ""
+    api_key: ""
+    display_name: ""
+    models:
+      - id: ""
+        tags: []
+      - id: ""
+        tags: []
+      - id: ""
         default: true
-        tags: ["K2.5"]
-      - id: ZhipuAI/GLM-5
-        tags: ["GLM-5"]
-      - id: "Qwen/Qwen3.5-35B-A3B"
-        tags: ["35B", "A3B"]
-      - id: MiniMax/MiniMax-M2.5
-        tags: ["M2.5"]
-      - id: deepseek-ai/DeepSeek-V3.2
-        tags: ["推理"]
-    
+        tags: []
+      - id: ""
+        tags: []
+      - id: ""
+        tags: []
+      - id: ""
+        tags: []
+    enable: true
 
 
 # 模型ID到提供商的映射
