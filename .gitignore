@@ -15,3 +15,9 @@ env.*
 
 # Node.js modules
 node_modules/
+
+# Config files with sensitive data
+*.toml
+*.lock
+mcpcache.json
+models_config.yaml
