@@ -1,11 +1,11 @@
-# JeikChat 智能客服系统
+# JeikChat 全能AI助手 无缝集成各种生态
 
 <p align="center">
   <img src="frontend/public/logo.png" alt="JeikChat Logo" width="120">
 </p>
 
 <p align="center">
-  <strong>基于大语言模型的智能客服解决方案</strong>
+  <strong>基于大语言模型的全能拓展BOT解决方案</strong>
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 
 ## 项目简介
 
-JeikChat 是一个功能完善的智能客服系统，采用现代化的前后端分离架构设计，支持多模型切换、RAG知识库检索、MCP工具扩展等核心功能。UI设计参考主流AI产品（豆包、ChatGPT、通义千问等），完美适配电脑和手机端。
+JeikChat 是一个基于langchain和langgraph开发的功能完善的全能AI助手，采用现代化的前后端分离架构设计，支持多模型切换、RAG知识库检索、MCP工具扩展等核心功能。UI设计参考主流AI产品（豆包、ChatGPT、通义千问等），完美适配电脑和手机端。
 
 **作者**: jeikliu@outlook.com
 
