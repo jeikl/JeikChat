@@ -1,4 +1,4 @@
-# JeikChat 全能AI助手 无缝集成各种生态 MCP API Tools 多语言混合调用
+# langchain-JeikChat 全能AI助手 无缝集成各种生态 MCP API Tools 多语言混合调用
 
 
 <p align="center">
@@ -21,7 +21,7 @@
 
 ## 项目简介
 
-JeikChat 是一个基于langchain和langgraph开发的功能完善的全能AI助手，采用现代化的前后端分离架构设计，支持多模型切换、RAG知识库检索、MCP工具扩展等核心功能。UI设计参考主流AI产品（豆包、ChatGPT、通义千问等），完美适配电脑和手机端。
+JeikChat 是一个基于langchain、langgraph、vite、react，python等开发的功能完善的全能AI助手，采用现代化的前后端分离架构设计，支持多模型切换、RAG知识库检索、MCP工具扩展等核心功能。UI设计参考主流AI产品（豆包、ChatGPT、通义千问等），完美适配电脑和手机端。
 
 
 # !!!注意 MCP集成功能 需要较新的模型才能使用 推荐用2025年中旬以后发布的模型 即可使用 快速集成构建你的智能助手!!!
