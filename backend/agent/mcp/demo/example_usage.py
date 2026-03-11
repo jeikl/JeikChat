@@ -206,36 +206,8 @@ async def example_with_agent():
         
     
     try:
-        async for mode, data in graph.astream(input_state, stream_mode=["messages", "updates"]):
-
-            # --- 情况 A: 细粒度流处理 (messages) ---
-            if mode == "messages":
-                chunk, _ = data
-
-                # 1. 提取推理内容 (Reasoning / Thinking)
-                # 兼容 deepseek 等模型的思维链字段
-                if hasattr(chunk, "additional_kwargs"):
-                    reasoning = chunk.additional_kwargs.get("reasoning_content", "")
-                    if reasoning:
-                        print(f"{reasoning}", end="", flush=True)
-
-                # 2. 提取正式回答内容
-                if hasattr(chunk, "content") and chunk.content:
-                    print(chunk.content, end="", flush=True)
-
-            # --- 情况 B: 节点状态处理 (updates) ---
-            elif mode == "updates":
-                for node, state in data.items():
-                    if node == "agent":
-                        # 检查是否有工具调用动作
-                        msgs = state.get("messages", [])
-                        if msgs and hasattr(msgs[-1], "tool_calls") and msgs[-1].tool_calls:
-                            tool_name = msgs[-1].tool_calls[0]['name']
-                            print(f"\n\n🛠️  [系统动作] 正在调用工具: {tool_name}...")
-
-                    elif node == "tools":
-                        print(f"✅ [系统动作] 工具执行完毕，获取到数据。")
-                        #print("\n--- 正在生成最终回答 ---\n")
+        async for mode, data in graph.astream(input_state, stream_mode=["messages"]):
+            print({})
 
     except Exception as e:
         print(f"\n❌ 运行中断: {e}")

@@ -40,7 +40,6 @@ from .connection_manager import (
     get_connection_manager,
     load_service_tools,
     get_mcp_tool,
-    disconnect_all_mcp,
 )
 
 
@@ -232,11 +231,19 @@ async def disconnect_mcp_service(service_id: str):
     await manager.disconnect_service(service_id)
 
 
+async def disconnect_all_mcp():
+    """断开所有 MCP 服务连接（兼容旧接口）"""
+    manager = await get_connection_manager()
+    await manager.disconnect_all()
+
+
 async def clear_mcp_cache():
     """清除 MCP 缓存"""
     cache = await get_cache_manager()
     await cache.clear()
-    await disconnect_all_mcp()
+    # 断开所有连接
+    manager = await get_connection_manager()
+    await manager.disconnect_all()
 
 
 async def refresh_mcp():

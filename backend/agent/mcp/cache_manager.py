@@ -234,6 +234,43 @@ async def get_tool_cache() -> MCPCacheManager:
 
 
 async def refresh_tool_cache():
-    """刷新工具缓存（兼容旧接口）"""
+    """刷新工具缓存 - 连接所有 MCP 服务并获取工具"""
+    global _cache_manager
+    
+    if _cache_manager is not None:
+        await _cache_manager.clear()
+    
+    _cache_manager = None
     manager = await get_cache_manager()
-    await manager.refresh()
+    
+    from .connection_manager import MCPConnectionManager
+    from .config_loader import load_server_configs
+    
+    connection_manager = MCPConnectionManager()
+    configs = load_server_configs()
+    
+    connected_count = 0
+    failed_count = 0
+    total_tools = 0
+    
+    for cfg in configs:
+        if not cfg.enabled:
+            continue
+        
+        try:
+            tools = await connection_manager.connect_service(cfg.name)
+            
+            if tools is not None:
+                connected_count += 1
+                total_tools += len(tools)
+            else:
+                failed_count += 1
+                
+        except Exception as e:
+            failed_count += 1
+            manager.update_service_status(cfg.name, "error", str(e))
+    
+    await manager.save_to_file()
+    
+    print(f"[MCP] 刷新完成: {connected_count} 个服务, {total_tools} 个工具")
+    return manager

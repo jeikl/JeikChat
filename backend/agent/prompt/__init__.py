@@ -69,18 +69,15 @@ class Prompts:
         return self.CHAT_WELCOME_PROMPT
 
     async def get_agent_prompt(self, tool_ids: List[str]) -> str:
-        """异步获取Agent提示词（修复死锁问题）"""
+        """异步获取Agent提示词"""
         from agent.mcp.cache_manager import get_cache_manager
         from agent.tools import get_regular_tools
         import logging
         logger = logging.getLogger(__name__)
         
-        logger.info(f"[DEBUG-PROMPT] get_agent_prompt 开始，工具IDs={tool_ids}")
+        logger.info(f"[DEBUG-PROMPT] 工具IDs={tool_ids}")
         
-        # 获取普通工具（内存中的，不连接外部服务）
         regular_tools = get_regular_tools()
-        
-        # 异步获取缓存（使用await，不会阻塞事件循环）
         cache = await get_cache_manager()
         
         base_prompt = self.AGENT_SYSTEM_PROMPT or "你是一个智能Agent助手。"
@@ -88,30 +85,37 @@ class Prompts:
         
         for tid in tool_ids:
             found = False
-            # 先在普通工具中查找
+            
+            # 标准化工具名（处理重复前缀如 github_github_xxx -> github_xxx）
+            normalized_tid = tid
+            parts = tid.split('_')
+            if len(parts) >= 3 and parts[0] == parts[1]:
+                normalized_tid = f"{parts[0]}_{'_'.join(parts[2:])}"
+            
+            # 在普通工具中查找
             for tool in regular_tools:
-                if tool.name == tid:
+                if tool.name == tid or tool.name == normalized_tid:
                     tools_desc.append(f"- {tool.name}: {tool.description}")
                     found = True
                     break
             
-            # 再在 MCP 缓存中查找
+            # 在 MCP 缓存中查找（使用原始名和标准化名）
             if not found:
-                # MCP 工具：分割前缀获取实际工具名
-                # 格式: service_name_tool_name (如: bing-search_bing_search)
-                actual_tool_name = tid
-                if "_" in tid:
-                    actual_tool_name = tid.split("_", 1)[1]
-                
-                tool_info = cache.get_tool_info(actual_tool_name)
-                if tool_info:
-                    tools_desc.append(f"- {tool_info.name}: {tool_info.description}")
+                for try_tid in [tid, normalized_tid]:
+                    tool_info = cache.get_tool_info(try_tid)
+                    if tool_info:
+                        tools_desc.append(f"- {tool_info.name}: {tool_info.description}")
+                        found = True
+                        break
         
         if tools_desc:
             tools_list = "你目前可用的工具：\n" + "\n".join(tools_desc)
-            return base_prompt.replace("{tools}", tools_list)
+            result = base_prompt.replace("{tools}", tools_list)
+        else:
+            result = base_prompt.replace("{tools}", "")
         
-        return base_prompt.replace("{tools}", "")
+        logger.info(f"[DEBUG-PROMPT] 找到工具: {len(tools_desc)}/{len(tool_ids)}")
+        return result
 
     def get_rag_prompt(self) -> str:
         return self.RAG_SYSTEM_PROMPT

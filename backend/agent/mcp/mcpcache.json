@@ -1,12 +1,16 @@
 {
   "services": {
-    "bing-search": {
-      "id": "bing-search",
-      "name": "bing-search",
-      "transport": "streamable_http",
+    "postgres-full": {
+      "id": "postgres-full",
+      "name": "postgres-full",
+      "transport": "stdio",
       "tool_names": [
-        "bing_search",
-        "crawl_webpage"
+        "postgres-full_execute_query",
+        "postgres-full_execute_dml_ddl_dcl_tcl",
+        "postgres-full_execute_commit",
+        "postgres-full_execute_rollback",
+        "postgres-full_list_tables",
+        "postgres-full_describe_table"
       ],
       "enabled": true
     },
@@ -15,48 +19,14 @@
       "name": "12306-mcp",
       "transport": "stdio",
       "tool_names": [
-        "get-current-date",
-        "get-stations-code-in-city",
-        "get-station-code-of-citys",
-        "get-station-code-by-names",
-        "get-station-by-telecode",
-        "get-tickets",
-        "get-interline-tickets",
-        "get-train-route-stations"
-      ],
-      "enabled": true
-    },
-    "github-mcp": {
-      "id": "github-mcp",
-      "name": "github-mcp",
-      "transport": "stdio",
-      "tool_names": [
-        "create_or_update_file",
-        "search_repositories",
-        "create_repository",
-        "get_file_contents",
-        "push_files",
-        "create_issue",
-        "create_pull_request",
-        "fork_repository",
-        "create_branch",
-        "list_commits",
-        "list_issues",
-        "update_issue",
-        "add_issue_comment",
-        "search_code",
-        "search_issues",
-        "search_users",
-        "get_issue",
-        "get_pull_request",
-        "list_pull_requests",
-        "create_pull_request_review",
-        "merge_pull_request",
-        "get_pull_request_files",
-        "get_pull_request_status",
-        "update_pull_request_branch",
-        "get_pull_request_comments",
-        "get_pull_request_reviews"
+        "12306-mcp_get-current-date",
+        "12306-mcp_get-stations-code-in-city",
+        "12306-mcp_get-station-code-of-citys",
+        "12306-mcp_get-station-code-by-names",
+        "12306-mcp_get-station-by-telecode",
+        "12306-mcp_get-tickets",
+        "12306-mcp_get-interline-tickets",
+        "12306-mcp_get-train-route-stations"
       ],
       "enabled": true
     },
@@ -65,333 +35,515 @@
       "name": "zhipu-web-search-sse",
       "transport": "sse",
       "tool_names": [
-        "webSearchSogou",
-        "webSearchQuark",
-        "webSearchPro",
-        "webSearchStd"
+        "zhipu-web-search-sse_webSearchSogou",
+        "zhipu-web-search-sse_webSearchQuark",
+        "zhipu-web-search-sse_webSearchPro",
+        "zhipu-web-search-sse_webSearchStd"
+      ],
+      "enabled": true
+    },
+    "github": {
+      "id": "github",
+      "name": "github",
+      "transport": "streamable_http",
+      "tool_names": [
+        "github_create_or_update_file",
+        "github_search_repositories",
+        "github_create_repository",
+        "github_get_file_contents",
+        "github_push_files",
+        "github_create_issue",
+        "github_create_pull_request",
+        "github_fork_repository",
+        "github_create_branch",
+        "github_list_commits",
+        "github_list_issues",
+        "github_update_issue",
+        "github_add_issue_comment",
+        "github_search_code",
+        "github_search_issues",
+        "github_search_users",
+        "github_get_issue",
+        "github_get_pull_request",
+        "github_list_pull_requests",
+        "github_create_pull_request_review",
+        "github_merge_pull_request",
+        "github_get_pull_request_files",
+        "github_get_pull_request_status",
+        "github_update_pull_request_branch",
+        "github_get_pull_request_comments",
+        "github_get_pull_request_reviews"
+      ],
+      "enabled": true
+    },
+    "Gaodeamp": {
+      "id": "Gaodeamp",
+      "name": "Gaodeamp",
+      "transport": "streamable_http",
+      "tool_names": [
+        "Gaodeamp_maps_regeocode",
+        "Gaodeamp_maps_geo",
+        "Gaodeamp_maps_ip_location",
+        "Gaodeamp_maps_weather",
+        "Gaodeamp_maps_search_detail",
+        "Gaodeamp_maps_bicycling",
+        "Gaodeamp_maps_direction_walking",
+        "Gaodeamp_maps_direction_driving",
+        "Gaodeamp_maps_direction_transit_integrated",
+        "Gaodeamp_maps_distance",
+        "Gaodeamp_maps_text_search",
+        "Gaodeamp_maps_around_search"
       ],
       "enabled": true
     }
   },
   "all_tools": {
-    "bing_search": {
-      "name": "bing_search",
-      "original_name": "bing_search",
-      "description": "【bing-search】 使用必应中文搜索引擎搜索信息。返回搜索结果包括标题、链接和摘要。",
-      "service_id": "bing-search",
-      "service_name": "bing-search",
+    "postgres-full_execute_query": {
+      "name": "postgres-full_execute_query",
+      "original_name": "execute_query",
+      "description": "【postgres-full】 Run a read-only SQL query (SELECT statements). Executed in read-only mode for safety.",
+      "service_id": "postgres-full",
+      "service_name": "postgres-full",
       "args_schema": null
     },
-    "crawl_webpage": {
-      "name": "crawl_webpage",
-      "original_name": "crawl_webpage",
-      "description": "【bing-search】 根据搜索结果的UUID抓取网页内容。支持批量抓取多个网页。会自动过滤黑名单中的网站(如知乎、小红书等)。",
-      "service_id": "bing-search",
-      "service_name": "bing-search",
+    "postgres-full_execute_dml_ddl_dcl_tcl": {
+      "name": "postgres-full_execute_dml_ddl_dcl_tcl",
+      "original_name": "execute_dml_ddl_dcl_tcl",
+      "description": "【postgres-full】 Execute DML, DDL, DCL, or TCL statements (INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, etc). Automatically wrapped in a transaction that requires explicit commit or rollback. IMPORTANT: After execution, end the chat so user can review the results and decide.",
+      "service_id": "postgres-full",
+      "service_name": "postgres-full",
       "args_schema": null
     },
-    "get-current-date": {
-      "name": "get-current-date",
+    "postgres-full_execute_commit": {
+      "name": "postgres-full_execute_commit",
+      "original_name": "execute_commit",
+      "description": "【postgres-full】 Commit a transaction by its ID to permanently apply the changes to the database",
+      "service_id": "postgres-full",
+      "service_name": "postgres-full",
+      "args_schema": null
+    },
+    "postgres-full_execute_rollback": {
+      "name": "postgres-full_execute_rollback",
+      "original_name": "execute_rollback",
+      "description": "【postgres-full】 Rollback a transaction by its ID to undo all changes and discard the transaction",
+      "service_id": "postgres-full",
+      "service_name": "postgres-full",
+      "args_schema": null
+    },
+    "postgres-full_list_tables": {
+      "name": "postgres-full_list_tables",
+      "original_name": "list_tables",
+      "description": "【postgres-full】 Get a list of all tables in the database",
+      "service_id": "postgres-full",
+      "service_name": "postgres-full",
+      "args_schema": null
+    },
+    "postgres-full_describe_table": {
+      "name": "postgres-full_describe_table",
+      "original_name": "describe_table",
+      "description": "【postgres-full】 Get detailed information about a specific table",
+      "service_id": "postgres-full",
+      "service_name": "postgres-full",
+      "args_schema": null
+    },
+    "12306-mcp_get-current-date": {
+      "name": "12306-mcp_get-current-date",
       "original_name": "get-current-date",
       "description": "【12306-mcp】 获取当前日期，以上海时区（Asia/Shanghai, UTC+8）为准，返回格式为 \"yyyy-MM-dd\"。主要用于解析用户提到的相对日期（如“明天”、“下周三”），提供准确的日期输入。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "get-stations-code-in-city": {
-      "name": "get-stations-code-in-city",
+    "12306-mcp_get-stations-code-in-city": {
+      "name": "12306-mcp_get-stations-code-in-city",
       "original_name": "get-stations-code-in-city",
       "description": "【12306-mcp】 通过中文城市名查询该城市 **所有** 火车站的名称及其对应的 `station_code`，结果是一个包含多个车站信息的列表。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "get-station-code-of-citys": {
-      "name": "get-station-code-of-citys",
+    "12306-mcp_get-station-code-of-citys": {
+      "name": "12306-mcp_get-station-code-of-citys",
       "original_name": "get-station-code-of-citys",
       "description": "【12306-mcp】 通过中文城市名查询代表该城市的 `station_code`。此接口主要用于在用户提供**城市名**作为出发地或到达地时，为接口准备 `station_code` 参数。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "get-station-code-by-names": {
-      "name": "get-station-code-by-names",
+    "12306-mcp_get-station-code-by-names": {
+      "name": "12306-mcp_get-station-code-by-names",
       "original_name": "get-station-code-by-names",
       "description": "【12306-mcp】 通过具体的中文车站名查询其 `station_code` 和车站名。此接口主要用于在用户提供**具体车站名**作为出发地或到达地时，为接口准备 `station_code` 参数。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "get-station-by-telecode": {
-      "name": "get-station-by-telecode",
+    "12306-mcp_get-station-by-telecode": {
+      "name": "12306-mcp_get-station-by-telecode",
       "original_name": "get-station-by-telecode",
       "description": "【12306-mcp】 通过车站的 `station_telecode` 查询车站的详细信息，包括名称、拼音、所属城市等。此接口主要用于在已知 `telecode` 的情况下获取更完整的车站数据，或用于特殊查询及调试目的。一般用户对话流程中较少直接触发。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "get-tickets": {
-      "name": "get-tickets",
+    "12306-mcp_get-tickets": {
+      "name": "12306-mcp_get-tickets",
       "original_name": "get-tickets",
       "description": "【12306-mcp】 查询12306余票信息。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "get-interline-tickets": {
-      "name": "get-interline-tickets",
+    "12306-mcp_get-interline-tickets": {
+      "name": "12306-mcp_get-interline-tickets",
       "original_name": "get-interline-tickets",
       "description": "【12306-mcp】 查询12306中转余票信息。尚且只支持查询前十条。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "get-train-route-stations": {
-      "name": "get-train-route-stations",
+    "12306-mcp_get-train-route-stations": {
+      "name": "12306-mcp_get-train-route-stations",
       "original_name": "get-train-route-stations",
       "description": "【12306-mcp】 查询特定列车车次在指定区间内的途径车站、到站时间、出发时间及停留时间等详细经停信息。当用户询问某趟具体列车的经停站时使用此接口。",
       "service_id": "12306-mcp",
       "service_name": "12306-mcp",
       "args_schema": null
     },
-    "create_or_update_file": {
-      "name": "create_or_update_file",
-      "original_name": "create_or_update_file",
-      "description": "【github-mcp】 Create or update a single file in a GitHub repository",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "search_repositories": {
-      "name": "search_repositories",
-      "original_name": "search_repositories",
-      "description": "【github-mcp】 Search for GitHub repositories",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "create_repository": {
-      "name": "create_repository",
-      "original_name": "create_repository",
-      "description": "【github-mcp】 Create a new GitHub repository in your account",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "get_file_contents": {
-      "name": "get_file_contents",
-      "original_name": "get_file_contents",
-      "description": "【github-mcp】 Get the contents of a file or directory from a GitHub repository",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "push_files": {
-      "name": "push_files",
-      "original_name": "push_files",
-      "description": "【github-mcp】 Push multiple files to a GitHub repository in a single commit",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "create_issue": {
-      "name": "create_issue",
-      "original_name": "create_issue",
-      "description": "【github-mcp】 Create a new issue in a GitHub repository",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "create_pull_request": {
-      "name": "create_pull_request",
-      "original_name": "create_pull_request",
-      "description": "【github-mcp】 Create a new pull request in a GitHub repository",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "fork_repository": {
-      "name": "fork_repository",
-      "original_name": "fork_repository",
-      "description": "【github-mcp】 Fork a GitHub repository to your account or specified organization",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "create_branch": {
-      "name": "create_branch",
-      "original_name": "create_branch",
-      "description": "【github-mcp】 Create a new branch in a GitHub repository",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "list_commits": {
-      "name": "list_commits",
-      "original_name": "list_commits",
-      "description": "【github-mcp】 Get list of commits of a branch in a GitHub repository",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "list_issues": {
-      "name": "list_issues",
-      "original_name": "list_issues",
-      "description": "【github-mcp】 List issues in a GitHub repository with filtering options",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "update_issue": {
-      "name": "update_issue",
-      "original_name": "update_issue",
-      "description": "【github-mcp】 Update an existing issue in a GitHub repository",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "add_issue_comment": {
-      "name": "add_issue_comment",
-      "original_name": "add_issue_comment",
-      "description": "【github-mcp】 Add a comment to an existing issue",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "search_code": {
-      "name": "search_code",
-      "original_name": "search_code",
-      "description": "【github-mcp】 Search for code across GitHub repositories",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "search_issues": {
-      "name": "search_issues",
-      "original_name": "search_issues",
-      "description": "【github-mcp】 Search for issues and pull requests across GitHub repositories",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "search_users": {
-      "name": "search_users",
-      "original_name": "search_users",
-      "description": "【github-mcp】 Search for users on GitHub",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "get_issue": {
-      "name": "get_issue",
-      "original_name": "get_issue",
-      "description": "【github-mcp】 Get details of a specific issue in a GitHub repository.",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "get_pull_request": {
-      "name": "get_pull_request",
-      "original_name": "get_pull_request",
-      "description": "【github-mcp】 Get details of a specific pull request",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "list_pull_requests": {
-      "name": "list_pull_requests",
-      "original_name": "list_pull_requests",
-      "description": "【github-mcp】 List and filter repository pull requests",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "create_pull_request_review": {
-      "name": "create_pull_request_review",
-      "original_name": "create_pull_request_review",
-      "description": "【github-mcp】 Create a review on a pull request",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "merge_pull_request": {
-      "name": "merge_pull_request",
-      "original_name": "merge_pull_request",
-      "description": "【github-mcp】 Merge a pull request",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "get_pull_request_files": {
-      "name": "get_pull_request_files",
-      "original_name": "get_pull_request_files",
-      "description": "【github-mcp】 Get the list of files changed in a pull request",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "get_pull_request_status": {
-      "name": "get_pull_request_status",
-      "original_name": "get_pull_request_status",
-      "description": "【github-mcp】 Get the combined status of all status checks for a pull request",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "update_pull_request_branch": {
-      "name": "update_pull_request_branch",
-      "original_name": "update_pull_request_branch",
-      "description": "【github-mcp】 Update a pull request branch with the latest changes from the base branch",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "get_pull_request_comments": {
-      "name": "get_pull_request_comments",
-      "original_name": "get_pull_request_comments",
-      "description": "【github-mcp】 Get the review comments on a pull request",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "get_pull_request_reviews": {
-      "name": "get_pull_request_reviews",
-      "original_name": "get_pull_request_reviews",
-      "description": "【github-mcp】 Get the reviews on a pull request",
-      "service_id": "github-mcp",
-      "service_name": "github-mcp",
-      "args_schema": null
-    },
-    "webSearchSogou": {
-      "name": "webSearchSogou",
+    "zhipu-web-search-sse_webSearchSogou": {
+      "name": "zhipu-web-search-sse_webSearchSogou",
       "original_name": "webSearchSogou",
       "description": "【zhipu-web-search-sse】 搜索网络信息，返回结果包括网页标题、网页URL、网页摘要、网站名称、网站图标等。",
       "service_id": "zhipu-web-search-sse",
       "service_name": "zhipu-web-search-sse",
       "args_schema": null
     },
-    "webSearchQuark": {
-      "name": "webSearchQuark",
+    "zhipu-web-search-sse_webSearchQuark": {
+      "name": "zhipu-web-search-sse_webSearchQuark",
       "original_name": "webSearchQuark",
       "description": "【zhipu-web-search-sse】 搜索网络信息，返回结果包括网页标题、网页URL、网页摘要、网站名称、网站图标等。",
       "service_id": "zhipu-web-search-sse",
       "service_name": "zhipu-web-search-sse",
       "args_schema": null
     },
-    "webSearchPro": {
-      "name": "webSearchPro",
+    "zhipu-web-search-sse_webSearchPro": {
+      "name": "zhipu-web-search-sse_webSearchPro",
       "original_name": "webSearchPro",
       "description": "【zhipu-web-search-sse】 搜索网络信息，返回结果包括网页标题、网页URL、网页摘要、网站名称、网站图标等。",
       "service_id": "zhipu-web-search-sse",
       "service_name": "zhipu-web-search-sse",
       "args_schema": null
     },
-    "webSearchStd": {
-      "name": "webSearchStd",
+    "zhipu-web-search-sse_webSearchStd": {
+      "name": "zhipu-web-search-sse_webSearchStd",
       "original_name": "webSearchStd",
       "description": "【zhipu-web-search-sse】 搜索网络信息，返回结果包括网页标题、网页URL、网页摘要、网站名称、网站图标等。",
       "service_id": "zhipu-web-search-sse",
       "service_name": "zhipu-web-search-sse",
+      "args_schema": null
+    },
+    "github_create_or_update_file": {
+      "name": "github_create_or_update_file",
+      "original_name": "create_or_update_file",
+      "description": "【github】 Create or update a single file in a GitHub repository",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_search_repositories": {
+      "name": "github_search_repositories",
+      "original_name": "search_repositories",
+      "description": "【github】 Search for GitHub repositories",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_create_repository": {
+      "name": "github_create_repository",
+      "original_name": "create_repository",
+      "description": "【github】 Create a new GitHub repository in your account",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_get_file_contents": {
+      "name": "github_get_file_contents",
+      "original_name": "get_file_contents",
+      "description": "【github】 Get the contents of a file or directory from a GitHub repository",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_push_files": {
+      "name": "github_push_files",
+      "original_name": "push_files",
+      "description": "【github】 Push multiple files to a GitHub repository in a single commit",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_create_issue": {
+      "name": "github_create_issue",
+      "original_name": "create_issue",
+      "description": "【github】 Create a new issue in a GitHub repository",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_create_pull_request": {
+      "name": "github_create_pull_request",
+      "original_name": "create_pull_request",
+      "description": "【github】 Create a new pull request in a GitHub repository",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_fork_repository": {
+      "name": "github_fork_repository",
+      "original_name": "fork_repository",
+      "description": "【github】 Fork a GitHub repository to your account or specified organization",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_create_branch": {
+      "name": "github_create_branch",
+      "original_name": "create_branch",
+      "description": "【github】 Create a new branch in a GitHub repository",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_list_commits": {
+      "name": "github_list_commits",
+      "original_name": "list_commits",
+      "description": "【github】 Get list of commits of a branch in a GitHub repository",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_list_issues": {
+      "name": "github_list_issues",
+      "original_name": "list_issues",
+      "description": "【github】 List issues in a GitHub repository with filtering options",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_update_issue": {
+      "name": "github_update_issue",
+      "original_name": "update_issue",
+      "description": "【github】 Update an existing issue in a GitHub repository",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_add_issue_comment": {
+      "name": "github_add_issue_comment",
+      "original_name": "add_issue_comment",
+      "description": "【github】 Add a comment to an existing issue",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_search_code": {
+      "name": "github_search_code",
+      "original_name": "search_code",
+      "description": "【github】 Search for code across GitHub repositories",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_search_issues": {
+      "name": "github_search_issues",
+      "original_name": "search_issues",
+      "description": "【github】 Search for issues and pull requests across GitHub repositories",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_search_users": {
+      "name": "github_search_users",
+      "original_name": "search_users",
+      "description": "【github】 Search for users on GitHub",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_get_issue": {
+      "name": "github_get_issue",
+      "original_name": "get_issue",
+      "description": "【github】 Get details of a specific issue in a GitHub repository.",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_get_pull_request": {
+      "name": "github_get_pull_request",
+      "original_name": "get_pull_request",
+      "description": "【github】 Get details of a specific pull request",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_list_pull_requests": {
+      "name": "github_list_pull_requests",
+      "original_name": "list_pull_requests",
+      "description": "【github】 List and filter repository pull requests",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_create_pull_request_review": {
+      "name": "github_create_pull_request_review",
+      "original_name": "create_pull_request_review",
+      "description": "【github】 Create a review on a pull request",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_merge_pull_request": {
+      "name": "github_merge_pull_request",
+      "original_name": "merge_pull_request",
+      "description": "【github】 Merge a pull request",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_get_pull_request_files": {
+      "name": "github_get_pull_request_files",
+      "original_name": "get_pull_request_files",
+      "description": "【github】 Get the list of files changed in a pull request",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_get_pull_request_status": {
+      "name": "github_get_pull_request_status",
+      "original_name": "get_pull_request_status",
+      "description": "【github】 Get the combined status of all status checks for a pull request",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_update_pull_request_branch": {
+      "name": "github_update_pull_request_branch",
+      "original_name": "update_pull_request_branch",
+      "description": "【github】 Update a pull request branch with the latest changes from the base branch",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_get_pull_request_comments": {
+      "name": "github_get_pull_request_comments",
+      "original_name": "get_pull_request_comments",
+      "description": "【github】 Get the review comments on a pull request",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "github_get_pull_request_reviews": {
+      "name": "github_get_pull_request_reviews",
+      "original_name": "get_pull_request_reviews",
+      "description": "【github】 Get the reviews on a pull request",
+      "service_id": "github",
+      "service_name": "github",
+      "args_schema": null
+    },
+    "Gaodeamp_maps_regeocode": {
+      "name": "Gaodeamp_maps_regeocode",
+      "original_name": "maps_regeocode",
+      "description": "【Gaodeamp】 将一个高德经纬度坐标转换为行政区划地址信息",
+      "service_id": "Gaodeamp",
+      "service_name": "Gaodeamp",
+      "args_schema": null
+    },
+    "Gaodeamp_maps_geo": {
+      "name": "Gaodeamp_maps_geo",
+      "original_name": "maps_geo",
+      "description": "【Gaodeamp】 将详细的结构化地址转换为经纬度坐标。支持对地标性名胜景区、建筑物名称解析为经纬度坐标",
+      "service_id": "Gaodeamp",
+      "service_name": "Gaodeamp",
+      "args_schema": null
+    },
+    "Gaodeamp_maps_ip_location": {
+      "name": "Gaodeamp_maps_ip_location",
+      "original_name": "maps_ip_location",
+      "description": "【Gaodeamp】 IP 定位根据用户输入的 IP 地址，定位 IP 的所在位置",
+      "service_id": "Gaodeamp",
+      "service_name": "Gaodeamp",
+      "args_schema": null
+    },
+    "Gaodeamp_maps_weather": {
+      "name": "Gaodeamp_maps_weather",
+      "original_name": "maps_weather",
+      "description": "【Gaodeamp】 根据城市名称或者标准adcode查询指定城市的天气",
+      "service_id": "Gaodeamp",
+      "service_name": "Gaodeamp",
+      "args_schema": null
+    },
+    "Gaodeamp_maps_search_detail": {
+      "name": "Gaodeamp_maps_search_detail",
+      "original_name": "maps_search_detail",
+      "description": "【Gaodeamp】 查询关键词搜或者周边搜获取到的POI ID的详细信息",
+      "service_id": "Gaodeamp",
+      "service_name": "Gaodeamp",
+      "args_schema": null
+    },
+    "Gaodeamp_maps_bicycling": {
+      "name": "Gaodeamp_maps_bicycling",
+      "original_name": "maps_bicycling",
+      "description": "【Gaodeamp】 骑行路径规划用于规划骑行通勤方案，规划时会考虑天桥、单行线、封路等情况。最大支持 500km 的骑行路线规划",
+      "service_id": "Gaodeamp",
+      "service_name": "Gaodeamp",
+      "args_schema": null
+    },
+    "Gaodeamp_maps_direction_walking": {
+      "name": "Gaodeamp_maps_direction_walking",
+      "original_name": "maps_direction_walking",
+      "description": "【Gaodeamp】 步行路径规划 API 可以根据输入起点终点经纬度坐标规划100km 以内的步行通勤方案，并且返回通勤方案的数据",
+      "service_id": "Gaodeamp",
+      "service_name": "Gaodeamp",
+      "args_schema": null
+    },
+    "Gaodeamp_maps_direction_driving": {
+      "name": "Gaodeamp_maps_direction_driving",
+      "original_name": "maps_direction_driving",
+      "description": "【Gaodeamp】 驾车路径规划 API 可以根据用户起终点经纬度坐标规划以小客车、轿车通勤出行的方案，并且返回通勤方案的数据。",
+      "service_id": "Gaodeamp",
+      "service_name": "Gaodeamp",
+      "args_schema": null
+    },
+    "Gaodeamp_maps_direction_transit_integrated": {
+      "name": "Gaodeamp_maps_direction_transit_integrated",
+      "original_name": "maps_direction_transit_integrated",
+      "description": "【Gaodeamp】 公交路径规划 API 可以根据用户起终点经纬度坐标规划综合各类公共（火车、公交、地铁）交通方式的通勤方案，并且返回通勤方案的数据，跨城场景下必须传起点城市与终点城市",
+      "service_id": "Gaodeamp",
+      "service_name": "Gaodeamp",
+      "args_schema": null
+    },
+    "Gaodeamp_maps_distance": {
+      "name": "Gaodeamp_maps_distance",
+      "original_name": "maps_distance",
+      "description": "【Gaodeamp】 距离测量 API 可以测量两个经纬度坐标之间的距离,支持驾车、步行以及球面距离测量",
+      "service_id": "Gaodeamp",
+      "service_name": "Gaodeamp",
+      "args_schema": null
+    },
+    "Gaodeamp_maps_text_search": {
+      "name": "Gaodeamp_maps_text_search",
+      "original_name": "maps_text_search",
+      "description": "【Gaodeamp】 关键词搜，根据用户传入关键词，搜索出相关的POI",
+      "service_id": "Gaodeamp",
+      "service_name": "Gaodeamp",
+      "args_schema": null
+    },
+    "Gaodeamp_maps_around_search": {
+      "name": "Gaodeamp_maps_around_search",
+      "original_name": "maps_around_search",
+      "description": "【Gaodeamp】 周边搜，根据用户传入关键词以及坐标location，搜索出radius半径范围的POI",
+      "service_id": "Gaodeamp",
+      "service_name": "Gaodeamp",
       "args_schema": null
     }
   }

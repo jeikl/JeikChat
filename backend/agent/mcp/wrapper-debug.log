@@ -1,0 +1,193 @@
+[2026-03-10T04:50:46.404Z] Wrapper started
+[2026-03-10T04:50:46.406Z] DATABASE_URL: postgresql://root:anhuang520@pan.junv.top:5432/postgres
+[2026-03-10T04:50:46.407Z] Starting: node D:\postgres-mcp\dist\index.js
+[2026-03-10T04:50:46.407Z] MCP file exists
+[2026-03-10T04:50:46.449Z] Child process spawned, PID: 35500
+[2026-03-10T04:50:46.950Z] stdout received: [32minfo[39m: Initializing PostgreSQL MCP Server {"database":"postgres","host":"localhost","timestamp":"2026-03-10T04:50:46.946Z","toolCount":11}
+...
+[2026-03-10T04:50:46.951Z] Non-JSON ignored: [32minfo[39m: Initializing PostgreSQL MCP Server {"database":"postgres","host":"localhost","timest...
+[2026-03-10T04:50:46.951Z] stdout received: [32minfo[39m: Database connection event {"event":"pool_created","max":10,"min":2,"ssl":false,"timestamp":"2026-03-10T04:50:46.951Z","type":"database_connection"}
+...
+[2026-03-10T04:50:46.952Z] Non-JSON ignored: [32minfo[39m: Database connection event {"event":"pool_created","max":10,"min":2,"ssl":false,"time...
+[2026-03-10T04:50:46.953Z] stdout received: [32minfo[39m: PostgreSQL MCP Server running with 11 tools {"timestamp":"2026-03-10T04:50:46.953Z"}
+...
+[2026-03-10T04:50:46.953Z] Non-JSON ignored: [32minfo[39m: PostgreSQL MCP Server running with 11 tools {"timestamp":"2026-03-10T04:50:46.953Z"}...
+[2026-03-10T04:50:46.958Z] stdout received: {"result":{"protocolVersion":"2024-11-05","capabilities":{"resources":{},"tools":{}},"serverInfo":{"name":"postgres-mcp","version":"1.0.0"}},"jsonrpc":"2.0","id":0}
+...
+[2026-03-10T04:50:46.958Z] JSON output: {"result":{"protocolVersion":"2024-11-05","capabilities":{"resources":{},"tools":{}},"serverInfo":{"...
+[2026-03-10T04:50:46.960Z] stdout received: {"result":{"tools":[{"name":"query","description":"Execute SQL queries with transaction support, query analysis, and performance monitoring","inputSchema":{"type":"object","properties":{"action":{"typ...
+[2026-03-10T04:50:46.961Z] JSON output: {"result":{"tools":[{"name":"query","description":"Execute SQL queries with transaction support, que...
+[2026-03-10T04:50:46.967Z] stdin ended
+[2026-03-10T04:53:47.689Z] Wrapper started
+[2026-03-10T04:53:47.691Z] DATABASE_URL: postgresql://root:anhuang520@pan.junv.top:5432/postgres
+[2026-03-10T04:53:47.691Z] Starting: node D:\postgres-mcp\dist\index.js
+[2026-03-10T04:53:47.691Z] MCP file exists
+[2026-03-10T04:53:47.735Z] Child process spawned, PID: 35096
+[2026-03-10T04:53:48.263Z] stdout received (149 chars)
+[2026-03-10T04:53:48.264Z] Non-JSON ignored: [32minfo[39m: Initializing PostgreSQL MCP Server {"database":"postgres","host":"localhost","timest...
+[2026-03-10T04:53:48.264Z] stdout received (165 chars)
+[2026-03-10T04:53:48.265Z] Non-JSON ignored: [32minfo[39m: Database connection event {"event":"pool_created","max":10,"min":2,"ssl":false,"time...
+[2026-03-10T04:53:48.266Z] stdout received (102 chars)
+[2026-03-10T04:53:48.266Z] Non-JSON ignored: [32minfo[39m: PostgreSQL MCP Server running with 11 tools {"timestamp":"2026-03-10T04:53:48.266Z"}...
+[2026-03-10T04:53:48.270Z] stdout received (165 chars)
+[2026-03-10T04:53:48.271Z] JSON output #1: {"result":{"protocolVersion":"2024-11-05","capabilities":{"resources":{},"tools":{}},"serverInfo":{"...
+[2026-03-10T04:53:48.277Z] stdout received (11853 chars)
+[2026-03-10T04:53:48.277Z] JSON output #2: {"result":{"tools":[{"name":"query","description":"Execute SQL queries with transaction support, que...
+[2026-03-10T04:53:48.280Z] stdin ended, but keeping child process alive
+[2026-03-10T04:55:57.083Z] Wrapper started
+[2026-03-10T04:55:57.084Z] DATABASE_URL: postgresql://root:anhuang520@pan.junv.top:5432/postgres
+[2026-03-10T04:55:57.084Z] Starting: node D:\postgres-mcp\dist\index.js
+[2026-03-10T04:55:57.085Z] MCP file exists
+[2026-03-10T04:55:57.127Z] Child process spawned, PID: 22468
+[2026-03-10T04:55:57.623Z] stdout received (149 chars)
+[2026-03-10T04:55:57.624Z] Non-JSON ignored: [32minfo[39m: Initializing PostgreSQL MCP Server {"database":"postgres","host":"localhost","timest...
+[2026-03-10T04:55:57.624Z] stdout received (165 chars)
+[2026-03-10T04:55:57.624Z] Non-JSON ignored: [32minfo[39m: Database connection event {"event":"pool_created","max":10,"min":2,"ssl":false,"time...
+[2026-03-10T04:55:57.626Z] stdout received (102 chars)
+[2026-03-10T04:55:57.626Z] Non-JSON ignored: [32minfo[39m: PostgreSQL MCP Server running with 11 tools {"timestamp":"2026-03-10T04:55:57.626Z"}...
+[2026-03-10T04:55:57.630Z] stdout received (165 chars)
+[2026-03-10T04:55:57.631Z] JSON output #1: {"result":{"protocolVersion":"2024-11-05","capabilities":{"resources":{},"tools":{}},"serverInfo":{"...
+[2026-03-10T04:55:57.633Z] stdout received (11853 chars)
+[2026-03-10T04:55:57.634Z] JSON output #2: {"result":{"tools":[{"name":"query","description":"Execute SQL queries with transaction support, que...
+[2026-03-10T04:55:57.634Z] Tools list received, will exit after delay
+[2026-03-10T04:55:57.640Z] stdin ended
+[2026-03-10T04:55:58.134Z] Exiting after tools received
+[2026-03-10T04:55:58.143Z] Child exited with code: null, total JSON messages: 2
+[2026-03-10T04:58:00.040Z] Wrapper started
+[2026-03-10T04:58:00.043Z] DATABASE_URL: postgresql://root:anhuang520@pan.junv.top:5432/postgres
+[2026-03-10T04:58:00.043Z] Starting: node D:\postgres-mcp\dist\index.js
+[2026-03-10T04:58:00.043Z] MCP file exists
+[2026-03-10T04:58:00.096Z] Child process spawned, PID: 28712
+[2026-03-10T04:58:00.611Z] stdout received (149 chars)
+[2026-03-10T04:58:00.612Z] Non-JSON ignored: [32minfo[39m: Initializing PostgreSQL MCP Server {"database":"postgres","host":"localhost","timest...
+[2026-03-10T04:58:00.612Z] stdout received (165 chars)
+[2026-03-10T04:58:00.613Z] Non-JSON ignored: [32minfo[39m: Database connection event {"event":"pool_created","max":10,"min":2,"ssl":false,"time...
+[2026-03-10T04:58:00.616Z] stdout received (102 chars)
+[2026-03-10T04:58:00.616Z] Non-JSON ignored: [32minfo[39m: PostgreSQL MCP Server running with 11 tools {"timestamp":"2026-03-10T04:58:00.616Z"}...
+[2026-03-10T04:58:00.621Z] stdout received (165 chars)
+[2026-03-10T04:58:00.621Z] JSON output #1: {"result":{"protocolVersion":"2024-11-05","capabilities":{"resources":{},"tools":{}},"serverInfo":{"...
+[2026-03-10T04:58:00.624Z] stdout received (11853 chars)
+[2026-03-10T04:58:00.624Z] JSON output #2: {"result":{"tools":[{"name":"query","description":"Execute SQL queries with transaction support, que...
+[2026-03-10T04:58:00.624Z] Tools list received, will exit after delay
+[2026-03-10T04:58:00.628Z] stdin ended
+[2026-03-10T04:58:01.126Z] Exiting after tools received
+[2026-03-10T04:58:01.133Z] Child exited with code: null, total JSON messages: 2
+[2026-03-10T04:58:24.867Z] Wrapper started
+[2026-03-10T04:58:24.869Z] DATABASE_URL: postgresql://root:anhuang520@pan.junv.top:5432/postgres
+[2026-03-10T04:58:24.870Z] Starting: node D:\postgres-mcp\dist\index.js
+[2026-03-10T04:58:24.870Z] MCP file exists
+[2026-03-10T04:58:24.913Z] Child process spawned, PID: 35544
+[2026-03-10T04:58:25.395Z] stdout received (149 chars)
+[2026-03-10T04:58:25.396Z] Non-JSON ignored: [32minfo[39m: Initializing PostgreSQL MCP Server {"database":"postgres","host":"localhost","timest...
+[2026-03-10T04:58:25.396Z] stdout received (165 chars)
+[2026-03-10T04:58:25.397Z] Non-JSON ignored: [32minfo[39m: Database connection event {"event":"pool_created","max":10,"min":2,"ssl":false,"time...
+[2026-03-10T04:58:25.399Z] stdout received (102 chars)
+[2026-03-10T04:58:25.399Z] Non-JSON ignored: [32minfo[39m: PostgreSQL MCP Server running with 11 tools {"timestamp":"2026-03-10T04:58:25.398Z"}...
+[2026-03-10T04:58:25.404Z] stdout received (165 chars)
+[2026-03-10T04:58:25.404Z] JSON output #1: {"result":{"protocolVersion":"2024-11-05","capabilities":{"resources":{},"tools":{}},"serverInfo":{"...
+[2026-03-10T04:58:25.409Z] stdout received (140 chars)
+[2026-03-10T04:58:25.409Z] Non-JSON ignored: [31merror[39m: Tool execution error {"error":"Unknown admin operation: undefined","timestamp":"202...
+[2026-03-10T04:58:25.410Z] stdout received (137 chars)
+[2026-03-10T04:58:25.410Z] JSON output #2: {"jsonrpc":"2.0","id":1,"error":{"code":-32603,"message":"MCP error -32603: Tool execution failed: U...
+[2026-03-10T04:58:25.412Z] stdin ended
+[2026-03-10T04:58:39.920Z] Timeout: forcing exit after 15 seconds
+[2026-03-10T04:58:39.926Z] Child exited with code: null, total JSON messages: 2
+[2026-03-10T04:58:40.039Z] Wrapper started
+[2026-03-10T04:58:40.040Z] DATABASE_URL: postgresql://root:anhuang520@pan.junv.top:5432/postgres
+[2026-03-10T04:58:40.041Z] Starting: node D:\postgres-mcp\dist\index.js
+[2026-03-10T04:58:40.041Z] MCP file exists
+[2026-03-10T04:58:40.081Z] Child process spawned, PID: 23460
+[2026-03-10T04:58:40.537Z] stdout received (149 chars)
+[2026-03-10T04:58:40.538Z] Non-JSON ignored: [32minfo[39m: Initializing PostgreSQL MCP Server {"database":"postgres","host":"localhost","timest...
+[2026-03-10T04:58:40.538Z] stdout received (165 chars)
+[2026-03-10T04:58:40.539Z] Non-JSON ignored: [32minfo[39m: Database connection event {"event":"pool_created","max":10,"min":2,"ssl":false,"time...
+[2026-03-10T04:58:40.540Z] stdout received (102 chars)
+[2026-03-10T04:58:40.540Z] Non-JSON ignored: [32minfo[39m: PostgreSQL MCP Server running with 11 tools {"timestamp":"2026-03-10T04:58:40.540Z"}...
+[2026-03-10T04:58:40.547Z] stdout received (165 chars)
+[2026-03-10T04:58:40.548Z] JSON output #1: {"result":{"protocolVersion":"2024-11-05","capabilities":{"resources":{},"tools":{}},"serverInfo":{"...
+[2026-03-10T04:58:40.552Z] stdout received (139 chars)
+[2026-03-10T04:58:40.553Z] Non-JSON ignored: [31merror[39m: Tool execution error {"error":"Unknown tables action: undefined","timestamp":"2026-...
+[2026-03-10T04:58:40.553Z] stdout received (135 chars)
+[2026-03-10T04:58:40.553Z] JSON output #2: {"jsonrpc":"2.0","id":1,"error":{"code":-32603,"message":"MCP error -32603: Tool execution failed: U...
+[2026-03-10T04:58:40.556Z] stdin ended
+[2026-03-10T04:58:55.086Z] Timeout: forcing exit after 15 seconds
+[2026-03-10T04:58:55.092Z] Child exited with code: null, total JSON messages: 2
+[2026-03-10T04:58:55.210Z] Wrapper started
+[2026-03-10T04:58:55.212Z] DATABASE_URL: postgresql://root:anhuang520@pan.junv.top:5432/postgres
+[2026-03-10T04:58:55.212Z] Starting: node D:\postgres-mcp\dist\index.js
+[2026-03-10T04:58:55.213Z] MCP file exists
+[2026-03-10T04:58:55.254Z] Child process spawned, PID: 30716
+[2026-03-10T04:58:55.761Z] stdout received (149 chars)
+[2026-03-10T04:58:55.761Z] Non-JSON ignored: [32minfo[39m: Initializing PostgreSQL MCP Server {"database":"postgres","host":"localhost","timest...
+[2026-03-10T04:58:55.762Z] stdout received (165 chars)
+[2026-03-10T04:58:55.762Z] Non-JSON ignored: [32minfo[39m: Database connection event {"event":"pool_created","max":10,"min":2,"ssl":false,"time...
+[2026-03-10T04:58:55.764Z] stdout received (102 chars)
+[2026-03-10T04:58:55.764Z] Non-JSON ignored: [32minfo[39m: PostgreSQL MCP Server running with 11 tools {"timestamp":"2026-03-10T04:58:55.763Z"}...
+[2026-03-10T04:58:55.769Z] stdout received (165 chars)
+[2026-03-10T04:58:55.769Z] JSON output #1: {"result":{"protocolVersion":"2024-11-05","capabilities":{"resources":{},"tools":{}},"serverInfo":{"...
+[2026-03-10T04:58:55.772Z] stdout received (140 chars)
+[2026-03-10T04:58:55.773Z] Non-JSON ignored: [31merror[39m: Tool execution error {"error":"Unknown schema action: undefined","timestamp":"2026-...
+[2026-03-10T04:58:55.773Z] stdout received (135 chars)
+[2026-03-10T04:58:55.774Z] JSON output #2: {"jsonrpc":"2.0","id":1,"error":{"code":-32603,"message":"MCP error -32603: Tool execution failed: U...
+[2026-03-10T04:58:55.775Z] stdin ended
+[2026-03-10T04:59:10.264Z] Timeout: forcing exit after 15 seconds
+[2026-03-10T04:59:10.270Z] Child exited with code: null, total JSON messages: 2
+[2026-03-10T04:59:16.341Z] Wrapper started
+[2026-03-10T04:59:16.343Z] DATABASE_URL: postgresql://root:anhuang520@pan.junv.top:5432/postgres
+[2026-03-10T04:59:16.343Z] Starting: node D:\postgres-mcp\dist\index.js
+[2026-03-10T04:59:16.343Z] MCP file exists
+[2026-03-10T04:59:16.383Z] Child process spawned, PID: 3112
+[2026-03-10T04:59:16.826Z] stdout received (149 chars)
+[2026-03-10T04:59:16.827Z] Non-JSON ignored: [32minfo[39m: Initializing PostgreSQL MCP Server {"database":"postgres","host":"localhost","timest...
+[2026-03-10T04:59:16.827Z] stdout received (165 chars)
+[2026-03-10T04:59:16.828Z] Non-JSON ignored: [32minfo[39m: Database connection event {"event":"pool_created","max":10,"min":2,"ssl":false,"time...
+[2026-03-10T04:59:16.829Z] stdout received (102 chars)
+[2026-03-10T04:59:16.829Z] Non-JSON ignored: [32minfo[39m: PostgreSQL MCP Server running with 11 tools {"timestamp":"2026-03-10T04:59:16.829Z"}...
+[2026-03-10T04:59:16.834Z] stdout received (165 chars)
+[2026-03-10T04:59:16.834Z] JSON output #1: {"result":{"protocolVersion":"2024-11-05","capabilities":{"resources":{},"tools":{}},"serverInfo":{"...
+[2026-03-10T04:59:16.838Z] stdout received (140 chars)
+[2026-03-10T04:59:16.838Z] Non-JSON ignored: [31merror[39m: Tool execution error {"error":"Unknown admin operation: undefined","timestamp":"202...
+[2026-03-10T04:59:16.839Z] stdout received (137 chars)
+[2026-03-10T04:59:16.839Z] JSON output #2: {"jsonrpc":"2.0","id":1,"error":{"code":-32603,"message":"MCP error -32603: Tool execution failed: U...
+[2026-03-10T04:59:16.840Z] stdin ended
+[2026-03-10T04:59:31.394Z] Timeout: forcing exit after 15 seconds
+[2026-03-10T04:59:31.401Z] Child exited with code: null, total JSON messages: 2
+[2026-03-10T04:59:31.510Z] Wrapper started
+[2026-03-10T04:59:31.511Z] DATABASE_URL: postgresql://root:anhuang520@pan.junv.top:5432/postgres
+[2026-03-10T04:59:31.511Z] Starting: node D:\postgres-mcp\dist\index.js
+[2026-03-10T04:59:31.512Z] MCP file exists
+[2026-03-10T04:59:31.554Z] Child process spawned, PID: 21048
+[2026-03-10T04:59:31.996Z] stdout received (149 chars)
+[2026-03-10T04:59:31.997Z] Non-JSON ignored: [32minfo[39m: Initializing PostgreSQL MCP Server {"database":"postgres","host":"localhost","timest...
+[2026-03-10T04:59:31.997Z] stdout received (165 chars)
+[2026-03-10T04:59:31.997Z] Non-JSON ignored: [32minfo[39m: Database connection event {"event":"pool_created","max":10,"min":2,"ssl":false,"time...
+[2026-03-10T04:59:31.999Z] stdout received (102 chars)
+[2026-03-10T04:59:31.999Z] Non-JSON ignored: [32minfo[39m: PostgreSQL MCP Server running with 11 tools {"timestamp":"2026-03-10T04:59:31.999Z"}...
+[2026-03-10T04:59:32.003Z] stdout received (165 chars)
+[2026-03-10T04:59:32.004Z] JSON output #1: {"result":{"protocolVersion":"2024-11-05","capabilities":{"resources":{},"tools":{}},"serverInfo":{"...
+[2026-03-10T04:59:32.007Z] stdout received (139 chars)
+[2026-03-10T04:59:32.008Z] Non-JSON ignored: [31merror[39m: Tool execution error {"error":"Unknown tables action: undefined","timestamp":"2026-...
+[2026-03-10T04:59:32.008Z] stdout received (135 chars)
+[2026-03-10T04:59:32.009Z] JSON output #2: {"jsonrpc":"2.0","id":1,"error":{"code":-32603,"message":"MCP error -32603: Tool execution failed: U...
+[2026-03-10T04:59:32.011Z] stdin ended
+[2026-03-10T04:59:46.563Z] Timeout: forcing exit after 15 seconds
+[2026-03-10T04:59:46.569Z] Child exited with code: null, total JSON messages: 2
+[2026-03-10T04:59:46.684Z] === Wrapper started ===
+[2026-03-10T04:59:46.686Z] DATABASE_URL: postgresql://root:anhuang520@pan.junv.top:5432/postgres
+[2026-03-10T04:59:46.686Z] Starting: node D:\postgres-mcp\dist\index.js
+[2026-03-10T04:59:46.686Z] MCP file exists
+[2026-03-10T04:59:46.727Z] Child process spawned, PID: 34424
+[2026-03-10T04:59:47.193Z] [LOG] [32minfo[39m: Initializing PostgreSQL MCP Server {"database":"postgres","host":"localhost","timestamp":"2026-03-10T04:59:47.191Z","toolCount":11}
+[2026-03-10T04:59:47.194Z] [LOG] [32minfo[39m: Database connection event {"event":"pool_created","max":10,"min":2,"ssl":false,"timestamp":"2026-03-10T04:59:47.194Z","type":"database_connection"}
+[2026-03-10T04:59:47.196Z] [LOG] [32minfo[39m: PostgreSQL MCP Server running with 11 tools {"timestamp":"2026-03-10T04:59:47.196Z"}
+[2026-03-10T04:59:47.204Z] [LOG] [31merror[39m: Tool execution error {"error":"Unknown schema action: undefined","timestamp":"2026-03-10T04:59:47.204Z","tool":"schemas"}
+[2026-03-10T04:59:47.206Z] Parent stdin ended
+[2026-03-10T05:00:37.734Z] === Wrapper started ===
+[2026-03-10T05:00:37.735Z] DATABASE_URL: postgresql://root:anhuang520@pan.junv.top:5432/postgres
+[2026-03-10T05:00:37.736Z] Starting: node D:\postgres-mcp\dist\index.js
+[2026-03-10T05:00:37.736Z] MCP file exists
+[2026-03-10T05:00:37.778Z] Child process spawned, PID: 34308
+[2026-03-10T05:00:38.238Z] [LOG] [32minfo[39m: Initializing PostgreSQL MCP Server {"database":"postgres","host":"localhost","timestamp":"2026-03-10T05:00:38.235Z","toolCount":11}
+[2026-03-10T05:00:38.240Z] [LOG] [32minfo[39m: Database connection event {"event":"pool_created","max":10,"min":2,"ssl":false,"timestamp":"2026-03-10T05:00:38.239Z","type":"database_connection"}
+[2026-03-10T05:00:38.242Z] [LOG] [32minfo[39m: PostgreSQL MCP Server running with 11 tools {"timestamp":"2026-03-10T05:00:38.242Z"}
+[2026-03-10T05:00:38.252Z] Parent stdin ended

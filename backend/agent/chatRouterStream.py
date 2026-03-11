@@ -13,12 +13,12 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.graph.message import MessagesState
 from langchain_deepseek import ChatDeepSeek
-from langchain_core.messages import ToolMessage, AIMessage
+from langchain_core.messages import ToolMessage, AIMessage,AIMessageChunk
 from typing import Any, List, Optional, Dict, Callable, AsyncGenerator
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from services.llm import create_client
-from .tools.ToolsProtect import McpToolNode
-from .tools import get_regular_tools
+from agent.tools.ToolsProtect import McpToolNode
+from agent.tools import get_regular_tools
 
 # 使用新的 MCP 缓存管理
 from agent.mcp.cache_manager import get_cache_manager
@@ -42,57 +42,106 @@ def _get_regular_tools_dict() -> Dict[str, Any]:
     return _regular_tools_cache
 
 
-async def _get_cached_mcp_client_and_tools():
+async def _get_cached_mcp_client_and_tools(selected_tool_ids: List[str] = None):
     """
     获取缓存的 MCP 客户端和工具
-    如果配置发生变化或缓存不存在，则重新创建
+    使用我们自己的 connection_manager 来获取工具，支持过滤后的 stdio 连接
+    
+    Args:
+        selected_tool_ids: 选中的工具ID列表，如果提供则只加载这些工具对应的服务
     """
     global _mcp_client_global, _mcp_tools_global, _mcp_config_hash_global
 
-    from agent.mcp.config_loader import get_server_config_dict, load_server_configs
+    from agent.mcp.config_loader import load_server_configs
+    from agent.mcp.cache_manager import get_cache_manager
     import hashlib
     import json
 
     # 获取当前配置
-    mcp_config = get_server_config_dict()
     server_configs = load_server_configs()
-
-    # 计算配置哈希（用于检测配置是否变化）
-    config_str = json.dumps(mcp_config, sort_keys=True)
+    
+    # 计算配置哈希（包含选中的工具）
+    cache_key_data = [{"name": cfg.name, "command": cfg.command, "args": cfg.args} for cfg in server_configs]
+    if selected_tool_ids:
+        cache_key_data.append({"selected": sorted(selected_tool_ids)})
+    config_str = json.dumps(cache_key_data, sort_keys=True)
     config_hash = hashlib.md5(config_str.encode()).hexdigest()
 
     # 检查缓存是否有效
     if (_mcp_client_global is not None and
         _mcp_tools_global is not None and
         _mcp_config_hash_global == config_hash):
-        logger.info(f"[MCP] 使用缓存的客户端和工具 ({len(_mcp_tools_global)} 个工具)")
+        logger.info(f"[MCP] 使用缓存的工具 ({len(_mcp_tools_global)} 个)")
         return _mcp_client_global, _mcp_tools_global
 
-    # 缓存无效或不存在，创建新的连接
-    logger.info("[MCP] 创建新的 MCP 客户端连接...")
+    # 确定需要加载的服务
+    services_to_load = set()
+    if selected_tool_ids:
+        # 根据工具名前缀确定服务
+        # 工具名格式: service-name_tool_name 或 service-name_service-name_tool_name（重复前缀）
+        for tool_id in selected_tool_ids:
+            # 标准化工具名（处理重复前缀）
+            parts = tool_id.split('_')
+            if len(parts) >= 3 and parts[0] == parts[1]:
+                # 移除重复前缀
+                normalized_id = f"{parts[0]}_{'_'.join(parts[2:])}"
+            else:
+                normalized_id = tool_id
+            
+            for cfg in server_configs:
+                if not cfg.enabled:
+                    continue
+                # 工具名格式为 service-name_tool_name
+                if normalized_id.startswith(cfg.name + '_'):
+                    services_to_load.add(cfg.name)
+                    break
+        logger.info(f"[MCP] 根据选中的 {len(selected_tool_ids)} 个工具，需要加载 {len(services_to_load)} 个服务: {services_to_load}")
+    else:
+        # 加载所有启用的服务
+        services_to_load = {cfg.name for cfg in server_configs if cfg.enabled}
+        logger.info(f"[MCP] 加载所有 {len(services_to_load)} 个启用的服务")
 
-    # 创建新的客户端
-    mcp_client = MultiServerMCPClient(mcp_config)
-    mcp_tools = await mcp_client.get_tools()
+    # 从 connection_manager 获取工具
+    manager = await get_connection_manager()
+    all_tools = []
+    
+    for cfg in server_configs:
+        if cfg.name not in services_to_load:
+            continue
+        try:
+            tools = await manager.connect_service(cfg.name)
+            if tools:
+                all_tools.extend(tools)
+        except Exception as e:
+            logger.error(f"[MCP] 获取服务 '{cfg.name}' 工具失败: {e}")
 
-    # 为工具描述添加服务名前缀
-    service_names = {cfg.name: cfg.name for cfg in server_configs}
-
-    for tool in mcp_tools:
-        for service_name in service_names.keys():
-            service_prefix = service_name.replace('-', '_')
-            if tool.name.startswith(service_prefix) or tool.name.startswith(service_name.replace('-', '')):
-                tool.description = f"【{service_name}】{tool.description}"
-                break
-
-    logger.info(f"[MCP] 新连接创建完成，获取到 {len(mcp_tools)} 个工具: {[t.name for t in mcp_tools]}")
+    # 如果只加载选中工具对应的服务，过滤工具列表
+    if selected_tool_ids:
+        # 处理工具名格式：前端可能发送重复前缀的格式（如 github_github_xxx）
+        # 需要标准化为单层前缀格式（如 github_xxx）
+        normalized_selected_ids = set()
+        for tool_id in selected_tool_ids:
+            # 检查是否有重复前缀（如 github_github_xxx）
+            parts = tool_id.split('_')
+            if len(parts) >= 3 and parts[0] == parts[1]:
+                # 移除重复前缀：github_github_xxx -> github_xxx
+                normalized_id = f"{parts[0]}_{'_'.join(parts[2:])}"
+                normalized_selected_ids.add(normalized_id)
+            else:
+                normalized_selected_ids.add(tool_id)
+        
+        filtered_tools = [t for t in all_tools if t.name in normalized_selected_ids]
+        logger.info(f"[MCP] 加载 {len(filtered_tools)}/{len(selected_tool_ids)} 个选中工具")
+        all_tools = filtered_tools
+    else:
+        logger.info(f"[MCP] 共加载 {len(all_tools)} 个工具")
 
     # 更新全局缓存
-    _mcp_client_global = mcp_client
-    _mcp_tools_global = mcp_tools
+    _mcp_client_global = manager
+    _mcp_tools_global = all_tools
     _mcp_config_hash_global = config_hash
 
-    return mcp_client, mcp_tools
+    return manager, all_tools
 
 
 def _get_toolid_from_config(tool_config) -> Optional[str]:
@@ -581,123 +630,110 @@ async def agent_stream1(
         history,
         should_stop: Optional[Callable[[], bool]] = None,
 ) -> AsyncGenerator[dict, None]:
+    """简化版代理流式响应"""
     
-    """
-    代理流式响应 - 使用缓存的 MCP 服务连接
-    """
-    selected_tools = []
-    yield {"reasoning": f"\n\n✅️ 已选择模型: {llm}\n\n"}
-    yield {"reasoning": f"✅️ 正在连接工具与服务...\n\n"}
-
-    # 使用缓存的 MCP 客户端和工具
-    mcp_client, mcp_tools = await _get_cached_mcp_client_and_tools()
-
-    # 获取本地工具（非 MCP 工具）
-    regular_tools_dict = _get_regular_tools_dict()
-    local_tools = []
-
-    # 根据 tool_configs 筛选本地工具
-    if tool_configs:
-        for config in tool_configs:
-            toolid = _get_toolid_from_config(config)
-            is_mcp = _get_mcp_from_config(config) == 1
-            if toolid and not is_mcp and toolid in regular_tools_dict:
-                local_tools.append(regular_tools_dict[toolid])
-
-    # 合并 MCP 工具和本地工具
+    yield {"reasoning": f"\n\n✅️ 消息发送成功: {llm}\n\n"}
+    
+    # 提取选中的 MCP 工具ID
+    selected_mcp_ids = [_get_toolid_from_config(c) for c in (tool_configs or []) if _get_toolid_from_config(c) and _get_mcp_from_config(c) == 1]
+    yield {"reasoning": f"⛄ 工具连接中...\n\n"}
+    # 获取工具
+    mcp_client, mcp_tools = await _get_cached_mcp_client_and_tools(selected_mcp_ids if selected_mcp_ids else None)
+    regular_tools = _get_regular_tools_dict()
+    local_tools = [regular_tools[tid] for tid in [_get_toolid_from_config(c) for c in (tool_configs or [])] if tid and tid in regular_tools]
     all_tools = mcp_tools + local_tools
-    logger.info(f"[MCP] MCP工具: {len(mcp_tools)}个, 本地工具: {len(local_tools)}个, 总计: {len(all_tools)}个")
-    logger.info(f"[MCP] 可用工具列表: {[t.name for t in all_tools]}")
-
-    async with AsyncPostgresSaver.from_conn_string(DB_URL) as checkpoint:
-
-        #yield {"reasoning": f"\n\n✅️ 已选择模型: {llm}\n\n"}
-
-        # 基础工具加载提示
-
-        tool_names = [_get_toolid_from_config(c) for c in (tool_configs or []) if _get_toolid_from_config(c)]
-        yield {"reasoning": f"✅️ 工具连接成功...\n\n"}
-        yield {"reasoning": f"⛄ 加载大模型中...\n\n"}
-        # 创建模型
-        model = create_client(llm, thinking)
-
-        # 将整个对话过程放在同一个函数内，确保 client 不被回收
-        workflow = StateGraph(MessagesState)
-
-        if all_tools:
-            llm_with_tools = model.bind_tools(all_tools)
-            tool_node = McpToolNode(all_tools)#怀疑
-        else:
-            llm_with_tools = model
     
-        async def call_model(state: MessagesState):
+    logger.info(f"[MCP] 工具: MCP={len(mcp_tools)}, 本地={len(local_tools)}, 总计={len(all_tools)}")
+    yield {"reasoning": f"✅️ 工具连接成功...\n\n"}
+    yield {"reasoning": f"\n\n✈️ 正在初始化大模型: {llm}\n\n"}
+    async with AsyncPostgresSaver.from_conn_string(DB_URL) as checkpoint:
+        model = create_client(llm, thinking)
+        workflow = StateGraph(MessagesState)
+ 
+        # 绑定工具
+        llm_with_tools = model.bind_tools(all_tools) if all_tools else model
+
+        tool_node=McpToolNode(all_tools)
+
+
+        
+        async def call_model(state):
+            """调用模型，处理流式工具调用组装"""
             response = await llm_with_tools.ainvoke(state["messages"])
+            
             return {"messages": [response]}
+
         
-        # 添加节点
         workflow.add_node("agent", call_model)
-        if mcp_tools:
-            workflow.add_node("tools", tool_node)
-        
-        # 设置入口和边
         workflow.add_edge(START, "agent")
         
-        if mcp_tools:
-            workflow.add_conditional_edges(
-                "agent",
-                tools_condition,
-                {"tools": "tools", END: END}
-            )
+        if all_tools:
+            workflow.add_node("tools", tool_node)
+            workflow.add_conditional_edges("agent", tools_condition, {"tools": "tools", END: END})
             workflow.add_edge("tools", "agent")
         else:
             workflow.add_edge("agent", END)
         
-        # 暂时禁用 checkpointer，排除历史消息问题（像 example_usage.py 一样）
-        graph=workflow.compile(checkpointer=checkpoint)
-        yield {"reasoning": f"⛄ 加载成功...\n\n"}
-        try:
-            yield {"reasoning": f"⛄ 正在思考...\n\n"}
-            # 暂时禁用 config=history，排除历史消息问题
-            async for mode, data in graph.astream(msg, config=history,stream_mode=["messages", "updates"]):
-                # 关键：显式引用全局 MCP 客户端，防止被垃圾回收
-                
-                
-                if should_stop and should_stop():
-                    break
-    
-                # --- 情况 A: 细粒度流处理 (messages) ---
-                if mode == "messages":
-                    chunk, _ = data
+        
+        
+        graph = workflow.compile(checkpointer=checkpoint)
+        yield {"reasoning": f"🚀 大模型初始化成功 !\n\n"}
+        yield {"reasoning": f"⌛ 正在思考中...\n\n"}
+        
 
-                    # 1. 提取推理内容
-                    has_reasoning = False
-                    if hasattr(chunk, "additional_kwargs"):
-                        reasoning = chunk.additional_kwargs.get("reasoning_content", "")
-                        if reasoning:
-                            has_reasoning = True
-                            yield {"reasoning": f"{reasoning}"}
+        async for chunk in graph.astream(msg, config=history, stream_mode=["messages","custom"],version="v2"):
+            chunk_type = chunk.get("type")
+            if chunk_type == "custom":#自定义数据输出
+                yield {f"reasoning": chunk["data"]}
 
-                    # 2. 提取正式回答内容
-                    if hasattr(chunk, "content") and chunk.content:
-                        if isinstance(chunk, ToolMessage):
-                            yield {"reasoning": f"\n\n✅ 返回数据: {chunk.content[:50]}...\n\n"}
-                            print(f"工具返回数据: {chunk.content}\n")
-                        else:
-                            # 如果已经有 reasoning_content，则 content 可能是重复内容
-                            # 只有当 content 和 reasoning 不同时才输出
-                            if not has_reasoning or chunk.content.strip() != chunk.additional_kwargs.get("reasoning_content", "").strip():
-                                yield {"content": chunk.content}
+            # messages 流
+            if chunk_type == "messages":
+                message, meta = chunk["data"]
+                node = meta.get("langgraph_node")
 
-                    # 3. 检测工具调用
-                    if hasattr(chunk, "tool_calls") and chunk.tool_calls:
-                        for tc in chunk.tool_calls:
-                            if tc.get("name"):
-                                yield {"reasoning": f"\n\n🧠 正在调用工具: {tc['name']} ...\n"}
-                                print(f"[系统动作] 正在调用工具: {tc['name']}...")
+                # if node:
+                #     print("节点:", node)
 
-        except Exception as e:
-            logger.error(f"[ChatRouter] 运行时错误: {e}")
-            yield {"content": f"\n\n❌ 模型调用失败: {str(e)}\n\n建议：请尝试重新提问或创建新会话。\n"}
+                # AI消息
+                if isinstance(message, AIMessageChunk):
+                    reasoning = message.additional_kwargs.get("reasoning_content")
+                    content = message.content
+                    tool_calls = message.tool_calls
+                    tool_chunks = message.tool_call_chunks
+
+                    if reasoning:
+                        #print("思考:", reasoning)
+                        yield {"reasoning": reasoning}
+
+                    if content:
+                        #print("回答:", content)
+                        yield {"content": content}
+
+                    # #只输出有 name 的 tool_calls
+                    # valid_calls = [tc for tc in tool_calls if tc.get("name")]
+                    # if valid_calls:
+                    #     #print("工具调用:", valid_calls)
+                    #     yield {"reasoning": f"\n\n⌛ 正在调用工具: {valid_calls}\n\n"}
+
+                    # if tool_chunks:
+                    #     if tool_calls:
+                    #         yield {"reasoning": f"\n\n⌛ToolCall完整信息: {tool_chunks}\n\n"}
+                    #     else:
+                    #          yield {"reasoning": f"\n⌛正在准备参数: {tool_chunks}\n"}   
+                # 工具消息
+                # elif isinstance(message, ToolMessage):
+
+                #     if message.content:
+                #         # 只显示摘要
+                #         content = message.content
+                #         if content.startswith("[完成]") or content.startswith("[失败]"):
+                #             parts = content.split(":", 1)
+                #             summary = parts[0] if len(parts) == 1 else parts[0] + ":" + parts[1][:500] + "..."
+                #         else:
+                #             summary = content[:30] + "..." if len(content) > 30 else content
+                #         # print("工具结果:", summary)
+                #         yield {"reasoning": f"\n\n✅️ 调用完成: {summary}\n\n"}
+                    
 
 
 

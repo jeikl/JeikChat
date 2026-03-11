@@ -1,0 +1,6 @@
+{"error":"Unknown admin operation: undefined","level":"error","message":"Tool execution error","timestamp":"2026-03-10T04:58:25.408Z","tool":"admin"}
+{"error":"Unknown tables action: undefined","level":"error","message":"Tool execution error","timestamp":"2026-03-10T04:58:40.552Z","tool":"tables"}
+{"error":"Unknown schema action: undefined","level":"error","message":"Tool execution error","timestamp":"2026-03-10T04:58:55.771Z","tool":"schemas"}
+{"error":"Unknown admin operation: undefined","level":"error","message":"Tool execution error","timestamp":"2026-03-10T04:59:16.837Z","tool":"admin"}
+{"error":"Unknown tables action: undefined","level":"error","message":"Tool execution error","timestamp":"2026-03-10T04:59:32.007Z","tool":"tables"}
+{"error":"Unknown schema action: undefined","level":"error","message":"Tool execution error","timestamp":"2026-03-10T04:59:47.204Z","tool":"schemas"}

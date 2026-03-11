@@ -545,6 +545,21 @@ export const toolsApi = {
   },
 
   /**
+   * 刷新工具缓存 - 强制重新加载 MCP 配置
+   * @请求方式 GET /api/tools?refresh=true
+   * @触发位置 AgentToolsPage.tsx - 点击刷新按钮
+   * @返回 { status: 1, data: [...], msg: "获取成功" }
+   */
+  refresh: async (): Promise<{ tools: Tool[]; msg: string; status: number }> => {
+    const response = await apiClient.get<ApiResponse<Tool[]>>('/tools?refresh=true');
+    return {
+      status: response.data.status,
+      tools: response.data.data,
+      msg: response.data.msg
+    };
+  },
+
+  /**
    * 流式获取工具列表 - 按服务分组返回，提供更好的用户体验
    * @请求方式 GET /api/tools/stream
    * @触发位置 AgentToolsPage.tsx - 页面加载时

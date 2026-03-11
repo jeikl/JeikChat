@@ -1,18 +1,25 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from api.response import success
 
 router = APIRouter()
 
 
-async def get_tool_list():
+async def get_tool_list(force_refresh: bool = False):
     """
     获取工具列表，优先从缓存加载
     返回格式包含 mcp 标记，用于前端区分 MCP 工具和普通工具
     
     对于 MCP 工具，toolid 和 name 都使用带服务前缀的名称（如: github_fork_repository）
+    
+    Args:
+        force_refresh: 是否强制刷新缓存，重新加载 MCP 配置
     """
-    from agent.mcp.cache_manager import get_cache_manager
+    from agent.mcp.cache_manager import get_cache_manager, refresh_tool_cache
     from agent.tools import get_regular_tools
+
+    # 如果需要强制刷新，先刷新缓存
+    if force_refresh:
+        await refresh_tool_cache()
 
     # 获取缓存实例（确保已初始化）
     cache = await get_cache_manager()
@@ -51,9 +58,14 @@ async def get_tool_list():
 
 
 @router.get("/tools")
-async def list_tools():
-    """获取所有可用的Agent工具列表（使用缓存，O(1) 查询）"""
-    return success(data=await get_tool_list(), msg="获取成功")
+async def list_tools(refresh: bool = Query(False, description="是否强制刷新 MCP 缓存")):
+    """
+    获取所有可用的Agent工具列表
+    
+    - 默认使用缓存（O(1) 查询）
+    - 设置 refresh=true 可强制刷新 MCP 配置并重新加载
+    """
+    return success(data=await get_tool_list(force_refresh=refresh), msg="获取成功")
 
 
 @router.post("/tools/{tool_id}/enable")

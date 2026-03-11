@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Wrench, Check, Loader2, Wifi, WifiOff, Server, CheckSquare, Square, X, ChevronRight } from 'lucide-react';
+import { Wrench, Check, Loader2, Wifi, WifiOff, Server, CheckSquare, Square, X, ChevronRight, RefreshCw } from 'lucide-react';
 import { showToast } from '@/utils/toast';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { toolsApi, type MCPToolService, type Tool, type ToolConfig } from '@/services/api';
@@ -450,18 +450,73 @@ const AgentToolsPage = () => {
     setTimeout(() => setSelectedService(null), 200);
   };
 
+  // 强制刷新 MCP 工具缓存
+  const handleRefreshTools = useCallback(async () => {
+    if (isLoading) return;
+    
+    setIsLoading(true);
+    setLoadingStatus({ message: '正在刷新工具缓存...', type: 'loading' });
+    
+    try {
+      // 重置加载标记，允许重新加载
+      loadedRef.current = false;
+      
+      // 先调用刷新接口强制重新加载 MCP 配置
+      const response = await toolsApi.refresh();
+      
+      if (response.status === 1) {
+        showToast('工具缓存已刷新', 'success');
+        
+        // 清空当前服务列表，重新加载
+        setToolServices([]);
+        
+        // 重新加载工具列表
+        loadToolsStream();
+      } else {
+        showToast(response.msg || '刷新失败', 'error');
+        setIsLoading(false);
+        setLoadingStatus({ message: '刷新失败', type: 'error' });
+      }
+    } catch (error) {
+      console.error('刷新工具失败:', error);
+      showToast('刷新工具失败', 'error');
+      setIsLoading(false);
+      setLoadingStatus({ message: '刷新失败', type: 'error' });
+      loadedRef.current = false;
+    }
+  }, [isLoading, loadToolsStream, setToolServices]);
+
   return (
     <div className="h-full overflow-y-auto p-4 sm:p-6 bg-bg-primary">
       <div className="max-w-4xl mx-auto">
         {/* 标题区域 */}
         <div className="mb-6 sm:mb-8">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
-              Agent Tools
-            </h1>
-            {isLoading && (
-              <Loader2 className="w-5 h-5 text-primary animate-spin" />
-            )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
+                Agent Tools
+              </h1>
+              {isLoading && (
+                <Loader2 className="w-5 h-5 text-primary animate-spin" />
+              )}
+            </div>
+            {/* 刷新按钮 */}
+            <button
+              onClick={handleRefreshTools}
+              disabled={isLoading}
+              className={`
+                flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
+                transition-all duration-200
+                ${isLoading 
+                  ? 'opacity-50 cursor-not-allowed bg-bg-tertiary text-text-tertiary' 
+                  : 'bg-bg-secondary hover:bg-bg-tertiary text-text-secondary hover:text-text-primary border border-border'
+                }
+              `}
+              title="强制刷新 MCP 工具缓存"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">刷新</span>
+            </button>
           </div>
           <p className="text-sm text-text-tertiary mt-1">
             选择和配置 AI Agent 可使用的工具服务

@@ -1,9 +1,17 @@
 # MCP 服务配置
 servers:
-  # HTTP Streamable 模式 - bing-search
-  - name: bing-search
-    transport: streamable_http
-    url: https://mcp.api-inference.modelscope.net/7fcb19ec6e704b/mcp
+  # STDIO 模式 - PostgreSQL MCP (mcp-postgres-full-access)
+  - name: postgres-full
+    transport: stdio
+    command: npx
+    args: [-y, mcp-postgres-full-access, postgresql://root:anhuang520@pan.junv.top:5432/postgres]
+    env:
+      MAX_CONCURRENT_TRANSACTIONS: "5"
+      PG_STATEMENT_TIMEOUT_MS: "30000"
+      TRANSACTION_TIMEOUT_MS: "60000"
+    windows:
+      command: npx
+      args: [-y, mcp-postgres-full-access, postgresql://root:anhuang520@pan.junv.top:5432/postgres]
 
   # STDIO 模式 - 已注释
   # - name: bing-search
@@ -24,23 +32,19 @@ servers:
 
 
 
-  - name: github-mcp
-    transport: stdio
-    command: npx
-    args: [-y, "@modelcontextprotocol/server-github"]
-    env:
-      GITHUB_PERSONAL_ACCESS_TOKEN: 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
-    windows:
-      command: cmd
-      args: [/c, npx, -y, "@modelcontextprotocol/server-github"]
-
   - name: zhipu-web-search-sse
     transport: sse
     url: https://open.bigmodel.cn/api/mcp/web_search/sse?Authorization=834213e9b3cb42769cf3f5d4641a8df1.4xDerkV5c9x4PopI
 
   - name: github
     transport: streamable_http
-    url: https://mcp.api-inference.modelscope.net/0c4606c9a3914c/mcp
+    url: https://mcp.api-inference.modelscope.net/4c25504c7a9f4e/mcp
+
+  - name: Gaodeamp
+    transport: streamable_http
+    url: https://mcp.api-inference.modelscope.net/3fd5651a65fa47/mcp
+
+
 
 settings:
   timeout: 30

@@ -9,9 +9,9 @@ from .calculate import calculate
 
 # 普通工具列表（非 MCP）
 REGULAR_TOOLS = [
-    get_weather,
+    #get_weather,
     get_current_time,
-    calculate,
+    #calculate,
 ]
 
 
