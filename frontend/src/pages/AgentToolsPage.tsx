@@ -338,25 +338,29 @@ const AgentToolsPage = () => {
     }
   };
   
-  const loadToolsStream = useCallback(() => {
-    if (loadedRef.current) return;
+  const loadedServicesListRef = useRef<MCPToolService[]>([]);
+
+  const loadToolsStream = useCallback((forceRefresh: boolean = false) => {
+    if (loadedRef.current && !forceRefresh) return;
     loadedRef.current = true;
-    
+
+    // 清空列表
+    loadedServicesListRef.current = [];
+
     setIsLoading(true);
-    setLoadingStatus({ message: '正在连接工具服务...', type: 'connecting' });
-    
-    const loadedServicesList: MCPToolService[] = [];
-    
-    cancelRef.current = toolsApi.listStream({
+    setLoadingStatus({ message: forceRefresh ? '正在刷新工具缓存...' : '正在连接工具服务...', type: 'connecting' });
+
+    cancelRef.current = toolsApi.listStream(forceRefresh, {
       onStatus: (message) => {
         setLoadingStatus({ message, type: 'loading' });
       },
-      
-      onService: (service) => {
-        loadedServicesList.push(service);
 
-        // 实时更新服务列表
-        setToolServices([...loadedServicesList]);
+      onService: (service) => {
+        // 使用 ref 累积服务列表
+        loadedServicesListRef.current.push(service);
+
+        // 实时更新服务列表（使用函数式更新确保最新状态）
+        setToolServices([...loadedServicesListRef.current]);
 
         setLoadingStatus({
           message: `已加载 ${service.name}...`,
@@ -364,13 +368,64 @@ const AgentToolsPage = () => {
         });
       },
 
-      onComplete: (total, services) => {
+      onComplete: (total, services, defaultSelectedTools) => {
+        console.log('[onComplete] 流式加载完成:', { total, services, defaultSelectedTools });
+        console.log('[onComplete] 当前服务列表:', loadedServicesListRef.current.map(s => ({ id: s.id, toolCount: s.tools.length })));
+
         setIsLoading(false);
         setLoadingStatus({
           message: `共加载 ${services} 个服务，${total} 个工具`,
           type: 'complete'
         });
-        
+
+        // 从 store 获取最新状态（避免闭包问题）
+        const store = useSettingsStore.getState();
+        const userHasSelection = store.hasUserSelection;
+        const currentSelectedTools = store.selectedTools;
+
+        // 应用后端配置的默认选中工具（仅在用户无选择记录时）
+        // 直接使用 ref 中的服务列表，确保数据最新
+        if (!userHasSelection && currentSelectedTools.length === 0 && defaultSelectedTools && defaultSelectedTools.length > 0 && loadedServicesListRef.current.length > 0) {
+          console.log('[onComplete] 用户无选择记录，准备应用默认工具:', defaultSelectedTools);
+
+          // 从 ref 中的服务列表查找匹配的工具
+          const matchedTools: ToolConfig[] = [];
+          for (const service of loadedServicesListRef.current) {
+            for (const tool of service.tools) {
+              const isMatch = defaultSelectedTools.some(pattern => {
+                if (pattern.includes('*') || pattern.includes('?')) {
+                  const regexPattern = pattern
+                    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+                    .replace(/\*/g, '.*')
+                    .replace(/\?/g, '.');
+                  const regex = new RegExp(`^${regexPattern}$`);
+                  return regex.test(tool.toolid);
+                }
+                return tool.toolid === pattern;
+              });
+              if (isMatch) {
+                console.log('[onComplete] 匹配工具:', tool.toolid);
+                matchedTools.push({
+                  toolid: tool.toolid,
+                  mcp: tool.mcp,
+                  name: tool.name,
+                  description: tool.description,
+                });
+              }
+            }
+          }
+
+          console.log('[onComplete] 匹配到的工具数:', matchedTools.length);
+
+          // 直接设置选中的工具
+          if (matchedTools.length > 0) {
+            setSelectedTools(matchedTools);
+            showToast(`已默认选中 ${matchedTools.length} 个工具`, 'success');
+          }
+        } else {
+          console.log('[onComplete] 用户已有选择记录，跳过默认工具应用');
+        }
+
         if (services > 0) {
           showToast(`成功加载 ${services} 个服务`, 'success');
         } else {
@@ -453,30 +508,21 @@ const AgentToolsPage = () => {
   // 强制刷新 MCP 工具缓存
   const handleRefreshTools = useCallback(async () => {
     if (isLoading) return;
-    
+
     setIsLoading(true);
     setLoadingStatus({ message: '正在刷新工具缓存...', type: 'loading' });
-    
+
     try {
       // 重置加载标记，允许重新加载
       loadedRef.current = false;
-      
-      // 先调用刷新接口强制重新加载 MCP 配置
-      const response = await toolsApi.refresh();
-      
-      if (response.status === 1) {
-        showToast('工具缓存已刷新', 'success');
-        
-        // 清空当前服务列表，重新加载
-        setToolServices([]);
-        
-        // 重新加载工具列表
-        loadToolsStream();
-      } else {
-        showToast(response.msg || '刷新失败', 'error');
-        setIsLoading(false);
-        setLoadingStatus({ message: '刷新失败', type: 'error' });
-      }
+
+      // 清空当前服务列表，重新加载（流式接口会返回默认选中工具）
+      setToolServices([]);
+
+      // 重新加载工具列表（流式，带刷新参数）
+      // 使用流式接口的 refresh=true 参数来强制刷新缓存
+      loadedRef.current = false;
+      loadToolsStream(true);  // 传入 true 表示强制刷新
     } catch (error) {
       console.error('刷新工具失败:', error);
       showToast('刷新工具失败', 'error');

@@ -43,6 +43,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
   const toolServices = useSettingsStore((state) => state.toolServices);
   const toggleTool = useSettingsStore((state) => state.toggleTool);
   const setToolServices = useSettingsStore((state) => state.setToolServices);
+  const applyDefaultTools = useSettingsStore((state) => state.applyDefaultTools);
   
   // 检查是否选中了 web 搜索工具
   const isWebSearch = selectedTools.some(t => WEB_SEARCH_TOOL_IDS.includes(t.toolid));
@@ -53,15 +54,19 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
     setIsLoadingTools(true);
     
     const loadedServicesList: any[] = [];
-    
-    toolsApi.listStream({
+
+    toolsApi.listStream(false, {
       onStatus: () => {},
       onService: (service) => {
         loadedServicesList.push(service);
         setToolServices([...loadedServicesList]);
       },
-      onComplete: () => {
+      onComplete: (_total, _services, defaultSelectedTools) => {
         setIsLoadingTools(false);
+        // 应用后端配置的默认选中工具（仅在用户无选择记录时）
+        if (defaultSelectedTools && defaultSelectedTools.length > 0) {
+          applyDefaultTools(defaultSelectedTools);
+        }
       },
       onError: (error) => {
         console.error('[InputArea] 工具加载失败:', error);

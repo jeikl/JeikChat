@@ -172,3 +172,14 @@ def get_settings(config_path: Optional[str] = None) -> Dict[str, Any]:
         "auto_reload": True,
         "log_level": "info",
     })
+
+
+def get_default_selected_tools(config_path: Optional[str] = None) -> List[str]:
+    """
+    获取默认选中的工具列表（支持通配符模式）
+    
+    Returns:
+        默认选中的工具ID列表（包含通配符模式，如 zhipu-web-search-sse_*）
+    """
+    config = load_config(config_path)
+    return config.get("default_selected_tools", [])

@@ -233,8 +233,13 @@ async def get_tool_cache() -> MCPCacheManager:
     return await get_cache_manager()
 
 
-async def refresh_tool_cache():
-    """刷新工具缓存 - 连接所有 MCP 服务并获取工具"""
+async def refresh_tool_cache(on_service_connected=None):
+    """刷新工具缓存 - 连接所有 MCP 服务并获取工具
+    
+    Args:
+        on_service_connected: 可选的回调函数，当一个服务连接成功时调用
+                              参数: (service_name, tools_count)
+    """
     global _cache_manager
     
     if _cache_manager is not None:
@@ -263,6 +268,9 @@ async def refresh_tool_cache():
             if tools is not None:
                 connected_count += 1
                 total_tools += len(tools)
+                # 调用回调通知服务已连接
+                if on_service_connected:
+                    await on_service_connected(cfg.name, len(tools))
             else:
                 failed_count += 1
                 

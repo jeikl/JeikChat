@@ -10,6 +10,7 @@ interface SettingsState {
   tools: Tool[];
   toolServices: MCPToolService[];  // 按服务分组的工具
   selectedTools: ToolConfig[];  // 改为存储完整的 ToolConfig 对象
+  hasUserSelection: boolean;  // 标记用户是否有过选择行为
 
   addConfig: (config: LLMConfig) => void;
   updateConfig: (id: string, updates: Partial<LLMConfig>) => void;
@@ -23,6 +24,7 @@ interface SettingsState {
   toggleTool: (tool: Tool) => void;  // 改为接收 Tool 对象
   toggleServiceTools: (serviceId: string, tools: Tool[]) => void;  // 改为接收 Tool 对象数组
   setSelectedTools: (tools: ToolConfig[]) => void;  // 改为设置 ToolConfig 数组
+  applyDefaultTools: (defaultToolIds: string[]) => void;  // 应用默认选中工具
   getActiveConfig: () => LLMConfig | null;
   getSelectedTools: () => ToolConfig[];  // 获取选中的工具配置
 }
@@ -59,6 +61,7 @@ export const useSettingsStore = create<SettingsState>()(
       tools: [],
       toolServices: [],
       selectedTools: [],
+      hasUserSelection: false,
 
       addConfig: (config) =>
         set((state) => ({
@@ -98,6 +101,7 @@ export const useSettingsStore = create<SettingsState>()(
             selectedTools: exists
               ? state.selectedTools.filter((t) => t.toolid !== tool.toolid)
               : [...state.selectedTools, toolConfig],
+            hasUserSelection: true,  // 标记用户有过选择行为
           };
         }),
       toggleServiceTools: (_serviceId, tools) =>
@@ -119,6 +123,7 @@ export const useSettingsStore = create<SettingsState>()(
               selectedTools: state.selectedTools.filter(
                 (t) => !toolConfigs.find((tc) => tc.toolid === t.toolid)
               ),
+              hasUserSelection: true,
             };
           } else {
             // 否则，选中该服务的所有工具（去重）
@@ -130,12 +135,63 @@ export const useSettingsStore = create<SettingsState>()(
             });
             return {
               selectedTools: newSelectedTools,
+              hasUserSelection: true,
             };
           }
         }),
       setSelectedTools: (tools) =>
         set({
           selectedTools: tools,
+          hasUserSelection: true,
+        }),
+      applyDefaultTools: (defaultToolIds) =>
+        set((state) => {
+          // 如果用户已经有过选择行为，不应用默认设置
+          if (state.hasUserSelection || state.selectedTools.length > 0) {
+            console.log('[applyDefaultTools] 用户已有选择，跳过默认设置');
+            return state;
+          }
+
+          console.log('[applyDefaultTools] 应用默认工具:', defaultToolIds);
+          console.log('[applyDefaultTools] 当前服务列表:', state.toolServices.map(s => ({ id: s.id, toolCount: s.tools.length })));
+
+          // 辅助函数：检查工具ID是否匹配模式（支持通配符 * 和 ?）
+          const matchesPattern = (toolId: string, pattern: string): boolean => {
+            if (pattern.includes('*') || pattern.includes('?')) {
+              // 将通配符模式转换为正则表达式
+              const regexPattern = pattern
+                .replace(/[.+^${}()|[\]\\]/g, '\\$&') // 转义特殊字符
+                .replace(/\*/g, '.*') // * 匹配任意字符
+                .replace(/\?/g, '.'); // ? 匹配单个字符
+              const regex = new RegExp(`^${regexPattern}$`);
+              return regex.test(toolId);
+            }
+            return toolId === pattern;
+          };
+
+          // 从所有服务中查找默认工具
+          const defaultTools: ToolConfig[] = [];
+          for (const service of state.toolServices) {
+            for (const tool of service.tools) {
+              // 检查是否匹配任一模式
+              const isMatch = defaultToolIds.some(pattern => matchesPattern(tool.toolid, pattern));
+              if (isMatch) {
+                console.log('[applyDefaultTools] 匹配工具:', tool.toolid);
+                defaultTools.push({
+                  toolid: tool.toolid,
+                  mcp: tool.mcp,
+                  name: tool.name,
+                  description: tool.description,
+                });
+              }
+            }
+          }
+
+          console.log('[applyDefaultTools] 最终选中工具数:', defaultTools.length);
+
+          return {
+            selectedTools: defaultTools,
+          };
         }),
       getActiveConfig: (): LLMConfig | null => {
         const state = useSettingsStore.getState();
@@ -147,21 +203,17 @@ export const useSettingsStore = create<SettingsState>()(
       },
     }),
     {
-      name: 'settings-storage-v4',  // 修改版本号，强制清除旧缓存
+      name: 'settings-storage-v5',  // 修改版本号，强制清除旧缓存
       partialize: (state) => ({
-        // 只持久化这些字段，selectedTools 不保存
+        // 持久化用户选择，这样后端重启后不会丢失
         configs: state.configs,
         activeConfigId: state.activeConfigId,
         defaultSystemPrompt: state.defaultSystemPrompt,
         tools: state.tools,
         toolServices: state.toolServices,
+        selectedTools: state.selectedTools,
+        hasUserSelection: state.hasUserSelection,
       }),
-      onRehydrateStorage: (state) => {
-        // 恢复时清空 selectedTools
-        if (state) {
-          state.selectedTools = [];
-        }
-      },
     }
   )
 );

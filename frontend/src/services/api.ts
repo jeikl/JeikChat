@@ -481,14 +481,15 @@ export const knowledgeApi = {
    * 获取所有可用的Agent工具列表
    * @请求方式 GET /api/tools
    * @触发位置 AgentToolsPage.tsx - 页面加载时
-   * @返回 { status: 1, data: [...], msg: "获取成功" } 或 { status: 0, data: [], msg: "未获取到任何 Agent Tool" }
+   * @返回 { status: 1, data: { tools: [...], defaultSelectedTools: [...] }, msg: "获取成功" }
    */
-  listTools: async (): Promise<{ tools: Tool[]; msg: string; status: number }> => {
-    const response = await apiClient.get<ApiResponse<Tool[]>>('/tools');
-    const tools = response.data?.data || [];
+  listTools: async (): Promise<{ tools: Tool[]; defaultSelectedTools: string[]; msg: string; status: number }> => {
+    const response = await apiClient.get<ApiResponse<{ tools: Tool[]; defaultSelectedTools: string[] }>>('/tools');
+    const data = response.data?.data;
     const status = response.data?.status;
     return {
-      tools: tools,
+      tools: data?.tools || [],
+      defaultSelectedTools: data?.defaultSelectedTools || [],
       msg: response.data?.msg || (status === 1 ? '获取成功' : '获取失败'),
       status: status || 0
     };
@@ -548,13 +549,15 @@ export const toolsApi = {
    * 刷新工具缓存 - 强制重新加载 MCP 配置
    * @请求方式 GET /api/tools?refresh=true
    * @触发位置 AgentToolsPage.tsx - 点击刷新按钮
-   * @返回 { status: 1, data: [...], msg: "获取成功" }
+   * @返回 { status: 1, data: { tools: [...], defaultSelectedTools: [...] }, msg: "获取成功" }
    */
-  refresh: async (): Promise<{ tools: Tool[]; msg: string; status: number }> => {
-    const response = await apiClient.get<ApiResponse<Tool[]>>('/tools?refresh=true');
+  refresh: async (): Promise<{ tools: Tool[]; defaultSelectedTools: string[]; msg: string; status: number }> => {
+    const response = await apiClient.get<ApiResponse<{ tools: Tool[]; defaultSelectedTools: string[] }>>('/tools?refresh=true');
+    const data = response.data?.data;
     return {
       status: response.data.status,
-      tools: response.data.data,
+      tools: data?.tools || [],
+      defaultSelectedTools: data?.defaultSelectedTools || [],
       msg: response.data.msg
     };
   },
@@ -564,24 +567,26 @@ export const toolsApi = {
    * @请求方式 GET /api/tools/stream
    * @触发位置 AgentToolsPage.tsx - 页面加载时
    * @返回 SSE流式响应
-   * 
+   *
    * 事件类型：
    * - status: 状态更新（如"正在连接工具服务..."）
    * - service: 单个服务数据（包含该服务下的所有工具）
    * - warning: 警告信息
-   * - complete: 加载完成
+   * - complete: 加载完成（包含 defaultSelectedTools: 默认选中的工具ID列表）
    * - error: 错误信息
    */
   listStream: (
+    forceRefresh: boolean = false,
     callbacks: {
       onStatus?: (message: string) => void;
       onService?: (service: MCPToolService) => void;
-      onComplete?: (total: number, services: number) => void;
+      onComplete?: (total: number, services: number, defaultSelectedTools?: string[]) => void;
       onWarning?: (message: string) => void;
       onError?: (message: string) => void;
     }
   ): (() => void) => {
-    const eventSource = new EventSource('/api/tools/stream');
+    const url = forceRefresh ? '/api/tools/stream?refresh=true' : '/api/tools/stream';
+    const eventSource = new EventSource(url);
     
     eventSource.onmessage = (event) => {
       try {
@@ -595,7 +600,7 @@ export const toolsApi = {
             callbacks.onService?.(data.service);
             break;
           case 'complete':
-            callbacks.onComplete?.(data.total, data.services);
+            callbacks.onComplete?.(data.total, data.services, data.defaultSelectedTools);
             eventSource.close();
             break;
           case 'warning':
