@@ -693,13 +693,20 @@ async def agent_stream1(
                 if should_stop and should_stop():
                     #yield {"reasoning": f"\n\n⚠️ 检测到停止信号，大模型初始化已取消\n\n"}
                     break
-                chunk_type = chunk.get("type")
+
+                # 处理 tuple 格式的 chunk (stream_mode v2 返回格式)
+                if isinstance(chunk, tuple):
+                    chunk_type, chunk_data = chunk
+                else:
+                    chunk_type = chunk.get("type")
+                    chunk_data = chunk.get("data")
+
                 if chunk_type == "custom":#自定义数据输出
-                    yield {f"reasoning": chunk["data"]}
+                    yield {"reasoning": str(chunk_data)}
 
                 # messages 流
                 if chunk_type == "messages":
-                    message, meta = chunk["data"]
+                    message, meta = chunk_data
                     node = meta.get("langgraph_node")
 
                     # if node:
