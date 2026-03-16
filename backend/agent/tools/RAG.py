@@ -108,6 +108,17 @@ def get_embeddings() -> ModelScopeAPIEmbeddings:
 # 默认向量库存储路径 (backend/agent/knowledges/vector_store)
 DEFAULT_VECTOR_STORE_PATH = Path(__file__).parent.parent / "knowledges" / "vector_store"
 
+# ========== 向量维度缓存 ==========
+_vector_size_cache: Optional[int] = None
+
+def get_vector_size(embeddings: ModelScopeAPIEmbeddings) -> int:
+    """获取向量维度（带缓存）"""
+    global _vector_size_cache
+    if _vector_size_cache is None:
+        sample_vector = embeddings.embed_query("sample text")
+        _vector_size_cache = len(sample_vector)
+    return _vector_size_cache
+
 
 # ========== 向量库管理类 ==========
 class VectorStoreManager:
@@ -138,8 +149,8 @@ class VectorStoreManager:
         # 使用单例 Qdrant 客户端（避免并发访问错误）
         self.client = get_qdrant_client(self.persist_directory)
 
-        # 获取向量维度并创建/加载集合
-        self.vector_size = self._get_vector_size()
+        # 获取向量维度（使用缓存）并创建/加载集合
+        self.vector_size = get_vector_size(self.embeddings)
         self._ensure_collection_exists()
 
         # 创建 VectorStore
@@ -148,11 +159,6 @@ class VectorStoreManager:
             collection_name=collection_name,
             embedding=self.embeddings,
         )
-
-    def _get_vector_size(self) -> int:
-        """获取向量维度"""
-        sample_vector = self.embeddings.embed_query("sample text")
-        return len(sample_vector)
 
     def _ensure_collection_exists(self):
         """确保集合存在，不存在则创建"""
@@ -496,9 +502,12 @@ if __name__ == "__main__":
     print("创建向量库...")
     print("="*50)
     
+    # 使用与 knowledge_mapping.json 一致的集合名称
+    collection_name = "懂王-Ai应用开发架构师-就业班3.0-冲击月薪40k"
+    
     manager = create_vector_store_from_files(
         file_paths=[test_file],
-        collection_name="懂王AI"
+        collection_name=collection_name
     )
     print("✅ 向量库创建成功！")
     manager.close()
@@ -506,8 +515,17 @@ if __name__ == "__main__":
     print("\n" + "="*50)
     print("检索测试...")
     print("="*50)
-    res = retrieve_documents("AI应用开发教程")
-    print(res)
+    
+    # 直接使用 VectorStoreManager 进行检索（避免 StructuredTool 调用问题）
+    manager2 = get_vector_store(collection_name=collection_name)
+    results = manager2.similarity_search(query="AI应用开发教程", k=4)
+    print(f"✅ 找到 {len(results)} 条结果\n")
+    for i, doc in enumerate(results, 1):
+        print(f"--- 结果 {i} ---")
+        print(f"来源：{doc.metadata.get('source', '未知')}")
+        print(f"页码：{doc.metadata.get('page_number', '')}")
+        print(f"内容：{doc.page_content[:300]}...\n")
+    manager2.close()
 
     
     
