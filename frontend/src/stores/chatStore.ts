@@ -250,7 +250,24 @@ export const useChatStore = create<ChatState>()(
           const latestKnowledgeState = useKnowledgeStore.getState();
           const latestSettingsState = useSettingsStore.getState();
           const finalKnowledgeIds = latestKnowledgeState.selectedKnowledgeIds;
-          const finalTools = latestSettingsState.getSelectedTools();
+          let finalTools = latestSettingsState.getSelectedTools();
+
+          // 如果选中了知识库，自动添加 retrieve_documents 工具
+          if (finalKnowledgeIds.length > 0) {
+            const hasRetrieveTool = finalTools.some(tool => tool.toolid === 'retrieve_documents');
+            if (!hasRetrieveTool) {
+              finalTools = [
+                ...finalTools,
+                {
+                  toolid: 'retrieve_documents',
+                  mcp: 0,
+                  name: 'retrieve_documents',
+                  description: '从知识库检索文档',
+                }
+              ];
+              console.log('自动添加 retrieve_documents 工具');
+            }
+          }
 
           console.log('发送请求调试:', {
             content,

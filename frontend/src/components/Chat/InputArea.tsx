@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, Zap, Ban, Plus, Globe, Mic, Square, Send, Loader2 } from 'lucide-react';
+import { Sparkles, Zap, Ban, Plus, Globe, Mic, Square, Send, Loader2, BookOpen, X } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 import { useSettingsStore } from '@/stores/settingsStore';
-import { toolsApi } from '@/services/api';
+import { useKnowledgeStore } from '@/stores/knowledgeStore';
+import { toolsApi, knowledgeApi } from '@/services/api';
 import type { Tool } from '@/services/api';
+import type { KnowledgeBase } from '@/types/knowledge';
 
 interface InputAreaProps {
   onSend: (content: string) => void;
@@ -30,9 +32,12 @@ const WEB_SEARCH_TOOL_IDS = [
 const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) => {
   const [content, setContent] = useState('');
   const [showThinkingDropdown, setShowThinkingDropdown] = useState(false);
+  const [showKnowledgeDropdown, setShowKnowledgeDropdown] = useState(false);
   const [isLoadingTools, setIsLoadingTools] = useState(false);
+  const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const knowledgeDropdownRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(false);
   
   const thinkingMode = useChatStore((state) => state.thinkingMode);
@@ -45,8 +50,31 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
   const setToolServices = useSettingsStore((state) => state.setToolServices);
   const applyDefaultTools = useSettingsStore((state) => state.applyDefaultTools);
   
+  // 从 knowledgeStore 获取知识库状态
+  const selectedKnowledgeIds = useKnowledgeStore((state) => state.selectedKnowledgeIds);
+  const toggleKnowledgeSelection = useKnowledgeStore((state) => state.toggleKnowledgeSelection);
+  const setSelectedKnowledgeIds = useKnowledgeStore((state) => state.setSelectedKnowledgeIds);
+  
   // 检查是否选中了 web 搜索工具
   const isWebSearch = selectedTools.some(t => WEB_SEARCH_TOOL_IDS.includes(t.toolid));
+  
+  // 检查是否选中了知识库
+  const hasSelectedKnowledge = selectedKnowledgeIds.length > 0;
+  
+  // 加载知识库列表
+  useEffect(() => {
+    const loadKnowledgeBases = async () => {
+      try {
+        const result = await knowledgeApi.list();
+        if (result.status === 1) {
+          setKnowledgeBases(result.data);
+        }
+      } catch (error) {
+        console.error('加载知识库失败:', error);
+      }
+    };
+    loadKnowledgeBases();
+  }, []);
   
   // 自动加载工具（如果未加载）
   // 加载工具的函数
@@ -136,6 +164,9 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowThinkingDropdown(false);
+      }
+      if (knowledgeDropdownRef.current && !knowledgeDropdownRef.current.contains(event.target as Node)) {
+        setShowKnowledgeDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -232,8 +263,8 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                   onClick={toolServices.length === 0 && !isLoadingTools ? loadTools : handleWebSearchToggle}
                   disabled={isLoadingTools}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
-                    isWebSearch 
-                      ? 'bg-primary/10 text-primary' 
+                    isWebSearch
+                      ? 'bg-primary/10 text-primary'
                       : isLoadingTools
                         ? 'text-text-quaternary/50 cursor-not-allowed'
                         : toolServices.length === 0
@@ -253,6 +284,76 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                     {isLoadingTools ? 'Loading...' : toolServices.length === 0 ? 'Retry' : 'Search'}
                   </span>
                 </button>
+
+                {/* 知识库选择按钮 */}
+                <div className="relative" ref={knowledgeDropdownRef}>
+                  <button
+                    onClick={() => setShowKnowledgeDropdown(!showKnowledgeDropdown)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
+                      hasSelectedKnowledge
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-text-quaternary hover:bg-white/5 hover:text-text-primary'
+                    }`}
+                    title={hasSelectedKnowledge ? `已选择 ${selectedKnowledgeIds.length} 个知识库` : '点击选择知识库'}
+                  >
+                    <BookOpen className="w-4 h-4 flex-shrink-0" />
+                    <span className="inline whitespace-nowrap">
+                      {hasSelectedKnowledge ? `知识库 (${selectedKnowledgeIds.length})` : '知识库'}
+                    </span>
+                  </button>
+
+                  {showKnowledgeDropdown && (
+                    <div className="absolute bottom-full left-0 mb-4 w-64 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-[100]">
+                      <div className="px-3 py-2 border-b border-white/10">
+                        <p className="text-xs text-text-tertiary">选择要检索的知识库</p>
+                      </div>
+                      {knowledgeBases.length === 0 ? (
+                        <div className="px-3 py-4 text-center">
+                          <p className="text-xs text-text-tertiary">暂无知识库</p>
+                          <p className="text-[10px] text-text-quaternary mt-1">请先在知识库管理页面创建</p>
+                        </div>
+                      ) : (
+                        <div className="max-h-48 overflow-y-auto py-1">
+                          {knowledgeBases.map((kb) => (
+                            <button
+                              key={kb.id}
+                              onClick={() => toggleKnowledgeSelection(kb.id)}
+                              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-all duration-200 ${
+                                selectedKnowledgeIds.includes(kb.id)
+                                  ? 'bg-white/10 text-white font-bold'
+                                  : 'text-text-tertiary hover:bg-white/5 hover:text-text-primary'
+                              }`}
+                            >
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                                selectedKnowledgeIds.includes(kb.id)
+                                  ? 'bg-primary border-primary'
+                                  : 'border-text-tertiary'
+                              }`}>
+                                {selectedKnowledgeIds.includes(kb.id) && (
+                                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                              <span className="truncate text-left flex-1">{kb.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {hasSelectedKnowledge && (
+                        <div className="px-3 py-2 border-t border-white/10">
+                          <button
+                            onClick={() => setSelectedKnowledgeIds([])}
+                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[12px] text-text-tertiary hover:bg-white/5 hover:text-text-primary transition-all duration-200"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span>清除选择</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

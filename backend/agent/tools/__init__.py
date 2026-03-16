@@ -6,11 +6,12 @@ Agent 工具模块
 from .werther import get_weather
 from .getNowTime import get_current_time
 from .calculate import calculate
-
+from .RAG import retrieve_documents
 # 普通工具列表（非 MCP）
 REGULAR_TOOLS = [
     #get_weather,
     get_current_time,
+    retrieve_documents,
     #calculate,
 ]
 

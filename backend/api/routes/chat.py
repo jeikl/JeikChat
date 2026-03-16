@@ -59,15 +59,37 @@ async def send_message(request: SendMessageRequest, http_request: Request):
     tool_configs = request.tools or []
     tool_names = [t.toolid for t in tool_configs]
     config = {"configurable": {"thread_id": session_uuid}}
-
-    logger.info(f"[Chat] 模型={model}, 工具={tool_names}")
+    
+    # 获取知识库ID列表
+    knowledge_base_ids = request.knowledge_base_ids or []
+    
+    logger.info(f"[Chat] 模型={model}, 工具={tool_names}, 知识库={knowledge_base_ids}")
     task_id = str(uuid.uuid4())
     task = stream_manager.register_task(task_id, session_id)
 
     async def stream_generator():
         full_content, full_reasoning, chunk_count = "", "", 0
         disconnected = False
+        
+        # 构建系统提示词
         system_prompt = await prompts.get_agent_prompt(tool_names) if tool_names else prompts.get_chat_prompt()
+        
+        # 如果有选中的知识库，在system提示词中添加知识库信息
+        if knowledge_base_ids:
+            knowledge_names_str = "\n".join([f"- {kb_id}" for kb_id in knowledge_base_ids])
+            knowledge_hint = f"""
+
+你有以下知识库可供检索：
+{knowledge_names_str}
+
+当用户询问专业性问题时，请使用 retrieve_documents 工具从上述知识库中检索相关文档作为参考。
+你可以通过 knowledge_base 参数指定要检索的知识库名称，例如：retrieve_documents(query="问题", knowledge_base="知识库名称")
+如果不指定 knowledge_base 参数，则会检索所有知识库。"""
+
+
+            system_prompt = system_prompt + knowledge_hint
+            logger.info(f"[Chat] 已添加知识库提示词: {knowledge_base_ids}")
+        
         msg = build_messages(system_prompt, request.content)
 
         try:

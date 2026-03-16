@@ -478,6 +478,172 @@ export const knowledgeApi = {
   },
 
   /**
+   * 创建知识库并上传文件（一键创建）
+   * @请求方式 POST /api/knowledge/create-with-files
+   * @触发位置 KnowledgePage.tsx - 文件上传后自动创建
+   * @返回 { status: 1, data: {...}, msg: "创建成功" }
+   */
+  createWithFiles: async (
+    name: string,
+    files: File[],
+    onProgress?: (fileName: string, progress: number) => void
+  ): Promise<KnowledgeBase> => {
+    const formData = new FormData();
+    formData.append('name', name);
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    const response = await apiClient.post<ApiResponse<KnowledgeBase>>(
+      '/knowledge/create-with-files',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          if (onProgress && progressEvent.total && files.length > 0) {
+            const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+            onProgress(files[0].name, progress);
+          }
+        },
+      }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * 异步创建知识库（带实时进度）
+   * @请求方式 POST /api/knowledge/create-async
+   * @触发位置 KnowledgePage.tsx - 文件上传后异步创建
+   * @返回 { status: 1, data: { taskId, knowledgeBase }, msg: "创建任务已启动" }
+   */
+  createAsync: async (
+    name: string,
+    files: File[],
+    description?: string
+  ): Promise<{ taskId: string; knowledgeBase: KnowledgeBase }> => {
+    const formData = new FormData();
+    formData.append('name', name);
+    if (description) {
+      formData.append('description', description);
+    }
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    const response = await apiClient.post<ApiResponse<{ taskId: string; knowledgeBase: KnowledgeBase }>>(
+      '/knowledge/create-async',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * 获取创建进度（SSE 流）
+   * @请求方式 GET /api/knowledge/create-progress/{taskId}
+   * @触发位置 KnowledgePage.tsx - 创建任务启动后
+   */
+  getCreateProgress: (
+    taskId: string,
+    onProgress: (data: {
+      type: string;
+      taskId: string;
+      status: string;
+      progress: number;
+      message: string;
+      totalChunks: number;
+      processedChunks: number;
+    }) => void,
+    onError?: (error: Error) => void
+  ): (() => void) => {
+    const eventSource = new EventSource(`/api/knowledge/create-progress/${taskId}`);
+    
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        onProgress(data);
+        
+        // 如果任务完成或失败，关闭连接
+        if (data.status === 'completed' || data.status === 'error') {
+          eventSource.close();
+        }
+      } catch (error) {
+        console.error('解析进度数据失败:', error);
+      }
+    };
+    
+    eventSource.onerror = (error) => {
+      console.error('SSE 连接错误:', error);
+      if (onError) {
+        onError(new Error('连接失败'));
+      }
+      eventSource.close();
+    };
+    
+    // 返回关闭函数
+    return () => {
+      eventSource.close();
+    };
+  },
+
+  /**
+   * 获取任务状态（非流式）
+   * @请求方式 GET /api/knowledge/task-status/{taskId}
+   * @触发位置 KnowledgePage.tsx - 轮询任务状态
+   */
+  getTaskStatus: async (taskId: string): Promise<{
+    taskId: string;
+    status: string;
+    progress: number;
+    message: string;
+    totalChunks: number;
+    processedChunks: number;
+  } | null> => {
+    const response = await apiClient.get<ApiResponse<{
+      taskId: string;
+      status: string;
+      progress: number;
+      message: string;
+      totalChunks: number;
+      processedChunks: number;
+    }>>(`/knowledge/task-status/${taskId}`);
+    return response.data.data;
+  },
+
+  /**
+   * 获取知识库映射关系
+   * @请求方式 GET /api/knowledge/mapping
+   * @触发位置 KnowledgePage.tsx - 页面加载时
+   * @返回 { status: 1, data: {...}, msg: "获取成功" }
+   */
+  getMapping: async (): Promise<Record<string, { files: string[]; createdAt: string; updatedAt: string }>> => {
+    const response = await apiClient.get<ApiResponse<Record<string, { files: string[]; createdAt: string; updatedAt: string }>>>('/knowledge/mapping');
+    return response.data.data || {};
+  },
+
+  /**
+   * 根据名称检索知识库（不传名称则检索全部）
+   * @请求方式 POST /api/knowledge/retrieve
+   * @触发位置 chatStore.ts - sendMessage()
+   * @参数 query: 查询文本, knowledgeNames?: 知识库名称列表
+   * @返回 { status: 1, data: [...], msg: "检索成功" }
+   */
+  retrieve: async (
+    query: string,
+    knowledgeNames?: string[],
+    topK: number = 5
+  ): Promise<SearchResult[]> => {
+    const response = await apiClient.post<ApiResponse<SearchResult[]>>('/knowledge/retrieve', {
+      query,
+      knowledgeNames,
+      topK,
+    });
+    return response.data.data || [];
+  },
+
+  /**
    * 获取所有可用的Agent工具列表
    * @请求方式 GET /api/tools
    * @触发位置 AgentToolsPage.tsx - 页面加载时

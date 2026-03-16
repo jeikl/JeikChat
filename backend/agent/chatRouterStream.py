@@ -452,181 +452,6 @@ async def _get_mcp_tools_with_cached_connection(tool_configs: List) -> List:
 
 
 
-async def agent_stream0(
-    llm: str,
-    msg,
-    thinking: str,
-    tool_configs: List,
-    history,
-    should_stop: Optional[Callable[[], bool]] = None,
-) -> AsyncGenerator[dict, None]:
-    """代理流式响应 - 深度兼容 LangGraph 结构化消息流"""
-    
-    # 1. 基础工具加载提示
-    tool_names = [_get_toolid_from_config(c) for c in (tool_configs or []) if _get_toolid_from_config(c)]
-    if tool_names:
-        yield {"reasoning": f"\n\n🛠️ 已选择工具: {', '.join(tool_names)}\n\n"}
-
-    yield {"reasoning": f"⏳ 正在连接服务...\n\n"}
-    selected_tools = await _get_tools_by_configs(tool_configs)
-    yield {"reasoning": f"✅️ MCP服务连接成功...\n\n"}
-    async with AsyncPostgresSaver.from_conn_string(DB_URL) as checkpoint:
-        client = create_client(llm, thinking)
-        agent = create_agent(client, tools=selected_tools, checkpointer=checkpoint) 
-
-        # ==========================================
-        # 【预检修复】处理已存在的 400 状态死锁
-        # ==========================================
-        try:
-            from langgraph.types import StateSnapshot
-            state: StateSnapshot = await agent.get_state(history)
-            if state and state.values and state.values.get("messages"):
-                messages = state.values["messages"]
-                if messages:
-                    last_msg = messages[-1]
-                    # 检查最后一条消息是否是带有 tool_calls 的 assistant 消息
-                    if hasattr(last_msg, "tool_calls") and last_msg.tool_calls:
-                        # 检查是否有对应的 tool 响应
-                        pending_tool_ids = set(tc["id"] for tc in last_msg.tool_calls)
-                        
-                        # 检查后续消息中是否有对应的 tool 响应
-                        for msg in messages:
-                            if isinstance(msg, ToolMessage):
-                                pending_tool_ids.discard(msg.tool_call_id)
-                        
-                        # 如果有未响应的 tool_calls，添加虚拟响应
-                        if pending_tool_ids:
-                            remedy_msgs = [
-                                ToolMessage(content="[Auto-Healed] Tool call failed or was cancelled.", tool_call_id=tc_id) 
-                                for tc_id in pending_tool_ids
-                            ]
-                            await agent.update_state(history, {"messages": remedy_msgs})
-                            logger.warning(f"[ChatRouter] 发现 {len(pending_tool_ids)} 个未闭合的工具调用，已自动修复")
-                            yield {"reasoning": f"\n\n⚠️ 检测到历史记录中的工具调用错误，已自动修复。\n\n"}
-        except Exception as e:
-            logger.error(f"[ChatRouter] 预检修复失败: {e}")
-
-        # # 运行时状态维护
-        active_tool_calls = [] # 存储当前轮次的 {id, name}
-        last_message_type = "reasoning"
-
-        try:
-            yield {"reasoning": "🔄 正在思考...\n\n"}
-            
-            # 使用 messages 模式流式读取
-            async for token, metadata in agent.astream(msg, config=history, stream_mode="messages"):
-                if should_stop and should_stop(): break
-                
-                node = metadata.get("langgraph_node", "")
-                
-                # ------------------------------------------
-                # A. 提取工具调用 ID (用于状态自愈)
-                # ------------------------------------------
-                # 优先从 tool_call_chunks 中提取 ID
-                
-                if hasattr(token, "tool_call_chunks"):
-                    for chunk in token.tool_call_chunks:
-                        if chunk.get("id"):
-                            # 如果是新 ID，加入追踪列表
-                            if not any(tc["id"] == chunk["id"] for tc in active_tool_calls):
-                                active_tool_calls.append({"id": chunk["id"], "name": chunk.get("name")})
-                                yield {"reasoning": f"\n\n🧠 正在调用工具: {chunk.get('name') or 'unknown'} ...\n"}
-                                last_message_type = "reasoning"
-
-                # ------------------------------------------
-                # B. 深度解析结构化 Content Blocks (核心修复)
-                # ------------------------------------------
-                blocks = []
-                if isinstance(token.content, list):
-                    blocks = token.content
-                elif isinstance(token.content, str) and token.content:
-                    # 兼容普通字符串 content
-                    blocks = [{"type": "text", "text": token.content}]
-
-                for block in blocks:
-                    if not isinstance(block, dict): continue
-                    
-                    b_type = block.get("type")
-                    
-                    # 1. 处理文本块
-                    if b_type == "text":
-                        text = block.get("text", "")
-                        if not text: continue
-                        
-                        if node == "tools":
-                            # 工具节点的输出一般代表数据获取成功
-                            #yield {"reasoning": f"\n\n✅ 工具返回数据成功\n\n"}
-                            active_tool_calls = [] # 成功执行，清除挂起
-                            last_message_type = "reasoning"
-                        else:
-                            # 模型节点的普通文本输出
-                            if last_message_type == "reasoning":
-                                text = f"\n\n{text}"
-                            yield {"content": text}
-                            last_message_type = "content"
-                    
-                    # 2. 处理推理块 (针对某些特定模型的 reasoning 字段)
-                    elif b_type == "reasoning":
-                        yield {"reasoning": block.get("reasoning", "")}
-                        last_message_type = "reasoning"
-
-                # ------------------------------------------
-                # C. 兜底处理 additional_kwargs 中的推理
-                # ------------------------------------------
-                reasoning_content = token.additional_kwargs.get("reasoning_content")
-                if reasoning_content:
-                    # 确保 reasoning_content 是字符串类型
-                    if isinstance(reasoning_content, list):
-                        reasoning_content = "".join(str(r) for r in reasoning_content)
-                    else:
-                        reasoning_content = str(reasoning_content)
-                    yield {"reasoning": reasoning_content}
-                    last_message_type = "reasoning"
-
-        except Exception as e:
-            # 运行时自愈逻辑
-            error_msg = str(e)
-            logger.error(f"[ChatRouter] 运行时错误: {error_msg}")
-            
-            # 检查是否是 MCP 工具参数错误
-            if "Invalid input" in error_msg and "Required" in error_msg:
-                logger.warning(f"[ChatRouter] 工具参数错误: {error_msg}")
-                # 尝试修复：发送错误信息给模型，让它重新生成
-                if active_tool_calls:
-                    try:
-                        error_tool_msg = f"工具调用失败：参数错误。{error_msg}"
-                        remedy = [ToolMessage(content=error_tool_msg, tool_call_id=tc["id"]) for tc in active_tool_calls]
-                        await agent.update_state(history, {"messages": remedy})
-                        yield {"reasoning": "\n\n⚠️ 工具参数错误，已自动修复。请重新提问。\n"}
-                    except Exception as fix_err:
-                        logger.error(f"[ChatRouter] 修复失败: {fix_err}")
-                yield {"content": f"\n\n❌ 工具参数错误：大模型提供的参数不正确。请尝试重新提问或创建新会话。\n"}
-            elif "tool_calls" in error_msg and "tool messages" in error_msg:
-                # 对话历史损坏错误
-                logger.error(f"[ChatRouter] 对话历史损坏: {error_msg}")
-                yield {"content": f"\n\n❌ 对话历史错误：工具调用记录不完整。\n\n建议：点击'清空对话'按钮或创建新会话。\n"}
-            elif active_tool_calls:
-                try:
-                    remedy = [ToolMessage(content=f"Error: {error_msg}", tool_call_id=tc["id"]) for tc in active_tool_calls]
-                    await agent.update_state(history, {"messages": remedy})
-                    yield {"reasoning": "\n\n⚠️ 已自动截断并修复当前中断的工具链。\n"}
-                except: pass
-                yield {"content": f"\n\n❌ 运行错误: {error_msg}\n\n建议：请尝试重新提问。\n"}
-            else:
-                yield {"content": f"\n\n❌ 运行错误: {error_msg}\n\n建议：请尝试重新提问或创建新会话。\n"}
-            # 不再抛出异常，让对话可以继续
-            return
-                
-        except Exception as e:
-            # 外层异常处理
-            import traceback
-            error_detail = traceback.format_exc()
-            logger.error(f"[ChatRouter] Agent 执行错误: {e}\n{error_detail}")
-            yield {"content": f"\n\n❌ 模型调用失败: {str(e)}\n\n建议：请尝试重新提问或创建新会话。\n"}
-            # 不再抛出异常
-            return
-
-
 async def agent_stream1(
         llm: str,
         msg,
@@ -637,7 +462,7 @@ async def agent_stream1(
 ) -> AsyncGenerator[dict, None]:
     """简化版代理流式响应"""
     
-    yield {"reasoning": f"\n\n✅️ 消息发送成功: {llm}\n\n"}
+    yield {"reasoning": f"\n\n✅️ 消息发送成功\n\n"}
     
     # 提取选中的 MCP 工具ID
     selected_mcp_ids = [_get_toolid_from_config(c) for c in (tool_configs or []) if _get_toolid_from_config(c) and _get_mcp_from_config(c) == 1]
@@ -701,7 +526,13 @@ async def agent_stream1(
                     chunk_type = chunk.get("type")
                     chunk_data = chunk.get("data")
 
+
+
+
+
                 if chunk_type == "custom":#自定义数据输出
+                    #print(f"自定义数据输出:{str(chunk_data)}")
+                    last = "reasoning"
                     yield {"reasoning": str(chunk_data)}
 
                 # messages 流
@@ -714,6 +545,7 @@ async def agent_stream1(
 
                     # AI消息
                     if isinstance(message, AIMessageChunk):
+                        
                         reasoning = message.additional_kwargs.get("reasoning_content")
                         content = message.content
                         tool_calls = message.tool_calls
@@ -734,17 +566,18 @@ async def agent_stream1(
 
                         if reasoning:
                             #print("思考:", reasoning)
+                            last = "reasoning"
                             yield {"reasoning": reasoning}
-                            last == "reasoning"
+
 
                         if content:
                             #print("回答:", content)
                             if last == "reasoning" :
                                 if hasContent:
-                                    yield {"content": f"\n\n{content}\n\n"}
+                                    yield {"content": f"\n\n{content}"}
                                 else:
-                                    yield {"content": content}
                                     hasContent=True
+                                    yield {"content": content}
                                 last = "content"
                             else:
                                 yield {"content": content}

@@ -86,15 +86,20 @@ class McpToolNode(ToolNode):
             writer(f"\n\n⌛ 正在调用工具: {tool.name} : {tool_args_str} \n\n")
             result = await tool.ainvoke(tool_args)
 
-            # 确保 result 是字符串类型
+            # 确保 result 是字符串类型，并截取前500字符
             if isinstance(result, list):
                 result_str = json.dumps(result, ensure_ascii=False)
             elif isinstance(result, dict):
                 result_str = json.dumps(result, ensure_ascii=False)
             else:
                 result_str = str(result)
-
-            writer(f"\n\n✅️ 调用成功: {tool_name}: {tool_args_str}: {result_str[:500]} \n\n")
+            
+            # 截取前500字符（仅显示给用户，不影响大模型）
+            display_result = result_str
+            if len(result_str) > 500:
+                display_result = result_str[:500] + "..."
+            
+            writer(f"\n\n✅️ 调用成功: {tool_name}: {tool_args_str}: {display_result} \n\n")
             return {"messages": [ToolMessage(content=f"[完成] {tool_name}: {tool_args_str}: {result_str}", tool_call_id=tool_id or "no-id", name=tool_name)]}
         except Exception as e:
             error_msg = str(e)
