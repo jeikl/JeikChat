@@ -6,13 +6,12 @@ embeddings:
   providers:
     modelscope:
       name: "魔塔"
-      api_key: "ms-1722d753-a473-4a8a-bb51-8dc77bd86c24"
+      api_key: ""
       base_url: "https://api-inference.modelscope.cn/v1"
       models:
         - id: "Qwen/Qwen3-Embedding-8B"
           default: true
-        - id: "bge-small-zh-v1.5"
-        - id: "bge-base-zh-v1.5"
+
 
 # LLM 模型配置文件
 # 根据模型ID读取对应的配置信息
@@ -23,6 +22,19 @@ embeddings:
 #   - 如果提供商enable为true，模型enable为false，则该模型不启用
 
 providers:
+  modelscope:
+    name: "魔塔"
+    api_key: ""
+    base_url: https://api-inference.modelscope.cn/v1
+    display_name: 魔塔
+    models:
+      - id: "Qwen/Qwen3.5-35B-A3B"
+      - id: "MiniMax/MiniMax-M2.5"
+      - id: "moonshotai/Kimi-K2.5"
+      - id: "ZhipuAI/GLM-5"
+    enable: false
+
+
   openai:
     name: ""
     api_key: ""
@@ -102,17 +114,6 @@ providers:
       - id: ""
     enable: false
 
-  modelscope:
-    name: "魔塔"
-    api_key: "ms-1722d753-a473-4a8a-bb51-8dc77bd86c24"
-    base_url: https://api-inference.modelscope.cn/v1
-    display_name: 魔塔
-    models:
-      - id: "Qwen/Qwen3.5-35B-A3B"
-      - id: "MiniMax/MiniMax-M2.5"
-      - id: "moonshotai/Kimi-K2.5"
-      - id: "ZhipuAI/GLM-5"
-    enable: true
 
   zhipu:
     name: ""
