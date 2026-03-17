@@ -187,71 +187,46 @@ async def delete_knowledge_base(kb_name: str):
             logger.error(error_msg)
             errors.append(error_msg)
     
-    # 删除向量库集合（使用单例客户端）
+    # 删除向量库集合
     try:
-        from agent.tools.RAG import get_qdrant_client, get_all_collection_names, close_qdrant_client
+        from agent.tools.RAG import close_qdrant_client
         import shutil
         import time
+        
         vector_store_path = str(VECTOR_STORE_PATH)
-        client = get_qdrant_client(vector_store_path)
         
-        logger.info(f"向量库存储路径: {vector_store_path}")
+        # 关闭Qdrant客户端以释放文件句柄
+        close_qdrant_client()
+        logger.info("已关闭Qdrant客户端，准备删除文件夹")
         
-        # 先检查集合是否存在
-        try:
-            collections_before = get_all_collection_names(vector_store_path)
-            logger.info(f"删除前存在的集合: {collections_before}")
+        # 强制垃圾回收以释放文件句柄
+        import gc
+        gc.collect()
+        
+        # 等待文件句柄完全释放
+        time.sleep(2)
+        
+        # 删除本地存储的文件夹
+        collection_folder = os.path.join(vector_store_path, kb_name)
+        if os.path.exists(collection_folder):
+            # 尝试多次删除
+            deleted = False
+            for attempt in range(5):
+                try:
+                    shutil.rmtree(collection_folder)
+                    logger.info(f"删除向量库文件夹成功: {collection_folder} (第{attempt + 1}次尝试)")
+                    deleted = True
+                    break
+                except Exception as folder_e:
+                    if attempt < 4:
+                        logger.warning(f"删除向量库文件夹失败 (第{attempt + 1}次): {collection_folder}, 等待后重试...")
+                        time.sleep(1)
+                    else:
+                        logger.warning(f"删除向量库文件夹最终失败: {collection_folder}, {folder_e}")
+                        errors.append(f"删除向量库文件夹失败: {folder_e}")
+        else:
+            logger.info(f"向量库文件夹不存在: {collection_folder}")
             
-            if kb_name in collections_before:
-                client.delete_collection(collection_name=kb_name)
-                logger.info(f"删除向量库成功: {kb_name} (路径: {vector_store_path})")
-                
-                # 验证删除
-                collections_after = get_all_collection_names(vector_store_path)
-                logger.info(f"删除后存在的集合: {collections_after}")
-                
-                if kb_name in collections_after:
-                    logger.error(f"向量库删除后仍然存在: {kb_name}")
-                    errors.append(f"向量库删除后仍然存在: {kb_name}")
-            else:
-                logger.warning(f"向量库不存在，无需删除: {kb_name}")
-            
-            # 关闭Qdrant客户端以释放文件句柄
-            close_qdrant_client()
-            logger.info("已关闭Qdrant客户端，准备删除文件夹")
-            
-            # 强制垃圾回收以释放文件句柄
-            import gc
-            gc.collect()
-            
-            # 等待文件句柄完全释放
-            time.sleep(2)
-            
-            # 删除本地存储的文件夹（即使集合不存在也尝试清理残留）
-            collection_folder = os.path.join(vector_store_path, "collection", kb_name)
-            if os.path.exists(collection_folder):
-                # 尝试多次删除
-                deleted = False
-                for attempt in range(5):
-                    try:
-                        shutil.rmtree(collection_folder)
-                        logger.info(f"删除向量库文件夹成功: {collection_folder} (第{attempt + 1}次尝试)")
-                        deleted = True
-                        break
-                    except Exception as folder_e:
-                        if attempt < 4:
-                            logger.warning(f"删除向量库文件夹失败 (第{attempt + 1}次): {collection_folder}, 等待后重试...")
-                            time.sleep(1)
-                        else:
-                            logger.warning(f"删除向量库文件夹最终失败: {collection_folder}, {folder_e}")
-                            errors.append(f"删除向量库文件夹失败: {folder_e}")
-                
-                # 如果删除失败，启动后台任务继续尝试
-                if not deleted:
-                    asyncio.create_task(_delete_collection_folder_async(collection_folder))
-        except Exception as e:
-            logger.warning(f"删除向量库集合失败: {kb_name}, {e}")
-            errors.append(f"删除向量库失败: {e}")
     except Exception as e:
         error_msg = f"删除向量库失败: {kb_name}, {e}"
         logger.error(error_msg)

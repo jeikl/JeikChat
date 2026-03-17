@@ -120,6 +120,8 @@ def get_vector_size(embeddings: ModelScopeAPIEmbeddings) -> int:
     return _vector_size_cache
 
 
+import os
+
 # ========== 向量库管理类 ==========
 class VectorStoreManager:
     """向量库管理器：负责创建、加载和管理 Qdrant 向量库"""
@@ -141,10 +143,15 @@ class VectorStoreManager:
         self.collection_name = collection_name
         # 使用默认路径或用户指定路径
         if persist_directory is None:
-            self.persist_directory = str(DEFAULT_VECTOR_STORE_PATH)
+            # 默认每个 collection 使用独立目录
+            # 修正: 不再使用 collection 子目录，直接在 vector_store 下创建知识库文件夹
+            self.persist_directory = str(DEFAULT_VECTOR_STORE_PATH / collection_name)
         else:
             self.persist_directory = persist_directory
         self.embeddings = embeddings or get_embeddings()
+
+        # 确保父目录存在
+        Path(self.persist_directory).parent.mkdir(parents=True, exist_ok=True)
 
         # 使用单例 Qdrant 客户端（避免并发访问错误）
         self.client = get_qdrant_client(self.persist_directory)
@@ -348,7 +355,13 @@ def create_vector_store_from_files(
         raise ValueError("没有成功加载任何文档")
 
     # 创建向量库
-    manager = VectorStoreManager(collection_name=collection_name)
+    # 使用独立目录存储
+    persist_directory = str(DEFAULT_VECTOR_STORE_PATH / collection_name)
+    
+    manager = VectorStoreManager(
+        collection_name=collection_name,
+        persist_directory=persist_directory
+    )
 
     # 添加文档
     manager.add_documents(splits)
@@ -367,24 +380,39 @@ def get_all_collection_names(persist_directory: Optional[str] = None) -> List[st
     Returns:
         集合名称列表
     """
+    # 如果未指定，使用默认的 collections 根目录
     if persist_directory is None:
-        persist_directory = str(DEFAULT_VECTOR_STORE_PATH)
+        base_path = DEFAULT_VECTOR_STORE_PATH
+    else:
+        # 如果指定了 persist_directory，检查它是单个 storage 还是 collections 根目录
+        base_path = Path(persist_directory)
     
-    # 使用单例客户端
-    client = get_qdrant_client(persist_directory)
-    try:
-        collections = client.get_collections().collections
-        return [collection.name for collection in collections]
-    except Exception:
-        # 如果获取失败（如客户端未初始化），返回空列表
+    if not base_path.exists():
         return []
+    
+    names = []
+    # 遍历目录，查找有效的向量库（包含 storage.sqlite 的目录）
+    try:
+        for p in base_path.iterdir():
+            if p.is_dir():
+                # 检查是否存在 storage.sqlite
+                # Qdrant 本地存储结构: {persist_directory}/collection/{collection_name}/storage.sqlite
+                # 这里 persist_directory = p, collection_name = p.name
+                storage_path = p / "collection" / p.name / "storage.sqlite"
+                if storage_path.exists():
+                    names.append(p.name)
+    except Exception as e:
+        print(f"❌ 获取集合列表失败: {e}")
+        return []
+        
+    return names
 
 
 # ========== 获取现有向量库 ==========
 def get_vector_store(
     collection_name: str = "default_collection",
     persist_directory: Optional[str] = None
-) -> VectorStoreManager:
+) -> Optional[VectorStoreManager]:
     """
     获取已存在的向量库（用于检索，不创建新集合）
 
@@ -393,12 +421,19 @@ def get_vector_store(
         persist_directory: 持久化目录（默认使用 DEFAULT_VECTOR_STORE_PATH）
 
     Returns:
-        VectorStoreManager 实例
-
-    Example:
-        >>> manager = get_vector_store("my_collection")
-        >>> results = manager.similarity_search("查询文本")
+        VectorStoreManager 实例，如果不存在则返回 None
     """
+    if persist_directory is None:
+        persist_directory = str(DEFAULT_VECTOR_STORE_PATH / collection_name)
+    
+    # 检查目录和 storage.sqlite 是否存在
+    # Qdrant 本地存储结构: {persist_directory}/collection/{collection_name}/storage.sqlite
+    storage_path = os.path.join(persist_directory, "collection", collection_name, "storage.sqlite")
+    
+    if not os.path.exists(persist_directory) or not os.path.exists(storage_path):
+        print(f"⚠️ 向量库不存在: {persist_directory} (storage: {storage_path})")
+        return None
+        
     return VectorStoreManager(
         collection_name=collection_name,
         persist_directory=persist_directory
@@ -437,6 +472,11 @@ def retrieve_documents(query: str, knowledge_base: str = None) -> str:
         try:
             # 获取向量库并搜索
             manager = get_vector_store(collection_name=collection_name)
+            
+            if manager is None:
+                writer(f"\n\n❌ 知识库不存在或无法访问: {collection_name}\n\n")
+                continue
+                
             writer( f"\n\n🔍 正在查询知识库: {collection_name}\n\n")
             results = manager.similarity_search(query=query, k=10)
         
