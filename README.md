@@ -1,189 +1,356 @@
-<div align="center" style="background-color: #f6f8fa; padding: 10px; border-radius: 5px;">
+<div align="center">
 
-# langchain-JeikChat 全能AI助手 
-# 无缝集成各种生态 MCP API Tools 多语言混合调用
+<img src="frontend/public/logo.png" alt="JeikChat Logo" width="120" style="margin: 20px 0;">
+
+# 🚀 JeikChat 全能智能助手
+
+**无缝集成大语言模型生态 · MCP协议扩展 · RAG知识库 · 多模型混合调用**
+
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![LangChain](https://img.shields.io/badge/LangChain-Latest-1C3C3C?style=flat-square)](https://langchain.com)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+
+<p align="center">
+  <strong>基于大语言模型的前后端分离AI助手解决方案</strong>
+</p>
+
+<p align="center">
+  <a href="#-项目简介">项目简介</a> •
+  <a href="#-核心特性">核心特性</a> •
+  <a href="#-技术架构">技术架构</a> •
+  <a href="#-快速开始">快速开始</a> •
+  <a href="#-目录结构">目录结构</a> •
+  <a href="#-api文档">API文档</a> •
+  <a href="#-部署指南">部署指南</a>
+</p>
 
 </div>
 
-
-<p align="center">
-  <img src="frontend/public/logo.png" alt="JeikChat Logo" width="120">
-</p>
-
-<p align="center">
-  <strong>基于大语言模型的全能拓展BOT解决方案</strong>
-</p>
-
-<p align="center">
-  <a href="#功能特性">功能特性</a> •
-  <a href="#技术架构">技术架构</a> •
-  <a href="#快速开始">快速开始</a> •
-  <a href="#部署指南">部署指南</a> •
-  <a href="#api文档">API文档</a>
-</p>
-
 ---
 
-## 项目简介
+## 📖 项目简介
 
-JeikChat 是一个基于langchain、langgraph、vite、react，python等开发的功能完善的全能AI助手，采用现代化的前后端分离架构设计，支持多模型切换、RAG知识库检索、MCP工具扩展等核心功能。UI设计参考主流AI产品（豆包、ChatGPT、通义千问等），完美适配电脑和手机端。
+**JeikChat** 是一个功能完善的全能AI助手系统，采用现代化的前后端分离架构设计。后端基于 **Python** 生态（`FastAPI` + `LangChain` + `LangGraph`），前端基于 **React** 生态（`Vite` + `TailwindCSS` + `Zustand`）。
 
+项目深度集成了**多模型自由切换**、**RAG知识库高级检索**（支持多种文档格式解析与向量存储）、**MCP (Model Context Protocol) 工具动态扩展**，以及带**持久化记忆 (PostgreSQL Checkpoint)** 的对话编排能力。UI设计参考主流AI产品，完美适配桌面端和移动端，为您提供极佳的交互体验。
 
-# !!!注意 MCP集成功能 需要较新的模型才能使用 推荐用2025年中旬以后发布的模型 即可使用 快速集成构建你的智能助手!!!
+### 🎯 设计理念
 
-# Python开发 由于Python是解释性语言 所以模型加载和工具的第一次初始化会比较慢 但第一次以后平台会带缓存机制 几乎所有功能都带缓存机制
+- **模块化架构**：各功能模块独立设计，易于扩展和维护
+- **多模型支持**：无缝切换国内外主流大模型
+- **知识增强**：RAG技术让AI具备领域专业知识
+- **工具生态**：MCP协议支持无限扩展AI能力边界
+- **流式体验**：基于SSE的实时流式输出，打字机效果
 
-# 本项目全程采用Langchain+langgraph+python+vue开发 UI美观大气上档次 任何模型 都可以集成 openai形API的大模型和MCP服务更是可以一秒无缝集成!
+> ⚠️ **注意**：MCP 集成功能需要较新的模型（推荐使用2025年中旬以后发布的模型）才能获得最佳的 Function Calling 体验。系统自带缓存机制，初次加载后响应速度会显著提升。
 
 **作者**: jeikliu@outlook.com
 
 ---
 
-## 开发计划
+## ✨ 核心特性
 
-- ✅️ 基础聊天功能
-- ✅️ 数据库记忆
-- ✅️ 多模型支持
-- [x] RAG知识库
-- ✅️  MCP工具系统
-- [ ] 语音对话
-- [ ] 用户认证系统
-- [ ] 对话历史持久化
-- ✅️ 多语言支持
+### 🤖 智能对话与多模型支持
 
----
+| 特性 | 说明 |
+|------|------|
+| **主流大模型全覆盖** | 原生支持 OpenAI、Anthropic、Google GenAI、阿里云 (DashScope)、字节跳动 (Doubao)、月之暗面 (Kimi)、DeepSeek、智谱AI、百度文心、讯飞星火等 |
+| **极致的流式体验** | 基于 Server-Sent Events (SSE) 的流式输出与打字机效果 |
+| **长期记忆** | 引入 `langgraph-checkpoint-postgres` 提供图状态的持久化，实现精准的历史对话管理和长期上下文跟踪 |
+| **富文本交互** | 完美支持 Markdown 渲染、代码高亮、消息复制与重新生成 |
+| **思考模式** | 支持模型的推理过程展示（Thinking Mode） |
 
+### 📚 RAG 知识库增强检索
 
-## 功能特性
+| 特性 | 说明 |
+|------|------|
+| **全格式文档解析** | 基于 `unstructured` 深度集成，支持 PDF, Excel, Word, CSV, Markdown, TXT 等多格式解析 |
+| **灵活的向量存储** | 支持 **ChromaDB** (本地轻量级) 和 **Qdrant** 等多种向量数据库引擎 |
+| **高级检索能力** | 支持文档的分块 (Chunking)、Embedding 模型切换、并行知识库挂载以及多知识库混合检索 |
+| **异步处理** | 支持大型文档的异步处理与构建进度追踪 |
+| **Embedding模型** | 支持魔塔、OpenAI、HuggingFace等多种Embedding服务 |
 
-### 核心功能
+### 🛠️ Agent 工具系统 (MCP)
 
-- **多模型支持**: 支持 OpenAI、Anthropic、Google、阿里云、字节跳动、Moonshot 等主流大模型
-- **流式对话**: 支持 SSE 流式输出，打字机效果，实时响应
-- **RAG知识库**: 基于向量检索的增强生成，支持 PDF、Excel、Word、Markdown 等多种文档格式
-- **MCP工具扩展**: 支持通过 MCP 协议集成外部工具（搜索、GitHub、12306等）
-- **响应式设计**: 完美适配桌面端和移动端
+| 特性 | 说明 |
+|------|------|
+| **协议原生支持** | 基于 `langchain-mcp-adapters`，标准支持 MCP 协议 |
+| **多传输通道** | 支持 HTTP Streamable、SSE、STDIO 等传输层 |
+| **工具生态** | 内置工具发现、缓存与热重载，可轻松对接 Bing搜索、GitHub操作、12306查询、文件读写等外部扩展 |
+| **动态加载** | 支持运行时动态加载和卸载MCP服务 |
 
-### 智能对话
+### 🎨 现代化前端界面
 
-- [x] 多模型即时切换
-- [x] 流式输出 (Server-Sent Events)
-- [x] Markdown 渲染与代码高亮
-- [x] 消息复制与重新生成
-- [x] 打字机效果
-- [x] 对话历史管理
-
-### RAG知识库
-
-- [x] 多格式文档支持: PDF, Excel, CSV, Word, TXT, Markdown
-- [x] 向量存储与相似度检索 (ChromaDB)
-- [x] 多知识库并行管理
-- [x] 知识库开关控制
-- [x] 自定义 System Prompt
-
-### Agent工具系统 (MCP)
-
-- [x] MCP 协议支持
-- [x] 工具自动发现与配置
-- [x] 支持多种传输方式: HTTP Streamable、SSE、STDIO
-- [x] 内置工具: Bing搜索、GitHub操作、12306查询、智谱搜索等
-- [x] 工具权限管理
+| 特性 | 说明 |
+|------|------|
+| **响应式设计** | 完美适配桌面端、平板和移动端 |
+| **深色模式** | 支持亮色/暗色主题切换 |
+| **代码高亮** | 支持多种编程语言的语法高亮 |
+| **LaTeX支持** | 数学公式渲染支持 |
+| **消息操作** | 支持复制、重新生成、删除等操作 |
 
 ---
 
-## 技术架构
+## 🛠️ 技术架构
 
-### 前端技术栈
+### 系统架构图
 
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| React | 18.2+ | UI框架 |
-| TypeScript | 5.3+ | 类型安全 |
-| Vite | 5.0+ | 构建工具 |
-| Zustand | 4.5+ | 状态管理 |
-| React Router | 6.21+ | 路由管理 |
-| TailwindCSS | 3.4+ | 样式框架 |
-| @tanstack/react-query | 5.17+ | 数据请求 |
-| Lucide React | 0.312+ | 图标库 |
-| date-fns | 3.2+ | 时间处理 |
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              JeikChat 系统架构                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                         前端层 (Frontend)                            │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │   │
+│  │  │   React 18  │  │  TypeScript │  │    Vite 5   │  │ TailwindCSS │ │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘ │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │   │
+│  │  │   Zustand   │  │  React Query│  │ React Router│  │    Axios    │ │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘ │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│                                    ▼ HTTP/WebSocket                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                         API网关层 (FastAPI)                          │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │   │
+│  │  │   CORS      │  │   JWT Auth  │  │  Rate Limit │  │   Swagger   │ │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘ │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│                                    ▼                                        │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                        业务服务层 (Services)                         │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │   │
+│  │  │ Chat Service│  │  RAG Service│  │Tool Service │  │File Service │ │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘ │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│                                    ▼                                        │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                        AI引擎层 (AI Engine)                          │   │
+│  │  ┌─────────────────────────────────────────────────────────────┐   │   │
+│  │  │                      LangChain / LangGraph                   │   │   │
+│  │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │   │   │
+│  │  │  │   ChatModel │  │  Embedding  │  │   Vector Store      │  │   │   │
+│  │  │  │  (多模型)    │  │   (向量化)   │  │ (Chroma/Qdrant)    │  │   │   │
+│  │  │  └─────────────┘  └─────────────┘  └─────────────────────┘  │   │   │
+│  │  └─────────────────────────────────────────────────────────────┘   │   │
+│  │  ┌─────────────────────────────────────────────────────────────┐   │   │
+│  │  │                    MCP 工具系统                              │   │   │
+│  │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │   │   │
+│  │  │  │   STDIO     │  │     SSE     │  │  HTTP Streamable    │  │   │   │
+│  │  │  └─────────────┘  └─────────────┘  └─────────────────────┘  │   │   │
+│  │  └─────────────────────────────────────────────────────────────┘   │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│                                    ▼                                        │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                        数据持久层 (Storage)                          │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │   │
+│  │  │  PostgreSQL │  │  ChromaDB   │  │   Qdrant    │  │     S3      │ │   │
+│  │  │  (对话记忆)  │  │  (向量存储)  │  │  (向量存储)  │  │  (文件存储)  │ │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘ │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-### 后端技术栈
+### 后端技术栈 (Backend)
 
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| Python | 3.11+ | 运行环境 |
-| FastAPI | 0.109+ | Web框架 |
-| SQLAlchemy | 2.x | ORM |
-| Pydantic | 2.x | 数据验证 |
-| LangChain | 1.2 最新版本 | LLM框架 |
-| LangGraph | 最新 | 工作流编排 |
-| ChromaDB | 0.4.x | 向量数据库 |
-| sentence-transformers | 2.x | 文本向量 |
+| 技术/依赖 | 版本 | 用途说明 |
+| :--- | :--- | :--- |
+| **Python** | >=3.11, <3.14 | 核心运行环境 |
+| **FastAPI** | Latest | 高性能异步 Web 框架 |
+| **Uvicorn** | [standard] | ASGI 服务器，支持 HTTP/2 和 WebSocket |
+| **LangChain** | Latest | 大模型应用开发框架 |
+| **LangChain-Community** | Latest | LangChain社区组件 |
+| **LangChain-OpenAI** | Latest | OpenAI模型集成 |
+| **LangChain-DeepSeek** | >=1.0.1 | DeepSeek模型集成 |
+| **LangChain-Google-GenAI** | >=4.2.1 | Google Gemini模型集成 |
+| **LangChain-Chroma** | >=1.1.0 | ChromaDB向量存储集成 |
+| **LangChain-Qdrant** | >=1.1.0 | Qdrant向量存储集成 |
+| **LangChain-MCP-Adapters** | >=0.2.1 | MCP协议适配器 |
+| **LangChain-Unstructured** | >=1.0.1 | 文档解析集成 |
+| **LangGraph** | Latest | 状态化多Agent工作流编排 |
+| **LangGraph-Checkpoint-Postgres** | Latest | PostgreSQL持久化检查点 |
+| **ChromaDB** | Latest | 本地轻量级向量数据库 |
+| **Qdrant** | Latest | 高性能向量数据库 |
+| **Unstructured** | >=0.21.5 | 非结构化数据解析（全功能版） |
+| **Sentence-Transformers** | Latest | 本地Embedding模型 |
+| **PyPDF** | Latest | PDF文档解析 |
+| **Python-Docx** | Latest | Word文档解析 |
+| **OpenPyXL** | Latest | Excel文档解析 |
+| **Pandas** | Latest | 数据处理与分析 |
+| **SQLAlchemy** | Latest | ORM框架 |
+| **Psycopg** | [binary,pool] | PostgreSQL异步驱动 |
+| **Pydantic** | Latest | 数据验证与序列化 |
+| **Pydantic-Settings** | Latest | 配置管理 |
+| **HTTPX** | Latest | 异步HTTP客户端 |
+| **Tenacity** | Latest | 重试机制 |
+| **Boto3** | >=1.42.69 | AWS S3兼容存储 |
+| **DashScope** | >=1.25.14 | 阿里云灵积模型服务 |
+| **Python-Magic** | Latest | 文件类型检测 |
+| **AIOFiles** | Latest | 异步文件操作 |
+| **Python-Jose** | [cryptography] | JWT认证 |
+| **Passlib** | [bcrypt] | 密码哈希 |
+| **Python-Multipart** | Latest | 表单数据解析 |
+| **PyYAML** | Latest | YAML配置解析 |
+| **Pytest** | >=7.0.0 | 单元测试框架 |
+| **Pytest-Asyncio** | >=0.21.0 | 异步测试支持 |
 
-### 支持的大模型
+### 前端技术栈 (Frontend)
 
-- **OpenAI**: GPT-4, GPT-3.5 Turbo, GPT-4o
-- **Anthropic**: Claude 3 Opus, Claude 3 Sonnet, Claude 3.5
-- **Google**: Gemini Pro, Gemini Ultra
-- **阿里云**: 通义千问 (Qwen) 系列
-- **字节跳动**: 豆包 (Doubao)
-- **Moonshot**: 月之暗面 (Kimi)
-- **DeepSeek**: DeepSeek Chat
-- **Hunyuan**: 腾讯混元
-- **本地部署**: Ollama (LLaMA2, Qwen, Mistral等)
-
-### 支持的向量数据库(开发中)
-
-- **ChromaDB** (默认, 轻量级)
-- **Milvus** (企业级)
-- **Pinecone** (云服务)
-- **Qdrant** (开源)
+| 技术/依赖 | 版本 | 用途说明 |
+| :--- | :--- | :--- |
+| **React** | ^18.2.0 | UI组件库 |
+| **React-DOM** | ^18.2.0 | DOM渲染 |
+| **TypeScript** | ^5.3.3 | 类型系统 |
+| **Vite** | ^5.0.12 | 构建工具 |
+| **Zustand** | ^4.5.0 | 轻量级状态管理 |
+| **TanStack React Query** | ^5.17.0 | 服务端状态管理 |
+| **React Router DOM** | ^6.21.3 | 路由管理 |
+| **TailwindCSS** | ^3.4.1 | 原子化CSS框架 |
+| **PostCSS** | ^8.4.33 | CSS处理 |
+| **Autoprefixer** | ^10.4.17 | CSS前缀自动补全 |
+| **Axios** | ^1.6.5 | HTTP客户端 |
+| **React Markdown** | ^9.0.1 | Markdown渲染 |
+| **React Syntax Highlighter** | ^15.5.0 | 代码语法高亮 |
+| **Rehype-Highlight** | ^7.0.0 | 代码高亮插件 |
+| **Rehype-Raw** | ^7.0.0 | 原始HTML支持 |
+| **Remark-GFM** | ^4.0.0 | GitHub风格Markdown |
+| **Lucide React** | ^0.312.0 | 图标库 |
+| **Date-Fns** | ^3.2.0 | 日期处理 |
+| **React-Hot-Toast** | ^2.4.1 | 消息提示 |
+| **UUID** | ^13.0.0 | UUID生成 |
+| **ESLint** | ^8.56.0 | 代码检查 |
+| **@Types/*** | Latest | TypeScript类型定义 |
 
 ---
 
-## 项目结构
+## 📁 目录结构
 
 ```
 aichat/
-├── frontend/                    # 前端项目 (React + TypeScript + Vite)
-│   ├── src/
-│   │   ├── components/          # UI组件
-│   │   │   ├── Chat/            # 聊天相关组件
-│   │   │   └── Common/          # 通用组件
-│   │   ├── pages/               # 页面
-│   │   ├── services/            # API服务
-│   │   ├── stores/              # 状态管理 (Zustand)
-│   │   └── types/               # TypeScript类型
-│   ├── dist/                    # 构建产物
-│   ├── nginx.conf               # Nginx配置
-│   └── package.json
+├── 📁 backend/                    # 后端服务
+│   ├── 📁 agent/                  # AI Agent核心模块
+│   │   ├── 📁 adapter/            # 模型适配器
+│   │   │   └── embedding.py       # Embedding模型适配
+│   │   ├── 📁 demo/               # 示例代码
+│   │   ├── 📁 knowledges/         # 知识库文件存储
+│   │   │   └── vector_store/      # 向量存储目录
+│   │   ├── 📁 mcp/                # MCP工具系统
+│   │   │   ├── mcp.yaml           # MCP服务配置
+│   │   │   ├── mcpToolNode.py     # MCP工具节点
+│   │   │   ├── cache_manager.py   # 缓存管理
+│   │   │   ├── config_loader.py   # 配置加载器
+│   │   │   └── connection_manager.py # 连接管理
+│   │   ├── 📁 prompt/             # 提示词模板
+│   │   ├── 📁 tools/              # 内置工具
+│   │   │   ├── RAG.py             # RAG检索工具
+│   │   │   ├── calculate.py       # 计算工具
+│   │   │   ├── getNowTime.py      # 时间工具
+│   │   │   ├── werther.py         # 天气工具
+│   │   │   └── retrieve_docs.py   # 文档检索
+│   │   └── chatRouterStream.py    # 聊天路由(流式)
+│   ├── 📁 api/                    # API接口层
+│   │   ├── 📁 routes/             # 路由模块
+│   │   │   ├── chat.py            # 聊天接口
+│   │   │   ├── knowledge.py       # 知识库接口
+│   │   │   ├── model.py           # 模型配置接口
+│   │   │   ├── tools.py           # 工具管理接口
+│   │   │   ├── tools_stream.py    # 工具流式接口
+│   │   │   ├── file.py            # 文件接口
+│   │   │   └── mock.py            # 测试模式接口
+│   │   └── response.py            # 统一响应封装
+│   ├── 📁 config/                 # 配置文件
+│   │   ├── app_config.yaml        # 应用配置
+│ │   ├── models.yaml              # 模型配置
+│   │   ├── prompts.yaml           # 提示词配置
+│   │   └── settings.py            # 配置管理类
+│   ├── 📁 fileUntils/             # 文件工具
+│   │   └── RustFs.py              # Rust文件系统
+│   ├── 📁 logs/                   # 日志目录
+│   ├── 📁 schemas/                # Pydantic模型
+│   │   ├── chat.py                # 聊天相关模型
+│   │   └── knowledge.py           # 知识库相关模型
+│   ├── 📁 services/               # 业务服务层
+│   │   ├── llm.py                 # LLM服务
+│   │   ├── rag.py                 # RAG服务
+│   │   ├── knowledge.py           # 知识库服务
+│   │   ├── knowledge_mapping.py   # 知识库映射
+│   │   └── stream.py              # 流式服务
+│   ├── 📁 app/                    # 应用入口
+│   │   └── main.py                # FastAPI主应用
+│   ├── pyproject.toml             # Python项目配置
+│   ├── uv.lock                    # UV锁文件
+│   └── cli.py                     # CLI命令行工具
 │
-├── backend/                     # 后端项目 (Python + FastAPI)
-│   ├── agent/                   # AI Agent核心
-│   │   ├── mcp/                 # MCP工具管理
-│   │   ├── tools/               # 内置工具
-│   │   └── prompt/              # 提示词模板
-│   ├── api/                     # API路由
-│   │   └── routes/              # 路由模块
-│   ├── services/                # 业务逻辑
-│   ├── app/                     # 应用配置
-│   ├── schemas/                 # 数据模型
-│   └── pyproject.toml           # Python配置
+├── 📁 frontend/                   # 前端应用
+│   ├── 📁 src/
+│   │   ├── 📁 components/         # 组件目录
+│   │   │   ├── 📁 Chat/           # 聊天组件
+│   │   │   │   ├── ChatContainer.tsx
+│   │   │   │   ├── InputArea.tsx
+│   │   │   │   └── MessageItem.tsx
+│   │   │   └── 📁 Common/         # 通用组件
+│   │   │       ├── Header.tsx
+│   │   │       └── Sidebar.tsx
+│   │   ├── 📁 pages/              # 页面组件
+│   │   │   ├── ChatPage.tsx       # 聊天页面
+│   │   │   ├── KnowledgePage.tsx  # 知识库页面
+│   │   │   ├── AgentToolsPage.tsx # 工具页面
+│   │   │   └── SettingsPage.tsx   # 设置页面
+│   │   ├── 📁 services/           # API服务
+│   │   │   ├── api.ts             # API封装
+│   │   │   ├── chat.ts            # 聊天服务
+│   │   │   ├── client.ts          # HTTP客户端
+│   │   │   └── knowledge.ts       # 知识库服务
+│   │   ├── 📁 stores/             # 状态管理
+│   │   │   ├── chatStore.ts       # 聊天状态
+│   │   │   ├── knowledgeStore.ts  # 知识库状态
+│   │   │   └── settingsStore.ts   # 设置状态
+│   │   ├── 📁 types/              # TypeScript类型
+│   │   │   ├── chat.ts            # 聊天类型
+│   │   │   ├── knowledge.ts       # 知识库类型
+│   │   │   └── config.ts          # 配置类型
+│   │   ├── 📁 utils/              # 工具函数
+│   │   │   └── toast.tsx          # 消息提示
+│   │   ├── 📁 assets/             # 静态资源
+│   │   │   └── styles/
+│   │   │       └── globals.css    # 全局样式
+│   │   ├── App.tsx                # 根组件
+│   │   └── main.tsx               # 入口文件
+│   ├── 📁 public/                 # 公共资源
+│   │   ├── logo.png               # Logo
+│   │   └── gitee.svg              # Gitee图标
+│   ├── index.html                 # HTML模板
+│   ├── package.json               # NPM配置
+│   ├── tsconfig.json              # TypeScript配置
+│   ├── vite.config.ts             # Vite配置
+│   ├── tailwind.config.js         # Tailwind配置
+│   └── nginx.conf                 # Nginx配置
 │
-├── .env                         # 环境变量
-├── .env.local                   # 本地环境变量
-└── README.md
+├── 📄 README.md                   # 项目说明
+├── 📄 API文档.md                   # API接口文档
+└── 📄 .env                        # 环境变量
 ```
 
 ---
 
-## 快速开始
+## 🚀 快速开始
 
 ### 环境要求
 
-- Python 3.11+
-- Node.js 18+
-- npm 或 yarn
+| 组件 | 版本要求 | 说明 |
+|------|---------|------|
+| Python | >= 3.11, < 3.14 | 推荐使用 3.11 或 3.12 |
+| Node.js | >= 18 | 推荐使用 LTS 版本 |
+| PostgreSQL | >= 14 | 可选，用于高级记忆持久化 |
+| Git | Latest | 代码版本管理 |
 
 ### 1. 克隆项目
 
@@ -192,304 +359,463 @@ git clone <your-repo-url>
 cd aichat
 ```
 
-### 2. 安装依赖
+### 2. 环境配置
+
+#### 后端配置
 
 ```bash
-# 安装后端依赖
 cd backend
+
+# 创建虚拟环境（推荐）
+python -m venv .venv
+
+# 激活虚拟环境
+# Windows:
+.venv\Scripts\activate
+# macOS/Linux:
+source .venv/bin/activate
+
+# 安装依赖（推荐使用uv，更快）
+pip install uv
+uv pip install -e .
+
+# 或者使用pip
 pip install -e .
+```
 
-# 安装前端依赖
+#### 前端配置
+
+```bash
 cd ../frontend
+
+# 安装依赖
 npm install
+
+# 或者使用pnpm（更快）
+pnpm install
 ```
 
-### 3. 配置环境变量
+#### 环境变量配置
 
-创建 `.env` 文件:
+在项目根目录创建 `.env` 文件：
 
-```bash
-# 后端配置
-cd backend
-cp .env.example .env
+```env
+# ============================================================
+# 应用基础配置
+# ============================================================
+APP_NAME="JeikChat"
+APP_VERSION="3.0.0"
+AICHAT_ENVIRONMENT="dev"
+JEIKCHAT_DEV_MODE="true"
 
-# 编辑 .env 文件，配置你的 API Keys
+# ============================================================
+# 服务端口配置
+# ============================================================
+BACKEND_HOST="0.0.0.0"
+BACKEND_PORT="8000"
+VITE_FRONTEND_HOST="::"
+VITE_FRONTEND_PORT="5173"
+
+# ============================================================
+# CORS配置
+# ============================================================
+CORS_ORIGINS="http://localhost:5173,http://127.0.0.1:5173"
+
+# ============================================================
+# 数据库配置
+# ============================================================
+DB_URL="postgresql://username:password@localhost:5432/jeikchat?sslmode=disable"
+# 或者使用SQLite（开发环境）
+# DB_URL="sqlite:///./jeikchat.db"
+
+# ============================================================
+# 向量存储配置
+# ============================================================
+VECTOR_STORE_TYPE="chroma"  # 可选: chroma, qdrant
+
+# ============================================================
+# 文件上传配置
+# ============================================================
+MAX_FILE_SIZE="104857600"  # 100MB
+CHUNK_SIZE="1000"
+CHUNK_OVERLAP="200"
+
+# ============================================================
+# LLM API密钥配置
+# ============================================================
+# OpenAI
+OPENAI_API_KEY="sk-..."
+OPENAI_BASE_URL="https://api.openai.com/v1"
+
+# DeepSeek
+DEEPSEEK_API_KEY="sk-..."
+
+# 阿里云DashScope
+DASHSCOPE_API_KEY="sk-..."
+
+# Google Gemini
+GOOGLE_API_KEY="AIza..."
+
+# 智谱AI
+ZHIPU_API_KEY="..."
+
+# 百度文心
+BAIDU_API_KEY="..."
+BAIDU_SECRET_KEY="..."
+
+# 讯飞星火
+XFYUN_API_KEY="..."
+
+# ============================================================
+# MCP配置
+# ============================================================
+MCP_CONFIG_PATH="./agent/mcp/mcp.yaml"
 ```
 
-### 4. 启动服务
+### 3. 启动服务
 
-**方式一：使用 CLI 工具 (推荐)**
+项目提供了便捷的 CLI 工具 `jeikchat` 用于管理服务。
+
+#### 方式一：一键启动所有服务（推荐）
 
 ```bash
-# 启动前后端服务
+# 在激活了后端虚拟环境的终端中执行
 jeikchat run all
-
 # 或使用简写
 jeikchat run a
 ```
 
-**方式二：分别启动**
+#### 方式二：分别启动
 
 ```bash
-# 终端1: 启动后端
+# 终端1: 启动后端 API (默认 8000 端口)
 cd backend
 jeikchat run back
-# 或: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-# 终端2: 启动前端
+# 终端2: 启动前端页面 (默认 5173 端口)
 cd frontend
 npm run dev
 ```
 
-### 5. 访问系统
+#### 方式三：使用Python直接启动
 
-- **前端**: http://localhost:5173
-- **后端API**: http://localhost:8000
-- **API文档**: http://localhost:8000/docs
+```bash
+# 后端
+cd backend
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
----
+# 前端
+cd frontend
+npm run dev
+```
 
-## CLI 命令详解
+### 4. 访问服务
+
+- 🌍 **Web 界面**: http://localhost:5173
+- 📖 **API 文档 (Swagger)**: http://localhost:8000/docs
+- 🔍 **ReDoc 文档**: http://localhost:8000/redoc
+- ✅ **健康检查**: http://localhost:8000/health
+
+### 5. CLI 命令参考
 
 ```bash
 # 查看帮助
 jeikchat --help
 
-# 启动所有服务
-jeikchat run all
-jeikchat run a          # 简写
+# 启动后端
+jeikchat run back
+
+# 启动后端（测试模式）
+jeikchat run back --test
 
 # 启动前端
-jeikchat run front      # http://localhost:5173
+jeikchat run front
 
-# 启动后端
-jeikchat run back       # http://localhost:8000
+# 一键启动所有服务
+jeikchat run all
 
-# 测试模式 (使用模拟数据)
-jeikchat run all -t
-jeikchat run back -t
-
-# 指定主机和端口
-jeikchat run all --host 0.0.0.0 --port 9000
-jeikchat run all -h :: -p 9000    # IPv6
-
-# 参数说明
-# -t, --test      测试模式
-# -h, --host      监听地址 (默认 127.0.0.1)
-# -p, --port      服务端口
+# 指定端口启动
+jeikchat run back --port 8080
+jeikchat run front --port 3000
 ```
 
 ---
 
-## 部署指南
+## 📦 部署指南
 
-### 方式一：开发模式部署
+### Docker Compose 部署（推荐生产环境）
 
-适合本地测试和开发：
-
-```bash
-jeikchat run all -t --host 0.0.0.0 --port 9000
-```
-
-访问：http://localhost:9000
-
-### 方式二：生产环境部署 (Nginx + 后端)
-
-#### 1. 构建前端
-
-```bash
-cd frontend
-npm run build
-```
-
-#### 2. 配置 Nginx
-
-复制配置文件到 Nginx 目录：
-
-```bash
-# nginx.conf -> nginx/conf/nginx.conf
-# dist/ -> nginx/html/
-```
-
-#### 3. 启动服务
-
-```bash
-# 启动后端
-jeikchat run back
-
-# 启动 Nginx
-nginx.exe
-```
-
-#### 4. 访问方式
-
-- IPv4: http://你的IP
-- IPv6: http://[你的IPv6地址]
-
-### 方式三：Docker 部署
-
-#### 1. 构建镜像
-
-```bash
-# 后端镜像
-cd backend
-docker build -t aichat-backend .
-
-# 前端镜像
-cd ../frontend
-docker build -t aichat-frontend .
-```
-
-#### 2. 使用 Docker Compose
+创建 `docker-compose.yml`：
 
 ```yaml
 version: '3.8'
 
 services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: jeikchat-postgres
+    environment:
+      POSTGRES_USER: jeikchat
+      POSTGRES_PASSWORD: your_password
+      POSTGRES_DB: jeikchat
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  # ChromaDB向量数据库
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: jeikchat-chroma
+    volumes:
+      - chroma_data:/chroma/chroma
+    ports:
+      - "8001:8000"
+    restart: unless-stopped
+
+  # 后端服务
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: jeikchat-backend
+    environment:
+      - DB_URL=postgresql://jeikchat:your_password@postgres:5432/jeikchat
+      - VECTOR_STORE_TYPE=chroma
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
     ports:
       - "8000:8000"
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    volumes:
-      - ./uploads:/app/uploads
-      - ./vector_store:/app/vector_store
+    depends_on:
+      - postgres
+      - chroma
+    restart: unless-stopped
 
+  # 前端服务
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: jeikchat-frontend
     ports:
       - "80:80"
     depends_on:
       - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  chroma_data:
 ```
+
+启动命令：
 
 ```bash
-docker-compose up -d
+docker-compose up -d --build
 ```
 
-### 公网部署注意事项
+### 传统服务器部署
 
-1. **防火墙**: 开放 80, 8000 端口
-2. **域名解析**: 配置 A 记录和 AAAA 记录
-3. **HTTPS**: 建议使用 Let's Encrypt 或 Cloudflare
-4. **安全组**: 云服务器需开放对应端口
+#### 后端部署
+
+```bash
+cd backend
+
+# 安装生产依赖
+pip install -e .
+
+# 使用Gunicorn + Uvicorn启动
+gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+
+# 或使用Uvicorn直接启动
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+#### 前端部署
+
+```bash
+cd frontend
+
+# 构建生产版本
+npm run build
+
+# 将dist目录部署到Nginx
+```
+
+#### Nginx配置示例
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    # 前端静态文件
+    location / {
+        root /var/www/jeikchat/frontend/dist;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API代理
+    location /api/ {
+        proxy_pass http://localhost:8000/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        # SSE支持
+        proxy_buffering off;
+        proxy_read_timeout 86400;
+    }
+
+    # WebSocket支持（如需要）
+    location /ws/ {
+        proxy_pass http://localhost:8000/ws/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
 
 ---
 
-## 环境变量配置
+## 🔧 配置详解
 
-### 后端 (.env)
+### 模型配置 (`backend/config/models.yaml`)
 
-```env
-# 应用配置
-APP_NAME=JeikChat
-APP_VERSION=3.0.0
-APP_DESCRIPTION=JeikChat智能客服系统
+```yaml
+# Embedding模型配置
+embeddings:
+  default_provider: modelscope
+  providers:
+    modelscope:
+      name: "魔塔"
+      api_key: "your-api-key"
+      base_url: "https://api-inference.modelscope.cn/v1"
+      models:
+        - id: "Qwen/Qwen3-Embedding-8B"
+          default: true
+        - id: "bge-small-zh-v1.5"
 
-# 数据库
-DATABASE_URL=sqlite:///./aichat.db
+# LLM提供商配置
+providers:
+  openai:
+    name: "OpenAI"
+    api_key: "sk-..."
+    base_url: "https://api.openai.com/v1"
+    display_name: "OpenAI"
+    models:
+      - id: "gpt-4o"
+        tags: ["多模态"]
+      - id: "gpt-4o-mini"
+    enable: true
 
-# 默认LLM配置
-DEFAULT_LLM_PROVIDER=openai
-DEFAULT_LLM_MODEL=gpt-4
-OPENAI_API_KEY=your-api-key
-OPENAI_BASE_URL=https://api.openai.com/v1
-
-# 可选: 其他模型
-ANTHROPIC_API_KEY=your-anthropic-key
-QWEN_API_KEY=your-qwen-key
-DOUBAO_API_KEY=your-doubao-key
-KIMI_API_KEY=your-kimi-key
-DEEPSEEK_API_KEY=your-deepseek-key
-GOOGLE_API_KEY=your-google-key
-
-# 向量数据库
-EMBEDDING_MODEL=all-MiniLM-L6-v2
-VECTOR_STORE_TYPE=chroma
-
-# 文件上传
-UPLOAD_DIR=./uploads
-MAX_FILE_SIZE=100MB
-MAX_UPLOAD_FILES=10
-
-# CORS
-CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
-
-# MCP配置
-MCP_CONFIG_PATH=./agent/mcp/mcp.yaml
-MCP_TIMEOUT=30
-MCP_AUTO_RELOAD=true
-
-# 日志
-LOG_LEVEL=INFO
+  deepseek:
+    name: "DeepSeek"
+    api_key: "sk-..."
+    base_url: "https://api.deepseek.com"
+    display_name: "DeepSeek"
+    models:
+      - id: "deepseek-chat"
+      - id: "deepseek-reasoner"
+        tags: ["推理"]
+    enable: true
 ```
 
----
-
-## MCP工具配置
-
-MCP (Model Context Protocol) 工具配置位于 `backend/agent/mcp/mcp.yaml`：
+### MCP配置 (`backend/agent/mcp/mcp.yaml`)
 
 ```yaml
 servers:
-  - name: bing-search
-    transport: streamable_http
-    url: https://mcp.api-inference.modelscope.net/7fcb19ec6e704b/mcp
-
-  - name: github-mcp
+  # STDIO模式
+  - name: postgres-full
     transport: stdio
     command: npx
-    args: [-y, "@modelcontextprotocol/server-github"]
-    env:
-      GITHUB_PERSONAL_ACCESS_TOKEN: your-token
+    args: [-y, mcp-postgres-full-access, postgresql://...]
+
+  # SSE模式
+  - name: zhipu-web-search
+    transport: sse
+    url: https://open.bigmodel.cn/api/mcp/web_search/sse?Authorization=...
+
+  # HTTP Streamable模式
+  - name: github
+    transport: streamable_http
+    url: https://mcp.api-inference.modelscope.net/.../mcp
 
 settings:
   timeout: 30
   auto_reload: true
   log_level: info
+
+# 默认选中的工具
+default_selected_tools:
+  - get_current_time
+  - zhipu-web-search-*
 ```
 
 ---
 
-## API文档
+## 🧪 测试
 
-详细的 API 接口文档请参考 [API文档.md](./API文档.md)
+```bash
+cd backend
 
-主要接口包括：
+# 运行所有测试
+pytest
 
-- **模型配置 API**: `/api/config/*`
-- **聊天服务 API**: `/api/chat/*`
-- **知识库 API**: `/api/knowledge/*`
-- **工具服务 API**: `/api/tools/*`
+# 运行异步测试
+pytest -v
 
-在线文档: http://localhost:8000/docs (启动后访问)
+# 测试模式启动
+jeikchat run back --test
+```
 
-## 贡献指南
+---
 
-欢迎提交 Issue 和 Pull Request！
+## 📚 相关文档
+
+- [API接口文档](./API文档.md) - 详细的API接口说明
+- [LangChain文档](https://python.langchain.com/) - LangChain官方文档
+- [LangGraph文档](https://langchain-ai.github.io/langgraph/) - LangGraph官方文档
+- [MCP协议文档](https://modelcontextprotocol.io/) - Model Context Protocol官方文档
+- [FastAPI文档](https://fastapi.tiangolo.com/) - FastAPI官方文档
+- [React文档](https://react.dev/) - React官方文档
+
+---
+
+## 🤝 贡献指南
 
 1. Fork 本仓库
-2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交你的修改 (`git commit -m 'Add some AmazingFeature'`)
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开一个 Pull Request
+5. 创建 Pull Request
 
 ---
 
-## 许可证
+## 📄 许可证
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
-
----
-
-## 联系方式
-
-- **作者**: jeikliu@outlook.com
-- **项目主页**: [GitHub Repository](your-repo-url)
+本项目基于 [MIT](LICENSE) 许可证开源。
 
 ---
 
-<p align="center">
-  Made with ❤️ by JeikLiu
-</p>
+## 💬 联系方式
+
+- 📧 邮箱: jeikliu@outlook.com
+- 🐙 GitHub: [https://github.com/jeikl/JeikChat](https://github.com/jeikl/JeikChat)
+- 🦊 Gitee: [https://gitee.com/jeikl/jeikchat](https://gitee.com/jeikl/jeikchat)
+
+---
+
+<div align="center">
+
+**⭐ 如果这个项目对你有帮助，请给它一个Star! ⭐**
+
+</div>
