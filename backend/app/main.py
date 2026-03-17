@@ -10,10 +10,17 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
+# 减少第三方库的日志噪音
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("multipart").setLevel(logging.WARNING)
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING) # 减少请求日志
+logging.getLogger("watchfiles").setLevel(logging.WARNING)
+
 # 为 agent.chatRouterStream 模块设置更详细的日志级别
 logging.getLogger("agent.chatRouterStream").setLevel(logging.INFO)
 
-from app.config import get_settings
+from config.settings import get_settings
 from api.routes import chat, knowledge, model, tools, tools_stream
 
 settings = get_settings()
@@ -28,7 +35,6 @@ if TEST_MODE:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs("./vector_store", exist_ok=True)
     
     # 初始化 MCP 工具缓存（已注释）

@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { 
   Plus, Upload, FileText, Trash2, RefreshCw, Loader2, X, 
-  Check, BookOpen, FolderOpen, FileUp, AlertCircle 
+  Check, BookOpen, FolderOpen, FileUp, AlertCircle, Edit2
 } from 'lucide-react';
 import { showToast } from '@/utils/toast';
 import { useKnowledgeStore } from '@/stores/knowledgeStore';
@@ -86,6 +86,8 @@ const KnowledgePage = () => {
   } = useKnowledgeStore();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingKnowledgeId, setEditingKnowledgeId] = useState<string | null>(null);
   const [newKnowledgeName, setNewKnowledgeName] = useState('');
   const [newKnowledgeDescription, setNewKnowledgeDescription] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -330,6 +332,34 @@ const KnowledgePage = () => {
     }
   };
 
+  // 打开编辑弹窗
+  const handleOpenEdit = (e: React.MouseEvent, kb: KnowledgeBase) => {
+    e.stopPropagation();
+    setEditingKnowledgeId(kb.id);
+    setNewKnowledgeDescription(kb.description || '');
+    setShowEditModal(true);
+  };
+
+  // 保存编辑
+  const handleSaveEdit = async () => {
+    if (!editingKnowledgeId) return;
+    
+    setIsCreating(true);
+    try {
+      await knowledgeApi.update(editingKnowledgeId, { description: newKnowledgeDescription });
+      updateKnowledgeBase(editingKnowledgeId, { description: newKnowledgeDescription });
+      showToast('知识库已更新', 'success');
+      setShowEditModal(false);
+      setEditingKnowledgeId(null);
+      setNewKnowledgeDescription('');
+    } catch (error) {
+      console.error('更新知识库失败:', error);
+      showToast('更新知识库失败', 'error');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   // 全选/取消全选
   const handleSelectAll = () => {
     const allSelected = selectedKnowledgeIds.length === knowledgeBases.length && knowledgeBases.length > 0;
@@ -477,18 +507,20 @@ const KnowledgePage = () => {
                 </label>
 
                 {/* 内容区 */}
-                <div className="pl-8 pr-16" onClick={() => toggleKnowledgeSelection(kb.id)}>
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-medium text-text-primary truncate pr-2">
+                <div className="pl-8 pr-1" onClick={() => toggleKnowledgeSelection(kb.id)}>
+                  <div className="flex items-start justify-between mb-2 gap-2">
+                    <h3 className="font-medium text-text-primary truncate" title={kb.name}>
                       {kb.name}
                     </h3>
-                    <div className={`
-                      w-2 h-2 rounded-full flex-shrink-0 mt-1.5
-                      ${kb.status === 'ready' ? 'bg-success' :
-                        kb.status === 'processing' ? 'bg-warning animate-pulse' :
-                        'bg-error'
-                      }
-                    `} />
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className={`
+                        w-2 h-2 rounded-full
+                        ${kb.status === 'ready' ? 'bg-success' :
+                          kb.status === 'processing' ? 'bg-warning animate-pulse' :
+                          'bg-error'
+                        }
+                      `} title={kb.status === 'ready' ? '就绪' : kb.status === 'processing' ? '处理中' : '错误'} />
+                    </div>
                   </div>
                   
                   {kb.description && (
@@ -525,39 +557,35 @@ const KnowledgePage = () => {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between text-xs text-text-tertiary">
-                    <div className="flex items-center gap-1">
-                      <FolderOpen className="w-3.5 h-3.5" />
-                      <span>{kb.fileCount || 0} 个文件</span>
+                  {/* 底部信息和操作按钮 */}
+                  <div className="flex items-center justify-between text-xs text-text-tertiary mt-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1">
+                        <FolderOpen className="w-3.5 h-3.5" />
+                        {kb.fileCount || 0} 个文件
+                      </span>
+                      <span>{format(new Date(kb.updatedAt || kb.createdAt || Date.now()), 'yyyy-MM-dd', { locale: zhCN })}</span>
                     </div>
-                    <span>
-                      {format(kb.createdAt, 'yyyy-MM-dd', { locale: zhCN })}
-                    </span>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={(e) => handleOpenEdit(e, kb)}
+                        className="p-1.5 hover:bg-primary/10 rounded-lg transition-colors"
+                        title="编辑知识库描述"
+                      >
+                        <Edit2 className="w-4 h-4 text-text-tertiary hover:text-primary" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteKnowledge(kb.id, kb.name);
+                        }}
+                        className="p-1.5 hover:bg-error/10 hover:text-error rounded-lg transition-colors"
+                        title="删除知识库"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                {/* 操作按钮 */}
-                <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      knowledgeApi.rebuild(kb.id);
-                    }}
-                    className="p-1.5 hover:bg-bg-tertiary rounded-lg transition-colors"
-                    title="重建索引"
-                  >
-                    <RefreshCw className="w-4 h-4 text-text-tertiary" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteKnowledge(kb.id, kb.name);
-                    }}
-                    className="p-1.5 hover:bg-error/10 rounded-lg transition-colors"
-                    title="删除知识库"
-                  >
-                    <Trash2 className="w-4 h-4 text-error" />
-                  </button>
                 </div>
               </div>
             ))}
@@ -761,6 +789,87 @@ const KnowledgePage = () => {
                     <>
                       <Check className="w-4 h-4" />
                       创建知识库
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 编辑知识库弹窗 */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-bg-secondary w-full max-w-lg rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+            {/* 弹窗头部 */}
+            <div className="flex items-center justify-between p-5 border-b border-border bg-bg-tertiary/30">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Edit2 className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary">编辑知识库</h3>
+                  <p className="text-xs text-text-tertiary mt-0.5">修改知识库的描述信息</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingKnowledgeId(null);
+                  setNewKnowledgeDescription('');
+                }}
+                className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors text-text-tertiary hover:text-text-primary"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 弹窗内容 */}
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+              {/* 知识库描述 */}
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">
+                  描述 <span className="text-text-tertiary">（可选）</span>
+                </label>
+                <textarea
+                  value={newKnowledgeDescription}
+                  onChange={(e) => setNewKnowledgeDescription(e.target.value)}
+                  placeholder="输入知识库描述，帮助您区分不同的知识库"
+                  rows={4}
+                  className="w-full px-3 py-2.5 bg-bg-tertiary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-text-primary resize-none"
+                />
+              </div>
+            </div>
+
+            {/* 弹窗底部 */}
+            <div className="flex items-center justify-end p-5 border-t border-border bg-bg-tertiary/30">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingKnowledgeId(null);
+                    setNewKnowledgeDescription('');
+                  }}
+                  disabled={isCreating}
+                  className="px-4 py-2 border border-border rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors disabled:opacity-50"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={isCreating}
+                  className="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      保存中...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      保存修改
                     </>
                   )}
                 </button>

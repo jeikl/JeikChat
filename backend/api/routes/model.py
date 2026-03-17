@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 
 from api.response import success
-from app.config import get_models_config
+from config.settings import get_models_config
 
 router = APIRouter()
 
@@ -213,6 +213,14 @@ async def list_embedding_models():
 
 
 MODEL_CONFIGS = {}
+
+
+@router.get("/config/app-info")
+async def get_app_info():
+    """获取应用信息（包括社交链接）"""
+    models_config = get_models_config()
+    app_info = models_config.get_app_info()
+    return success(data=app_info, msg="获取成功")
 
 
 @router.get("/config/list")

@@ -14,9 +14,12 @@ from services.stream import get_stream_manager
 from agent.chatRouterStream import agent_stream1
 from agent.prompt import get_prompts, build_messages
 
+from services.knowledge_mapping import get_knowledge_mapping_service
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 stream_manager = get_stream_manager()
+knowledge_service = get_knowledge_mapping_service()
 sessions = {}
 uuid_to_session_map = {}
 
@@ -63,7 +66,7 @@ async def send_message(request: SendMessageRequest, http_request: Request):
     # 获取知识库ID列表
     knowledge_base_ids = request.knowledge_base_ids or []
     
-    logger.info(f"[Chat] 模型={model}, 工具={tool_names}, 知识库={knowledge_base_ids}")
+    # logger.info(f"[Chat] 模型={model}, 工具={tool_names}, 知识库={knowledge_base_ids}")
     task_id = str(uuid.uuid4())
     task = stream_manager.register_task(task_id, session_id)
 
@@ -76,32 +79,36 @@ async def send_message(request: SendMessageRequest, http_request: Request):
         
         # 如果有选中的知识库，在system提示词中添加知识库信息
         if knowledge_base_ids:
-            knowledge_names_str = "\n".join([f"- {kb_id}" for kb_id in knowledge_base_ids])
-            knowledge_hint = f"""
+            knowledge_infos = []
+            for kb_id in knowledge_base_ids:
+                kb_info = knowledge_service.get_knowledge_base(kb_id)
+                if kb_info:
+                    desc = kb_info.get("description", "")
+                    info_str = f"- {kb_id}"
+                    if desc:
+                        info_str += f": {desc}"
+                    knowledge_infos.append(info_str)
+                else:
+                    knowledge_infos.append(f"- {kb_id}")
+            
+            knowledge_names_str = "\n".join(knowledge_infos)
+            knowledge_hint = prompts.get_knowledge_base_hint().format(knowledge_names_str=knowledge_names_str)
 
-你有以下知识库可供检索：
-{knowledge_names_str}
-
-当用户询问专业性问题时，请使用 retrieve_documents 工具从上述知识库中检索相关文档作为参考。
-你可以通过 knowledge_base 参数指定要检索的知识库名称，例如：retrieve_documents(query="问题", knowledge_base="知识库名称")
-如果不指定 knowledge_base 参数，则会检索所有知识库。"""
-
-
-            system_prompt = system_prompt + knowledge_hint
-            logger.info(f"[Chat] 已添加知识库提示词: {knowledge_base_ids}")
+            system_prompt = system_prompt + "\n" + knowledge_hint
+            # logger.info(f"[Chat] 已添加知识库提示词: {knowledge_base_ids}")
         
         msg = build_messages(system_prompt, request.content)
 
         try:
-            logger.info(f"[Chat] 开始: {task_id}")
+            # logger.info(f"[Chat] 开始: {task_id}")
             async for chunk in agent_stream1(model, msg, thinking, tool_configs, config, task.is_cancelled):
                 chunk_count += 1
                 if await http_request.is_disconnected():
-                    logger.info(f"客户端断开: {task_id}")
+                    # logger.info(f"客户端断开: {task_id}")
                     disconnected = True
                     break
                 if task.is_cancelled:
-                    logger.info(f"任务取消: {task_id}")
+                    # logger.info(f"任务取消: {task_id}")
                     break
 
                 if chunk.get("reasoning"):

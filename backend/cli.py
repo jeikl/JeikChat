@@ -82,7 +82,19 @@ def start_frontend(port: int = 5173):
 
 def run_backend(test_mode: bool = False, host: str = "0.0.0.0", port: int = 8000):
     """启动后端服务"""
-    print_header("� 启动后端服务")
+    if str(BACKEND_DIR) not in sys.path:
+        sys.path.insert(0, str(BACKEND_DIR))
+        
+    from config.settings import get_start_config
+    config = get_start_config()
+    
+    # 如果命令行没有指定参数，则使用环境变量的配置
+    if host == "0.0.0.0" and config.backend_host:
+        host = config.backend_host
+    if port == 8000 and config.backend_port:
+        port = config.backend_port
+        
+    print_header("🚀 启动后端服务")
     
     proc = start_backend(test_mode=test_mode, host=host, port=port)
     
@@ -106,6 +118,15 @@ def run_backend(test_mode: bool = False, host: str = "0.0.0.0", port: int = 8000
 
 def run_frontend(port: int = 5173):
     """启动前端服务"""
+    if str(BACKEND_DIR) not in sys.path:
+        sys.path.insert(0, str(BACKEND_DIR))
+        
+    from config.settings import get_start_config
+    config = get_start_config()
+    
+    if port == 5173 and config.frontend_port:
+        port = config.frontend_port
+        
     print_header("🎨 启动前端服务")
     
     proc = start_frontend(port=port)
@@ -131,6 +152,17 @@ def run_frontend(port: int = 5173):
 
 def run_all(test_mode: bool = False, backend_port: int = 8000, frontend_port: int = 5173):
     """启动全栈服务"""
+    if str(BACKEND_DIR) not in sys.path:
+        sys.path.insert(0, str(BACKEND_DIR))
+        
+    from config.settings import get_start_config
+    config = get_start_config()
+    
+    if backend_port == 8000 and config.backend_port:
+        backend_port = config.backend_port
+    if frontend_port == 5173 and config.frontend_port:
+        frontend_port = config.frontend_port
+        
     print_header("🌐 启动全栈服务")
     
     backend_proc = start_backend(test_mode=test_mode, port=backend_port)

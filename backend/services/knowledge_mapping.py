@@ -145,18 +145,35 @@ class KnowledgeMappingService:
         if name not in mapping:
             return None
         
+        # 获取字典引用
         info = mapping[name]
         
+        # 标记是否需要保存
+        changed = False
+        
+        # 强制更新描述，即使值看起来一样（可能是类型问题或空格）
         if description is not None:
-            info["description"] = description
+            # 只有当新旧值真的不同时才认为是变化，但为了确保，我们先打印日志
+            current_desc = info.get("description", "")
+            if str(current_desc) != str(description):
+                info["description"] = description
+                changed = True
+            else:
+                logger.info(f"描述未变化: '{current_desc}' -> '{description}'")
         
         if files is not None:
             info["files"] = files
+            changed = True
         
-        info["updatedAt"] = datetime.now().isoformat()
-        
-        self._save_mapping(mapping)
-        logger.info(f"更新知识库: {name}")
+        # 强制更新时间戳，确保至少有一次写入
+        # 如果是前端发起的更新请求，通常意味着用户想要保存
+        if description is not None or files is not None:
+            info["updatedAt"] = datetime.now().isoformat()
+            mapping[name] = info
+            self._save_mapping(mapping)
+            logger.info(f"更新知识库: {name}, description={description}")
+        else:
+            logger.info(f"知识库无需更新: {name}")
         
         return {
             "id": name,

@@ -164,6 +164,16 @@ export const configApi = {
   setActiveConfig: async (id: string): Promise<void> => {
     await apiClient.post('/config/active', { id });
   },
+  /**
+   * 获取应用信息（包括社交链接）
+   * @请求方式 GET /api/config/app-info
+   * @触发位置 Header.tsx - 页面加载时
+   * @返回 { status: 1, data: {...}, msg: "获取成功" }
+   */
+  getAppInfo: async (): Promise<any> => {
+    const response = await apiClient.get<ApiResponse<any>>('/config/app-info');
+    return response.data.data || {};
+  },
 };
 
 // ============================================================

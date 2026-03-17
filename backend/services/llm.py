@@ -20,7 +20,7 @@ if project_root not in sys.path:
 from dotenv import load_dotenv
 load_dotenv(os.path.join(project_root, ".env"), override=True)
 
-from app.config import get_models_config
+from config.settings import get_models_config
 from api.routes.model import get_all_enabled_models
 
 _client_cache = {}

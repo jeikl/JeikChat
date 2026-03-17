@@ -62,76 +62,21 @@ class Settings:
         load_env_file()
         
         self.AICHAT_ENVIRONMENT = os.getenv("AICHAT_ENVIRONMENT", "dev")
-        
-        self.JEIKCHAT_BACKEND_HOST = os.getenv("JEIKCHAT_BACKEND_HOST", "")
-        self.JEIKCHAT_BACKEND_PORT = int(os.getenv("JEIKCHAT_BACKEND_PORT", "8000") or "8000")
-        self.JEIKCHAT_FRONTEND_HOST = os.getenv("JEIKCHAT_FRONTEND_HOST", "")
-        self.JEIKCHAT_FRONTEND_PORT = int(os.getenv("JEIKCHAT_FRONTEND_PORT", "5173") or "5173")
-        self.JEIKCHAT_API_DOCS_HOST = os.getenv("JEIKCHAT_API_DOCS_HOST", "")
-        self.JEIKCHAT_API_DOCS_PORT = int(os.getenv("JEIKCHAT_API_DOCS_PORT", "8000") or "8000")
         self.JEIKCHAT_DEV_MODE = os.getenv("JEIKCHAT_DEV_MODE", "true").lower() == "true"
+        
+        self.BACKEND_HOST = os.getenv("BACKEND_HOST", "0.0.0.0")
+        self.BACKEND_PORT = int(os.getenv("BACKEND_PORT", "8000") or "8000")
+        self.FRONTEND_HOST = os.getenv("VITE_FRONTEND_HOST", "::")
+        self.FRONTEND_PORT = int(os.getenv("VITE_FRONTEND_PORT", "5173") or "5173")
         
         self.APP_NAME = os.getenv("APP_NAME", "")
         self.APP_VERSION = os.getenv("APP_VERSION", "")
-        self.DATABASE_URL = os.getenv("DATABASE_URL", "")
-        self.DEFAULT_LLM_PROVIDER = os.getenv("DEFAULT_LLM_PROVIDER", "")
         
-        self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-        self.OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "")
-        self.OPENAI_MODEL = os.getenv("OPENAI_MODEL", "")
-        self.OPENAI_DISPLAY_NAME = os.getenv("OPENAI_DISPLAY_NAME", "")
+        # 数据库配置
+        self.DB_URL = os.getenv("DB_URL", "postgresql://root:anhuang520@pan.junv.top:5432/postgres?sslmode=disable")
         
-        self.ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-        self.ANTHROPIC_BASE_URL = os.getenv("ANTHROPIC_BASE_URL", "")
-        self.ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "")
-        self.ANTHROPIC_DISPLAY_NAME = os.getenv("ANTHROPIC_DISPLAY_NAME", "")
-        
-        self.GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
-        self.GOOGLE_BASE_URL = os.getenv("GOOGLE_BASE_URL", "")
-        self.GOOGLE_MODEL = os.getenv("GOOGLE_MODEL", "")
-        self.GOOGLE_DISPLAY_NAME = os.getenv("GOOGLE_DISPLAY_NAME", "")
-        
-        self.QWEN_API_KEY = os.getenv("QWEN_API_KEY", "")
-        self.QWEN_BASE_URL = os.getenv("QWEN_BASE_URL", "")
-        self.QWEN_MODEL = os.getenv("QWEN_MODEL", "")
-        self.QWEN_DISPLAY_NAME = os.getenv("QWEN_DISPLAY_NAME", "")
-        
-        self.DOUBAO_API_KEY = os.getenv("DOUBAO_API_KEY", "")
-        self.DOUBAO_BASE_URL = os.getenv("DOUBAO_BASE_URL", "")
-        self.DOUBAO_MODEL = os.getenv("DOUBAO_MODEL", "")
-        self.DOUBAO_DISPLAY_NAME = os.getenv("DOUBAO_DISPLAY_NAME", "")
-        
-        self.MOONSHOT_API_KEY = os.getenv("MOONSHOT_API_KEY", "")
-        self.MOONSHOT_BASE_URL = os.getenv("MOONSHOT_BASE_URL", "")
-        self.MOONSHOT_MODEL = os.getenv("MOONSHOT_MODEL", "")
-        self.MOONSHOT_DISPLAY_NAME = os.getenv("MOONSHOT_DISPLAY_NAME", "")
-        
-        self.ZHIPU_API_KEY = os.getenv("ZHIPU_API_KEY", "")
-        self.ZHIPU_BASE_URL = os.getenv("ZHIPU_BASE_URL", "")
-        self.ZHIPU_MODEL = os.getenv("ZHIPU_MODEL", "")
-        self.ZHIPU_DISPLAY_NAME = os.getenv("ZHIPU_DISPLAY_NAME", "")
-        
-        self.BAIDU_API_KEY = os.getenv("BAIDU_API_KEY", "")
-        self.BAIDU_SECRET_KEY = os.getenv("BAIDU_SECRET_KEY", "")
-        self.BAIDU_BASE_URL = os.getenv("BAIDU_BASE_URL", "")
-        self.BAIDU_MODEL = os.getenv("BAIDU_MODEL", "")
-        self.BAIDU_DISPLAY_NAME = os.getenv("BAIDU_DISPLAY_NAME", "")
-        
-        self.XFYUN_API_KEY = os.getenv("XFYUN_API_KEY", "")
-        self.XFYUN_SECRET_KEY = os.getenv("XFYUN_SECRET_KEY", "")
-        self.XFYUN_APP_ID = os.getenv("XFYUN_APP_ID", "")
-        self.XFYUN_BASE_URL = os.getenv("XFYUN_BASE_URL", "")
-        self.XFYUN_MODEL = os.getenv("XFYUN_MODEL", "")
-        self.XFYUN_DISPLAY_NAME = os.getenv("XFYUN_DISPLAY_NAME", "")
-        
-        self.OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "")
-        self.OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "")
-        self.OLLAMA_DISPLAY_NAME = os.getenv("OLLAMA_DISPLAY_NAME", "")
-        
-        self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "")
         self.VECTOR_STORE_TYPE = os.getenv("VECTOR_STORE_TYPE", "")
         
-        self.UPLOAD_DIR = os.getenv("UPLOAD_DIR", "")
         self.MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", "104857600") or "104857600")
         
         self.CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1000") or "1000")
@@ -157,27 +102,27 @@ class StartConfig:
         load_env_file()
         
         config = cls()
-        config.backend_host = os.getenv("JEIKCHAT_BACKEND_HOST", "::") or "::"
-        config.backend_port = int(os.getenv("JEIKCHAT_BACKEND_PORT", "8000") or "8000")
-        config.frontend_host = os.getenv("VITE_FRONTEND_HOST") or os.getenv("JEIKCHAT_FRONTEND_HOST", "::") or "::"
-        config.frontend_port = int(os.getenv("VITE_FRONTEND_PORT") or os.getenv("JEIKCHAT_FRONTEND_PORT", "5173") or "5173")
+        config.backend_host = os.getenv("BACKEND_HOST", "0.0.0.0")
+        config.backend_port = int(os.getenv("BACKEND_PORT", "8000") or "8000")
+        config.frontend_host = os.getenv("VITE_FRONTEND_HOST", "::")
+        config.frontend_port = int(os.getenv("VITE_FRONTEND_PORT", "5173") or "5173")
         config.dev_mode = os.getenv("JEIKCHAT_DEV_MODE", "true").lower() == "true"
         config.environment = os.getenv("AICHAT_ENVIRONMENT", "dev") or "dev"
-        config.api_docs_host = os.getenv("JEIKCHAT_API_DOCS_HOST", "::") or "::"
-        config.api_docs_port = int(os.getenv("JEIKCHAT_API_DOCS_PORT", "8000") or "8000")
         return config
     
     @property
     def backend_url(self) -> str:
-        return f"http://{self.backend_host}:{self.backend_port}"
+        host = "localhost" if self.backend_host == "0.0.0.0" else self.backend_host
+        return f"http://{host}:{self.backend_port}"
     
     @property
     def frontend_url(self) -> str:
-        return f"http://{self.frontend_host}:{self.frontend_port}"
+        host = "localhost" if self.frontend_host in ["::", "0.0.0.0"] else self.frontend_host
+        return f"http://{host}:{self.frontend_port}"
     
     @property
     def api_docs_url(self) -> str:
-        return f"http://{self.api_docs_host}:{self.api_docs_port}/docs"
+        return f"{self.backend_url}/docs"
 
 
 @lru_cache()
@@ -239,24 +184,41 @@ class ModelsConfigManager:
     
     def _load_config(self):
         """加载YAML配置文件"""
-        config_path = PROJECT_ROOT / "backend" / "app" / "models_config.yaml"
+        config_path = PROJECT_ROOT / "backend" / "config" / "models.yaml"
+        app_info_path = PROJECT_ROOT / "backend" / "config" / "app_info.yaml"
         
+        # 兼容旧路径
+        if not config_path.exists():
+            old_config_path = PROJECT_ROOT / "backend" / "app" / "models_config.yaml"
+            if old_config_path.exists():
+                config_path = old_config_path
+                
         if not config_path.exists():
             print(f"[ModelsConfig] 配置文件不存在: {config_path}")
             self._config_data = {"providers": {}, "model_mappings": {}}
-            return
-        
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                raw_config = yaml.safe_load(f)
-            
-            # 处理环境变量替换
-            self._config_data = self._process_env_vars(raw_config)
-            print(f"[ModelsConfig] 成功加载模型配置，共 {len(self._config_data.get('providers', {}))} 个提供商")
-            
-        except Exception as e:
-            print(f"[ModelsConfig] 加载配置文件失败: {e}")
-            self._config_data = {"providers": {}, "model_mappings": {}}
+        else:
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    raw_config = yaml.safe_load(f)
+                
+                # 处理环境变量替换
+                self._config_data = self._process_env_vars(raw_config)
+                print(f"[ModelsConfig] 成功加载模型配置，共 {len(self._config_data.get('providers', {}))} 个提供商")
+                
+            except Exception as e:
+                print(f"[ModelsConfig] 加载配置文件失败: {e}")
+                self._config_data = {"providers": {}, "model_mappings": {}}
+                
+        # 加载应用信息配置
+        self._app_info = {}
+        if app_info_path.exists():
+            try:
+                with open(app_info_path, 'r', encoding='utf-8') as f:
+                    app_info_config = yaml.safe_load(f)
+                    self._app_info = app_info_config.get("app_info", {})
+                print(f"[AppInfo] 成功加载应用信息配置")
+            except Exception as e:
+                print(f"[AppInfo] 加载应用信息配置失败: {e}")
     
     def _process_env_vars(self, config: Dict) -> Dict:
         """处理配置中的环境变量引用"""
@@ -391,6 +353,27 @@ class ModelsConfigManager:
             if provider.enabled and provider.api_key
         }
     
+    def get_embedding_config(self) -> Dict[str, Any]:
+        """获取默认的 Embedding 模型配置"""
+        embeddings_config = self._config_data.get("embeddings", {})
+        default_provider_key = embeddings_config.get("default_provider", "modelscope")
+        providers = embeddings_config.get("providers", {})
+        
+        provider_info = providers.get(default_provider_key, {})
+        
+        # 查找默认模型
+        models = provider_info.get("models", [])
+        default_model = None
+        if models:
+            default_model = next((m.get("id") for m in models if m.get("default")), models[0].get("id"))
+            
+        return {
+            "provider": default_provider_key,
+            "api_key": provider_info.get("api_key", ""),
+            "base_url": provider_info.get("base_url", ""),
+            "model": default_model
+        }
+        
     def get_model_config(self, model_id: str) -> Optional[ModelConfig]:
         """获取单个模型配置（只返回启用的模型）"""
         provider = self.get_provider_by_model(model_id)
@@ -410,6 +393,10 @@ class ModelsConfigManager:
         """重新加载配置"""
         self._load_config()
 
+
+    def get_app_info(self) -> Dict[str, Any]:
+        """获取应用信息"""
+        return self._app_info
 
 # 全局模型配置管理器实例
 _models_config_manager = None

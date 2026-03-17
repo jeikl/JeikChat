@@ -34,12 +34,12 @@ class Prompts:
             Prompts._initialized = True
 
     def _load_prompts(self):
-        # 新的路径：从 agent/prompt/prompts.yaml 加载
-        prompts_file = PROMPT_DIR / "prompts.yaml"
+        # 新的路径：从 config/prompts.yaml 加载
+        prompts_file = Path(__file__).parent.parent.parent / "config" / "prompts.yaml"
         
-        # 兼容旧路径：如果新路径不存在，尝试从 app/prompts.yaml 加载
+        # 兼容旧路径
         if not prompts_file.exists():
-            old_prompts_file = Path(__file__).parent.parent.parent / "app" / "prompts.yaml"
+            old_prompts_file = Path(__file__).parent / "prompts.yaml"
             if old_prompts_file.exists():
                 prompts_file = old_prompts_file
         
@@ -59,7 +59,7 @@ class Prompts:
         self.CHAT_SYSTEM_PROMPT = "你是一个专业的AI客服助手"
         self.CHAT_WELCOME_PROMPT = "欢迎使用JeikChat智能客服！"
         self.AGENT_SYSTEM_PROMPT = "你是一个智能Agent助手"
-        self.RAG_SYSTEM_PROMPT = "你是一个知识库问答助手"
+        self.RAG_SYSTEM_PROMPT = "你是一个知识库问答助手\n你有以下知识库可供检索：\n{knowledge_names_str}\n当用户询问专业性问题时，请使用 retrieve_documents 工具从上述知识库中检索相关文档作为参考。"
         self.RAG_NO_CONTEXT_PROMPT = "未找到相关信息"
 
     def get_chat_prompt(self) -> str:
@@ -67,6 +67,9 @@ class Prompts:
 
     def get_welcome_prompt(self) -> str:
         return self.CHAT_WELCOME_PROMPT
+        
+    def get_knowledge_base_hint(self) -> str:
+        return self.RAG_SYSTEM_PROMPT
 
     async def get_agent_prompt(self, tool_ids: List[str]) -> str:
         """异步获取Agent提示词"""
@@ -75,7 +78,7 @@ class Prompts:
         import logging
         logger = logging.getLogger(__name__)
         
-        logger.info(f"[DEBUG-PROMPT] 工具IDs={tool_ids}")
+        # logger.info(f"[DEBUG-PROMPT] 工具IDs={tool_ids}")
         
         regular_tools = get_regular_tools()
         cache = await get_cache_manager()
@@ -114,7 +117,7 @@ class Prompts:
         else:
             result = base_prompt.replace("{tools}", "")
         
-        logger.info(f"[DEBUG-PROMPT] 找到工具: {len(tools_desc)}/{len(tool_ids)}")
+        # logger.info(f"[DEBUG-PROMPT] 找到工具: {len(tools_desc)}/{len(tool_ids)}")
         return result
 
     def get_rag_prompt(self) -> str:

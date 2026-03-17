@@ -1,0 +1,22 @@
+# ============================================================
+# 应用信息配置文件
+# ============================================================
+
+app_info:
+  name: "JeikChat"
+  version: "3.0.0"
+  description: "JeikChat 智能客服系统"
+  
+  # 社交链接配置
+  social_links:
+    - name: "Github"
+      url: "https://github.com/jeikl/JeikChat"
+      icon: "Github"
+      
+    - name: "Gitee"
+      url: "https://gitee.com/your-repo"
+      icon: "Code"  # Gitee 没有专属 Lucide 图标，通常用 Code 代替或自定义
+      
+    - name: "Email"
+      url: "mailto:support@jeikchat.com"
+      icon: "Mail"

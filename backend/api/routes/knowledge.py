@@ -130,15 +130,20 @@ async def get_knowledge_base(kb_name: str):
     return success(data=kb, msg="获取成功")
 
 
+from pydantic import BaseModel
+
+class UpdateKnowledgeRequest(BaseModel):
+    description: Optional[str] = None
+
 @router.put("/knowledge/{kb_name}")
 async def update_knowledge_base(
     kb_name: str,
-    description: Optional[str] = Form(None),
+    request: UpdateKnowledgeRequest,
 ):
     """更新知识库信息"""
     kb = knowledge_service.update_knowledge_base(
         name=kb_name,
-        description=description,
+        description=request.description,
     )
     if not kb:
         return success(data=None, msg="知识库不存在")

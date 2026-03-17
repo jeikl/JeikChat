@@ -24,8 +24,11 @@ from agent.tools import get_regular_tools
 from agent.mcp.cache_manager import get_cache_manager
 from agent.mcp.connection_manager import get_connection_manager
 
+from config.settings import Settings
+
 import logging
-DB_URL="postgresql://root:anhuang520@pan.junv.top:5432/postgres?sslmode=disable"
+settings = Settings()
+DB_URL = settings.DB_URL
 
 logger = logging.getLogger(__name__)
 
@@ -131,10 +134,11 @@ async def _get_cached_mcp_client_and_tools(selected_tool_ids: List[str] = None):
                 normalized_selected_ids.add(tool_id)
         
         filtered_tools = [t for t in all_tools if t.name in normalized_selected_ids]
-        logger.info(f"[MCP] 加载 {len(filtered_tools)}/{len(selected_tool_ids)} 个选中工具")
+        # logger.info(f"[MCP] 加载 {len(filtered_tools)}/{len(selected_tool_ids)} 个选中工具")
         all_tools = filtered_tools
     else:
-        logger.info(f"[MCP] 共加载 {len(all_tools)} 个工具")
+        # logger.info(f"[MCP] 共加载 {len(all_tools)} 个工具")
+        pass
 
     # 更新全局缓存
     _mcp_client_global = manager
@@ -374,15 +378,15 @@ async def _get_mcp_tools_with_cached_connection(tool_configs: List) -> List:
                 # 从缓存的客户端获取工具
                 logger.info(f"[DEBUG-MCP] 从缓存连接获取工具...")
                 all_tools = await client.get_tools()
-                logger.info(f"[DEBUG-MCP] 缓存连接获取到 {len(all_tools)} 个工具: {[t.name for t in all_tools]}")
+                # logger.info(f"[DEBUG-MCP] 缓存连接获取到 {len(all_tools)} 个工具: {[t.name for t in all_tools]}")
                 for tool in all_tools:
                     # 直接匹配（现在存储的都是无前缀的工具名）
                     is_match = tool.name in toolids
                     
-                    logger.info(f"[DEBUG-MCP] 检查工具: {tool.name}, 需要的工具: {toolids}, 是否匹配: {is_match}")
+                    # logger.info(f"[DEBUG-MCP] 检查工具: {tool.name}, 需要的工具: {toolids}, 是否匹配: {is_match}")
                     if is_match:
                         selected_tools.append(tool)
-                        logger.info(f"[DEBUG-MCP] 添加MCP工具: {tool.name}")
+                        # logger.info(f"[DEBUG-MCP] 添加MCP工具: {tool.name}")
             except Exception as e:
                 logger.warning(f"[MCP Cache] 缓存连接失效: {service_id}, 错误: {e}")
                 # 连接失效，从缓存中移除
@@ -400,52 +404,53 @@ async def _get_mcp_tools_with_cached_connection(tool_configs: List) -> List:
                     break
     
     # 3. 新建需要的连接
-    logger.info(f"[DEBUG-MCP] 需要新建连接的服务={list(configs_to_connect.keys())}")
+    # logger.info(f"[DEBUG-MCP] 需要新建连接的服务={list(configs_to_connect.keys())}")
     if configs_to_connect:
         logger.info(f"[MCP] 新建连接: {list(configs_to_connect.keys())}")
-        logger.info(f"[DEBUG-MCP] 即将创建 MultiServerMCPClient...")
+        # logger.info(f"[DEBUG-MCP] 即将创建 MultiServerMCPClient...")
         try:
             # 注意：langchain-mcp-adapters 0.1.0+ 不支持 async with
             client = MultiServerMCPClient(configs_to_connect)
             #logger.info(f"[DEBUG-MCP] MultiServerMCPClient 创建成功，即将获取工具...")
             mcp_tools = await client.get_tools()
-            logger.info(f"[DEBUG-MCP] 获取到 {len(mcp_tools)} 个工具")
+            # logger.info(f"[DEBUG-MCP] 获取到 {len(mcp_tools)} 个工具")
             
             # 缓存客户端连接
             for service_id in configs_to_connect.keys():
                 _mcp_connection_cache[service_id] = client
-                logger.info(f"[MCP Cache] 缓存新连接: {service_id}")
+                # logger.info(f"[MCP Cache] 缓存新连接: {service_id}")
             
             # 添加需要的工具
             needed_toolids = []
             for toolids in mcp_services_needed.values():
                 needed_toolids.extend(toolids)
             
-            logger.info(f"[DEBUG-MCP] 获取到的工具列表: {[t.name for t in mcp_tools]}")
+            # logger.info(f"[DEBUG-MCP] 获取到的工具列表: {[t.name for t in mcp_tools]}")
             for tool in mcp_tools:
                 # 直接匹配（现在存储的都是无前缀的工具名）
                 is_match = tool.name in needed_toolids
                 
-                logger.info(f"[DEBUG-MCP] 检查工具: {tool.name}, 是否匹配: {is_match}")
+                # logger.info(f"[DEBUG-MCP] 检查工具: {tool.name}, 是否匹配: {is_match}")
                 if is_match:
                     selected_tools.append(tool)
-                    logger.info(f"[DEBUG-MCP] 添加MCP工具: {tool.name}")
+                    # logger.info(f"[DEBUG-MCP] 添加MCP工具: {tool.name}")
                     
         except Exception as e:
             logger.error(f"[MCP] 新建连接失败: {e}")
             logger.error(f"[DEBUG-MCP] 异常详情: {str(e)}")
     else:
-        logger.info(f"[DEBUG-MCP] 没有需要新建连接的服务")
+        # logger.info(f"[DEBUG-MCP] 没有需要新建连接的服务")
+        pass
     
     # 4. 添加普通工具
-    logger.info(f"[DEBUG-MCP] 开始添加普通工具，数量={len(regular_tools)}")
+    # logger.info(f"[DEBUG-MCP] 开始添加普通工具，数量={len(regular_tools)}")
     regular_tools_dict = _get_regular_tools_dict()
     for toolid in regular_tools:
         if toolid in regular_tools_dict:
             selected_tools.append(regular_tools_dict[toolid])
-            logger.info(f"[DEBUG-MCP] 添加普通工具: {toolid}")
+            # logger.info(f"[DEBUG-MCP] 添加普通工具: {toolid}")
     
-    logger.info(f"[DEBUG-MCP] 工具获取完成，共 {len(selected_tools)} 个工具")
+    # logger.info(f"[DEBUG-MCP] 工具获取完成，共 {len(selected_tools)} 个工具")
     return selected_tools
 
 

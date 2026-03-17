@@ -190,8 +190,6 @@ const Sidebar = ({ isOpen, mobileOpen, onCloseMobile }: SidebarProps) => {
             <div className="space-y-1">
               {sessions
                 .filter(session => session.id !== 'default-session') // 过滤掉默认会话
-                // 反转数组，让最新的会话显示在最上面
-                .reverse()
                 .map((session) => (
                 <div
                   key={session.id}

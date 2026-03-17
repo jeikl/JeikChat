@@ -1,13 +1,20 @@
-import { Menu, ChevronDown, Bot, BookOpen, RotateCcw } from 'lucide-react';
+import { Menu, ChevronDown, Bot, BookOpen, RotateCcw, Github, Mail, Code } from 'lucide-react';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useKnowledgeStore } from '@/stores/knowledgeStore';
 import { useState, useEffect } from 'react';
 import { showToast } from '@/utils/toast';
-import { modelApi } from '@/services/api';
+import { modelApi, configApi } from '@/services/api';
 import type { LLMProvider, LLMConfig } from '@/types/config';
 
 const toLLMProvider = (provider: string): LLMProvider => {
   return provider as LLMProvider;
+};
+
+// 图标映射
+const ICON_MAP: Record<string, any> = {
+  Github,
+  Mail,
+  Code
 };
 
 interface HeaderProps {
@@ -21,6 +28,20 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [showKnowledgeSelector, setShowKnowledgeSelector] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [appInfo, setAppInfo] = useState<any>(null);
+
+  // 获取应用信息
+  useEffect(() => {
+    const fetchAppInfo = async () => {
+      try {
+        const info = await configApi.getAppInfo();
+        setAppInfo(info);
+      } catch (error) {
+        console.error('获取应用信息失败:', error);
+      }
+    };
+    fetchAppInfo();
+  }, []);
 
   const activeConfig = configs.find(c => c.id === activeConfigId);
 
@@ -121,6 +142,27 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
         <h1 className="text-lg font-bold text-text-primary tracking-tight hidden sm:block">
           JeikChat
         </h1>
+
+        {/* 社交链接图标 */}
+        {appInfo?.social_links && (
+          <div className="hidden md:flex items-center gap-1 ml-4 border-l border-border/20 pl-4">
+            {appInfo.social_links.map((link: any, index: number) => {
+              const Icon = ICON_MAP[link.icon] || Code;
+              return (
+                <a
+                  key={index}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-all"
+                  title={link.name}
+                >
+                  <Icon className="w-5 h-5" />
+                </a>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">

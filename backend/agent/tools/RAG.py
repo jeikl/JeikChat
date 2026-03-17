@@ -75,6 +75,11 @@ except ImportError:
     from agent.adapter.embedding import ModelScopeAPIEmbeddings
 
 
+from config.settings import Settings, get_models_config
+settings = Settings()
+models_config = get_models_config()
+embedding_config = models_config.get_embedding_config()
+
 # ========== 单例模式：全局 Embedding 实例 ==========
 class EmbeddingSingleton:
     """Embedding 单例类，确保全局只有一个 embedding 实例"""
@@ -83,14 +88,20 @@ class EmbeddingSingleton:
     @classmethod
     def get_instance(
         cls,
-        model: str = "Qwen/Qwen3-Embedding-8B",
-        api_key: str = "ms-1722d753-a473-4a8a-bb51-8dc77bd86c24"
+        model: str = None,
+        api_key: str = None
     ) -> ModelScopeAPIEmbeddings:
         """获取 Embedding 单例实例"""
         if cls._instance is None:
+            # 优先使用传入参数，否则使用配置
+            m = model or embedding_config.get("model") or "Qwen/Qwen3-Embedding-8B"
+            k = api_key or embedding_config.get("api_key") or "ms-1722d753-a473-4a8a-bb51-8dc77bd86c24"
+            b = embedding_config.get("base_url") or "https://api-inference.modelscope.cn/v1"
+            
             cls._instance = ModelScopeAPIEmbeddings(
-                model=model,
-                api_key=api_key
+                model=m,
+                api_key=k,
+                base_url=b
             )
         return cls._instance
 
@@ -266,9 +277,19 @@ class VectorStoreManager:
 
     def close(self):
         """关闭客户端连接（单例模式下不关闭共享客户端）"""
-        # 单例模式下不关闭客户端，避免影响其他实例
-        # 客户端会在程序结束时自动清理
-        pass
+        # 为了避免文件锁定问题，这里可以显式关闭
+        # 但在单例模式下，这意味着下一次请求需要重新创建连接
+        # 这是一种权衡，为了能够删除文件，必须释放句柄
+        if self.client:
+            try:
+                self.client.close()
+                # 同时清除全局单例引用，强制下次重新创建
+                global _qdrant_client_instance
+                with _qdrant_client_lock:
+                    if _qdrant_client_instance == self.client:
+                        _qdrant_client_instance = None
+            except Exception as e:
+                print(f"❌ 关闭 Qdrant 客户端失败: {e}")
 
     def __enter__(self):
         """上下文管理器入口"""
@@ -483,7 +504,7 @@ def retrieve_documents(query: str, knowledge_base: str = None) -> str:
             manager.close()
             
             if results:
-                writer( f"\n\n✅️ 找到 {len(results)} 条结果\n\n")
+                writer(f"\n\n✅️ 找到 {len(results)} 条结果\n\n")
                 # 按页码排序（处理 int 或 str 类型）
                 def get_page_num(doc):
                     page = doc.metadata.get('page_number', 0)
