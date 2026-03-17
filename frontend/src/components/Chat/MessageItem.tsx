@@ -178,8 +178,8 @@ const MessageItem = ({ message }: MessageItemProps) => {
   return (
     <div className={`w-full py-1.5 md:py-2 transition-colors`}>
       <div className={`max-w-[1400px] mx-auto px-3 md:px-8 flex gap-2 md:gap-3 ${isUser ? 'flex-row-reverse items-start' : ''}`}>
-        {/* 头像 - 始终显示 */}
-        <div className={`flex-shrink-0 ${isUser ? 'mt-0.5' : 'mt-1 md:mt-1'}`}>
+        {/* 头像 - 手机端隐藏Bot头像，保留User头像 */}
+        <div className={`flex-shrink-0 ${isUser ? 'mt-0.5' : 'hidden md:flex mt-1 md:mt-1'}`}>
           {isUser ? (
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#9333ea] flex items-center justify-center shadow-lg shadow-indigo-500/20 border border-white/10 transform hover:scale-105 transition-transform duration-300">
               <User className="w-4.5 h-4.5 md:w-5.5 md:h-5.5 text-white/90" />
