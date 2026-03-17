@@ -481,139 +481,104 @@ async def agent_stream1(
     logger.info(f"[MCP] 工具: MCP={len(mcp_tools)}, 本地={len(local_tools)}, 总计={len(all_tools)}")
     yield {"reasoning": f"✅️ 工具连接成功...\n\n"}
     yield {"reasoning": f"\n\n✈️ 正在初始化大模型: {llm}\n\n"}
-    async with AsyncPostgresSaver.from_conn_string(DB_URL) as checkpoint:
- 
-        model = create_client(llm, thinking)
-        workflow = StateGraph(MessagesState)
- 
-        # 绑定工具
-        llm_with_tools = model.bind_tools(all_tools) if all_tools else model
-
-        tool_node=McpToolNode(all_tools,handle_tool_errors=True)
-
-
-        
-        async def call_model(state):
-            """调用模型，处理流式工具调用组装"""
-            response = await llm_with_tools.ainvoke(state["messages"])
+    print(DB_URL+"\n")
+    try:
+        async with AsyncPostgresSaver.from_conn_string(DB_URL) as checkpoint:
+            print("开始初始化大模型\n")
+            model = create_client(llm, thinking)
+            print("成功\n")
+            workflow = StateGraph(MessagesState)
+     
+            # 绑定工具
+            llm_with_tools = model.bind_tools(all_tools) if all_tools else model
+    
+            tool_node=McpToolNode(all_tools,handle_tool_errors=True)
+    
+    
             
-            return {"messages": [response]}
-
-        
-        workflow.add_node("agent", call_model)
-        workflow.add_edge(START, "agent")
-        
-        if all_tools:
-            workflow.add_node("tools", tool_node)
-            workflow.add_conditional_edges("agent", tools_condition, {"tools": "tools", END: END})
-            workflow.add_edge("tools", "agent")
-        else:
-            workflow.add_edge("agent", END)
-        
-        
-        
-        graph = workflow.compile(checkpointer=checkpoint)
-        yield {"reasoning": f"🚀 大模型初始化成功 !\n\n"}
-        yield {"reasoning": f"⌛ 正在思考中...\n\n"}
-        
-        try:
-            last = "reasoning"
-            hasContent=False
-            async for chunk in graph.astream(msg, config=history, stream_mode=["messages","custom"],version="v2"):
-                if should_stop and should_stop():
-                    #yield {"reasoning": f"\n\n⚠️ 检测到停止信号，大模型初始化已取消\n\n"}
-                    break
-
-                # 处理 tuple 格式的 chunk (stream_mode v2 返回格式)
-                if isinstance(chunk, tuple):
-                    chunk_type, chunk_data = chunk
-                else:
-                    chunk_type = chunk.get("type")
-                    chunk_data = chunk.get("data")
-
-
-
-
-
-                if chunk_type == "custom":#自定义数据输出
-                    #print(f"自定义数据输出:{str(chunk_data)}")
-                    last = "reasoning"
-                    yield {"reasoning": str(chunk_data)}
-
-                # messages 流
-                if chunk_type == "messages":
-                    message, meta = chunk_data
-                    node = meta.get("langgraph_node")
-
-                    # if node:
-                    #     print("节点:", node)
-
-                    # AI消息
-                    if isinstance(message, AIMessageChunk):
-                        
-                        reasoning = message.additional_kwargs.get("reasoning_content")
-                        content = message.content
-                        tool_calls = message.tool_calls
-                        tool_chunks = message.tool_call_chunks
-
-                        # 确保 reasoning 和 content 是字符串类型
-                        if reasoning is not None:
-                            if isinstance(reasoning, list):
-                                reasoning = "".join(str(r) for r in reasoning)
-                            else:
-                                reasoning = str(reasoning)
-
-                        if content is not None:
-                            if isinstance(content, list):
-                                content = "".join(str(c) for c in content)
-                            else:
-                                content = str(content)
-
-                        if reasoning:
-                            #print("思考:", reasoning)
-                            last = "reasoning"
-                            yield {"reasoning": reasoning}
-
-
-                        if content:
-                            #print("回答:", content)
-                            if last == "reasoning" :
-                                if hasContent:
-                                    yield {"content": f"\n\n{content}"}
-                                else:
-                                    hasContent=True
-                                    yield {"content": content}
-                                last = "content"
-                            else:
-                                yield {"content": content}
-                        # #只输出有 name 的 tool_calls
-                        # valid_calls = [tc for tc in tool_calls if tc.get("name")]
-                        # if valid_calls:
-                        #     #print("工具调用:", valid_calls)
-                        #     yield {"reasoning": f"\n\n⌛ 正在调用工具: {valid_calls}\n\n"}
-
-                        # if tool_chunks:
-                        #     if tool_calls:
-                        #         yield {"reasoning": f"\n\n⌛ToolCall完整信息: {tool_chunks}\n\n"}
-                        #     else:
-                        #          yield {"reasoning": f"\n⌛正在准备参数: {tool_chunks}\n"}   
-                    # 工具消息
-                    # elif isinstance(message, ToolMessage):
-
-                    #     if message.content:
-                    #         # 只显示摘要
-                    #         content = message.content
-                    #         if content.startswith("[完成]") or content.startswith("[失败]"):
-                    #             parts = content.split(":", 1)
-                    #             summary = parts[0] if len(parts) == 1 else parts[0] + ":" + parts[1][:500] + "..."
-                    #         else:
-                    #             summary = content[:30] + "..." if len(content) > 30 else content
-                    #         # print("工具结果:", summary)
-                    #         yield {"reasoning": f"\n\n✅️ 调用完成: {summary}\n\n"}
-        except Exception as e:
-            # 此处应有表达式：捕获异常并记录日志
-            logger.error(f"[agent_stream1] 运行时异常: {e}")
-            yield {"reasoning": f"\n\n❌️ 调用失败: {str(e)}\n\n"}
+            async def call_model(state):
+                """调用模型，处理流式工具调用组装"""
+                response = await llm_with_tools.ainvoke(state["messages"])
+                
+                return {"messages": [response]}
+    
+            
+            workflow.add_node("agent", call_model)
+            workflow.add_edge(START, "agent")
+            
+            if all_tools:
+                workflow.add_node("tools", tool_node)
+                workflow.add_conditional_edges("agent", tools_condition, {"tools": "tools", END: END})
+                workflow.add_edge("tools", "agent")
+            else:
+                workflow.add_edge("agent", END)
+            
+            
+            
+            graph = workflow.compile(checkpointer=checkpoint)
+            yield {"reasoning": f"🚀 大模型初始化成功 !\n\n"}
+            yield {"reasoning": f"⌛ 正在思考中...\n\n"}
+            
+            try:
+                last = "reasoning"
+                hasContent=False
+                async for chunk in graph.astream(msg, config=history, stream_mode=["messages","custom"],version="v2"):
+                    if should_stop and should_stop():
+                        #yield {"reasoning": f"\n\n⚠️ 检测到停止信号，大模型初始化已取消\n\n"}
+                        break
+    
+                    # 处理 tuple 格式的 chunk (stream_mode v2 返回格式)
+                    if isinstance(chunk, tuple):
+                        chunk_type, chunk_data = chunk
+                    else:
+                        chunk_type = chunk.get("type")
+                        chunk_data = chunk.get("data")
+    
+    
+    
+    
+    
+                    if chunk_type == "custom":#自定义数据输出
+                        #print(f"自定义数据输出:{str(chunk_data)}")
+                        last = "reasoning"
+                        yield {"reasoning": str(chunk_data)}
+    
+                    # messages 流
+                    if chunk_type == "messages":
+                        message, meta = chunk_data
+                        node = meta.get("langgraph_node")
+    
+                        if node == "agent":
+                            if hasattr(message, "tool_calls") and message.tool_calls:
+                                # if hasattr(message, "content") and message.content:
+                                #     yield {"reasoning": message.content}
+                                continue
+    
+                            if message.content:
+                                if last == "reasoning":
+                                    # print("\n\n\n====开始内容======\n\n\n")
+                                    last = "content"
+                                hasContent=True
+                                yield {"content": message.content}
+    
+    
+                        elif node == "tools":
+                            if message.content:
+                                last = "reasoning"
+                                yield {"reasoning": f"{message.content}\n"}
+    
+            except Exception as e:
+                logger.error(f"[Agent] 推理过程发生异常: {e}", exc_info=True)
+                yield {"reasoning": f"推理发生错误: {str(e)}"}
+            finally:
+                if not hasContent:
+                    # 如果有工具调用但没有内容输出（例如直接通过自定义消息返回了）
+                    yield {"content": "✅ 已完成处理"}
+                
+    except Exception as db_err:
+        logger.error(f"数据库连接或大模型初始化异常: {db_err}", exc_info=True)
+        yield {"reasoning": f"系统内部错误，无法连接数据库: {str(db_err)}"}
+        return
        
 
 

@@ -82,6 +82,9 @@ if not TEST_MODE:
     app.include_router(model.router, prefix="/api", tags=["模型配置"])
     app.include_router(tools.router, prefix="/api", tags=["工具"])
     app.include_router(tools_stream.router, prefix="/api", tags=["工具流式"])
+    
+    from api.routes import file
+    app.include_router(file.router, prefix="/api", tags=["文件"])
 
 
 @app.get("/")

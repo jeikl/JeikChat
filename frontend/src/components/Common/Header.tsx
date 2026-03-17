@@ -244,7 +244,7 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
 
           {showModelSelector && (
             <div className="absolute top-full right-0 mt-2 w-[min(90vw,280px)] sm:w-[280px] bg-[#1E1E1E] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50 flex flex-col h-[200px] sm:h-[260px]">
-              <div className="px-4 py-2 mb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-widest flex-shrink-0">选择模型</div>
+              <div className="px-3 py-2 mb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-widest flex-shrink-0">选择模型</div>
               <div className="overflow-y-scroll overflow-x-scroll flex-1 min-h-0 dropdown-scrollbar [scrollbar-gutter:stable_both-edges]" style={{ touchAction: 'pan-x pan-y' }}>
                 {configs.length === 0 ? (
                   <div className="px-4 py-8 text-sm text-text-tertiary text-center flex flex-col items-center gap-2">
@@ -260,13 +260,13 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
                           useSettingsStore.getState().setActiveConfig(config.id);
                           setShowModelSelector(false);
                         }}
-                        className={`min-w-full w-max text-left px-3 py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center justify-between group/item ${
+                        className={`min-w-full w-max text-left px-2 py-2 rounded-xl text-sm transition-all duration-200 flex items-center justify-between group/item ${
                           activeConfigId === config.id
                             ? 'bg-primary/10 text-primary font-bold'
                             : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
                         }`}
                       >
-                        <div className="flex items-center gap-3 flex-1 min-w-max">
+                        <div className="flex items-center gap-2 flex-1 min-w-max">
                           <Bot className={`w-4 h-4 flex-shrink-0 ${activeConfigId === config.id ? 'text-primary' : 'text-text-quaternary group/item:text-text-primary'}`} />
                           <div className="flex flex-col gap-1 flex-1 pr-4 min-w-max">
                             <span className="whitespace-nowrap">{config.name}</span>

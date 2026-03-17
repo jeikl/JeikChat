@@ -13,6 +13,7 @@ import threading
 import asyncio
 from typing import Optional, Callable
 
+
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
@@ -155,6 +156,13 @@ def create_client(llm: str, thinking: str = "auto"):
             timeout=None,
             max_retries=2,
         )
+    # elif "qwen" in llm.lower():
+    #         client = ChatTongyi(
+    #         model=llm,
+    #         api_key=api_key,
+    #         streaming=True,
+    #         extra_body=extra_params,
+    #     )
     else:
         client = ChatDeepSeek(
             model=llm,

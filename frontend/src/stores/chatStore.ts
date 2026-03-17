@@ -23,7 +23,7 @@ interface ChatState {
   addMessage: (sessionId: string, message: Message) => void;
   updateMessage: (sessionId: string, messageId: string, updates: Partial<Message>) => void;
   clearMessages: (sessionId: string) => void;
-  sendMessage: (content: string, sessionId?: string) => Promise<void>;
+  sendMessage: (content: string | any[], sessionId?: string) => Promise<void>;
   stopGeneration: () => void;
   setThinkingMode: (mode: 'auto' | 'deep' | 'false') => void;
   updateSession: (sessionId: string, updates: Partial<ChatSession>) => void;
@@ -150,7 +150,31 @@ export const useChatStore = create<ChatState>()(
         }
       },
       
-      sendMessage: async (content: string, sessionId?: string) => {
+      sendMessage: async (content: string | any[], sessionId?: string) => {
+        console.log("chatStore sendMessage 收到 content:", content);
+        
+        // 处理文本类型的 content，用于在前端显示，如果是数组则取文本部分
+        let displayContent = '';
+        if (typeof content === 'string') {
+          displayContent = content;
+        } else if (Array.isArray(content)) {
+          const textItem = content.find(item => item.type === 'text');
+          const textContent = textItem ? textItem.text : '[文件消息]';
+          
+          let mediaContent = '';
+          // 如果有多模态文件，也将链接追加到展示内容中，以便在聊天记录中看到
+          // 修改为：将多模态内容拼接到文本前面
+          content.filter(item => item.type !== 'text').forEach(item => {
+             // 适配新的嵌套结构
+             if (item.type === 'image_url') mediaContent += `![image](${item.image_url.url})\n`;
+             else if (item.type === 'video_url') mediaContent += `<video src="${item.video_url.url}" controls width="100%"></video>\n`;
+             else if (item.type === 'audio_url') mediaContent += `<audio src="${item.audio_url.url}" controls></audio>\n`;
+             else mediaContent += `[文件](${item.url})\n`;
+          });
+          
+          displayContent = mediaContent + textContent;
+        }
+
         const { 
           currentSessionId, 
           addSession, 
@@ -179,7 +203,7 @@ export const useChatStore = create<ChatState>()(
         
         // 如果当前没有会话（点击了"开启新对话"），创建一个新会话
         if (!targetSessionId) {
-          const newSession = createNewSession(content);
+          const newSession = createNewSession(displayContent);
           targetSessionId = newSession.id;
           setCurrentSession(newSession.id);
           console.log('创建新会话:', { sessionId: newSession.id, title: newSession.title });
@@ -217,11 +241,11 @@ export const useChatStore = create<ChatState>()(
           console.warn('sessionId 为 null，无法生成 UUID');
         }
         
-        // 添加用户消息
+        // 添加用户消息，存储到前端状态时总是保存 string 类型的 displayContent
         const userMessage: Message = {
           id: uuidv4(),
           role: 'user',
-          content,
+          content: displayContent,
           timestamp: Date.now(),
         };
         addMessage(sessionId!, userMessage);
@@ -292,7 +316,7 @@ export const useChatStore = create<ChatState>()(
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              content,
+              content: content, // 这里直接使用传入的原始 content，如果是数组就会发送数组
               sessionId,
               model: modelIdToSend,
               knowledgeBaseIds: finalKnowledgeIds,

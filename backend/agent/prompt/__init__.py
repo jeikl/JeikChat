@@ -127,13 +127,16 @@ class Prompts:
         return self.RAG_NO_CONTEXT_PROMPT
 
 
-def build_messages(system_prompt: str, user_content: str):
+def build_messages(system_prompt: str, user_content: str | list):
 
     """构建消息列表"""
     msg_list_agent = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_content}
 ]
+
+    print(f"发送数据:\n\n{msg_list_agent}\n\n")
+
     return {"messages": msg_list_agent}
 
 

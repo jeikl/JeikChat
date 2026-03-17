@@ -139,7 +139,7 @@ const ChatContainer = () => {
     }
   }, [messages.length, currentSessionId]);
 
-  const handleSend = async (content: string) => {
+  const handleSend = async (content: string | any[]) => {
     // 直接调用 sendMessage，让 sendMessage 内部处理会话创建逻辑
     // 如果 currentSessionId 为 null，sendMessage 会自动创建新会话
     console.log('handleSend 调用:', { content, currentSessionId });

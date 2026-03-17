@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Union, Dict, Any
 from datetime import datetime
 
 
@@ -43,7 +43,7 @@ class ToolConfig(BaseModel):
 
 
 class SendMessageRequest(BaseModel):
-    content: str
+    content: Union[str, List[Dict[str, Any]]]
     session_id: Optional[str] = Field(default=None, alias="sessionId")
     model: Optional[str] = None
     thinking: Optional[str] = "auto"

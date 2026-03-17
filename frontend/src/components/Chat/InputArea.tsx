@@ -1,22 +1,35 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, Brain, Ban, Plus, Globe, Mic, Square, Send, Loader2, BookOpen, X } from 'lucide-react';
+import { Sparkles, Brain, Ban, Plus, Globe, Mic, Square, Send, Loader2, BookOpen, X, File as FileIcon, Image as ImageIcon, Video as VideoIcon, Music as AudioIcon, FileText as PdfIcon } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useKnowledgeStore } from '@/stores/knowledgeStore';
-import { toolsApi, knowledgeApi } from '@/services/api';
+import { toolsApi, knowledgeApi, fileApi } from '@/services/api';
 import type { Tool } from '@/services/api';
 import type { KnowledgeBase } from '@/types/knowledge';
+import { showToast } from '@/utils/toast';
 
 interface InputAreaProps {
-  onSend: (content: string) => void;
+  onSend: (content: string | any[]) => void;
   onStop?: () => void;
   disabled?: boolean;
   isStreaming?: boolean;
 }
 
+// ... thinkingOptions & WEB_SEARCH_TOOL_IDS ...
+
+// 文件上传状态类型
+interface UploadingFile {
+  id: string;
+  file: File;
+  previewUrl: string;
+  progress: number;
+  status: 'uploading' | 'success' | 'error';
+  url?: string; // 上传成功后的直链
+}
+
 const thinkingOptions = [
   { value: 'auto', label: 'Auto', icon: Sparkles },
-  { value: 'deep', label: 'Thinking', icon: Brain },
+  { value: 'deep', label: 'Think', icon: Brain },
   { value: 'false', label: 'Close', icon: Ban },
 ] as const;
 
@@ -35,34 +48,30 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
   const [showKnowledgeDropdown, setShowKnowledgeDropdown] = useState(false);
   const [isLoadingTools, setIsLoadingTools] = useState(false);
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
+  
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const knowledgeDropdownRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const loadedRef = useRef(false);
   
-  // 使用 shallow 比较或者分离 store 选择，避免整个 chatStore 变化导致 InputArea 重渲染
+  // ... stores ...
   const thinkingMode = useChatStore((state) => state.thinkingMode);
   const setThinkingMode = useChatStore((state) => state.setThinkingMode);
-  
-  // 从 settingsStore 获取工具状态
   const selectedTools = useSettingsStore((state) => state.selectedTools);
   const toolServices = useSettingsStore((state) => state.toolServices);
   const toggleTool = useSettingsStore((state) => state.toggleTool);
   const setToolServices = useSettingsStore((state) => state.setToolServices);
   const applyDefaultTools = useSettingsStore((state) => state.applyDefaultTools);
-  
-  // 从 knowledgeStore 获取知识库状态
   const selectedKnowledgeIds = useKnowledgeStore((state) => state.selectedKnowledgeIds);
   const toggleKnowledgeSelection = useKnowledgeStore((state) => state.toggleKnowledgeSelection);
   const setSelectedKnowledgeIds = useKnowledgeStore((state) => state.setSelectedKnowledgeIds);
   
-  // 检查是否选中了 web 搜索工具
   const isWebSearch = selectedTools.some(t => WEB_SEARCH_TOOL_IDS.includes(t.toolid));
-  
-  // 检查是否选中了知识库
   const hasSelectedKnowledge = selectedKnowledgeIds.length > 0;
-  
-  // 加载知识库列表
+
+  // ... loadKnowledgeBases & loadTools ...
   useEffect(() => {
     const loadKnowledgeBases = async () => {
       try {
@@ -76,14 +85,10 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
     };
     loadKnowledgeBases();
   }, []);
-  
-  // 自动加载工具（如果未加载）
-  // 加载工具的函数
+
   const loadTools = () => {
     setIsLoadingTools(true);
-    
     const loadedServicesList: any[] = [];
-
     toolsApi.listStream(false, {
       onStatus: () => {},
       onService: (service) => {
@@ -92,7 +97,6 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
       },
       onComplete: (_total, _services, defaultSelectedTools) => {
         setIsLoadingTools(false);
-        // 应用后端配置的默认选中工具（仅在用户无选择记录时）
         if (defaultSelectedTools && defaultSelectedTools.length > 0) {
           applyDefaultTools(defaultSelectedTools);
         }
@@ -100,7 +104,6 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
       onError: (error) => {
         console.error('[InputArea] 工具加载失败:', error);
         setIsLoadingTools(false);
-        // 3秒后重试
         setTimeout(() => {
           if (toolServices.length === 0) {
             console.log('[InputArea] 尝试重新加载工具...');
@@ -117,10 +120,9 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
       loadTools();
     }
   }, [toolServices.length, setToolServices]);
-  
-  // 切换 web 搜索工具
+
+  // ... handleWebSearchToggle ...
   const handleWebSearchToggle = () => {
-    // 获取所有 web 搜索工具
     const webSearchTools: Tool[] = [];
     for (const service of toolServices) {
       for (const tool of service.tools) {
@@ -129,28 +131,18 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
         }
       }
     }
-
     if (webSearchTools.length === 0) return;
-
-    // 检查当前是否已选中任何 web 搜索工具
-    const hasSelectedWebSearch = selectedTools.some(t =>
-      WEB_SEARCH_TOOL_IDS.includes(t.toolid)
-    );
-
+    const hasSelectedWebSearch = selectedTools.some(t => WEB_SEARCH_TOOL_IDS.includes(t.toolid));
     if (hasSelectedWebSearch) {
-      // 如果已选中，则取消选中所有 web 搜索工具
       for (const tool of webSearchTools) {
         const isSelected = selectedTools.some(t => t.toolid === tool.toolid);
-        if (isSelected) {
-          toggleTool(tool);
-        }
+        if (isSelected) toggleTool(tool);
       }
     } else {
-      // 如果未选中，则选中第一个 web 搜索工具
       toggleTool(webSearchTools[0]);
     }
   };
-  
+
   const currentOption = thinkingOptions.find(o => o.value === thinkingMode) || thinkingOptions[0];
   const CurrentIcon = currentOption.icon;
 
@@ -161,6 +153,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
     }
   }, [content]);
 
+  // ... handleClickOutside ...
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -174,10 +167,133 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // 处理文件上传
+  const handleFileUpload = async (files: FileList | File[]) => {
+    const newFiles: UploadingFile[] = Array.from(files).map(file => ({
+      id: Math.random().toString(36).substring(7),
+      file,
+      previewUrl: URL.createObjectURL(file),
+      progress: 0,
+      status: 'uploading'
+    }));
+
+    setUploadingFiles(prev => [...prev, ...newFiles]);
+
+    // 逐个上传
+    for (const uploadFile of newFiles) {
+      try {
+        // 模拟进度 (真实进度需要 axios onUploadProgress 支持，当前 api 封装暂不支持)
+        setUploadingFiles(prev => prev.map(f => 
+          f.id === uploadFile.id ? { ...f, progress: 50 } : f
+        ));
+
+        const result = await fileApi.uploadFile(uploadFile.file);
+        
+        if (result.url) {
+          setUploadingFiles(prev => prev.map(f => 
+            f.id === uploadFile.id ? { ...f, status: 'success', progress: 100, url: result.url } : f
+          ));
+        } else {
+          throw new Error("上传返回无效");
+        }
+      } catch (error) {
+        console.error("上传失败:", error);
+        showToast("文件上传失败", "error");
+        setUploadingFiles(prev => prev.map(f => 
+          f.id === uploadFile.id ? { ...f, status: 'error', progress: 0 } : f
+        ));
+      }
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    if (e.clipboardData.files.length > 0) {
+      e.preventDefault();
+      handleFileUpload(e.clipboardData.files);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFileUpload(e.target.files);
+      // 清空 input 允许重复选择同一文件
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const removeFile = (id: string) => {
+    setUploadingFiles(prev => prev.filter(f => f.id !== id));
+  };
+
   const handleSubmit = () => {
-    if (content.trim() && !disabled) {
-      onSend(content);
+    // 如果有文件正在上传，阻止发送
+    if (uploadingFiles.some(f => f.status === 'uploading')) {
+      showToast("请等待文件上传完成", "info");
+      return;
+    }
+
+    if ((content.trim() || uploadingFiles.length > 0) && !disabled) {
+      const uploadedFiles = uploadingFiles.filter(f => f.status === 'success' && f.url);
+      
+      if (uploadedFiles.length > 0) {
+        // 多模态数组格式发送
+        const messageContent: any[] = [];
+        
+        // 1. 添加文本内容
+        if (content.trim()) {
+          messageContent.push({ type: "text", text: content.trim() });
+        } else {
+          messageContent.push({ type: "text", text: "请分析以下文件" });
+        }
+        
+        // 2. 添加文件内容
+        uploadedFiles.forEach(f => {
+          if (f.file.type.startsWith("image/")) {
+            // 图片类型使用嵌套格式
+            messageContent.push({
+              type: "image_url",
+              image_url: {
+                url: f.url
+              }
+            });
+          } else if (f.file.type.startsWith("video/")) {
+            // 视频类型使用嵌套格式
+            messageContent.push({
+              type: "video_url",
+              video_url: {
+                url: f.url
+              }
+            });
+          } else if (f.file.type.startsWith("audio/")) {
+            // 音频类型使用嵌套格式
+            messageContent.push({
+              type: "audio_url",
+              audio_url: {
+                url: f.url
+              }
+            });
+          } else {
+            // 其他文件类型
+            messageContent.push({
+              type: "file",
+              url: f.url
+            });
+          }
+        });
+        
+        // @ts-ignore - 临时允许传递数组，实际需要在父组件和API类型中修改
+        console.log("InputArea 发送多模态数组:", messageContent);
+        onSend(messageContent);
+      } else {
+        // 纯文本格式发送
+        if (content.trim()) {
+          console.log("InputArea 发送纯文本:", content.trim());
+          onSend(content.trim()); 
+        }
+      }
+      
       setContent('');
+      setUploadingFiles([]);
     }
   };
 
@@ -190,18 +306,77 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
 
   return (
     <div className="w-full max-w-[1000px] relative px-4 md:px-8">
-      {/* 
-        由于父级可能存在 overflow 限制，为了确保下拉菜单能够完美显示，
-        我们将菜单通过 absolute 定位挂载在最外层（或者在不受 overflow 限制的层级），
-        这里我们依然把它们放在各自的相对容器里，但去除了所有父级的 overflow-hidden 相关的类
-      */}
-      <div className="relative group gemini-aura pointer-events-auto">
+      {/* 隐藏的文件输入框 */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        className="hidden" 
+        multiple 
+        onChange={handleFileSelect}
+      />
+
+      <div className="relative group gemini-aura pointer-events-auto z-[60]">
         <div className={`
           relative flex flex-col w-full
           bg-[#1E1E1E] transition-all duration-500
           rounded-[24px]
           ${isStreaming ? 'ring-[0.5px] ring-primary/20' : ''}
         `}>
+          {/* 文件预览区 */}
+          {uploadingFiles.length > 0 && (
+            <div className="flex gap-2 px-5 pt-3.5 overflow-x-auto scrollbar-thin pb-2">
+              {uploadingFiles.map(file => {
+                const isImage = file.file.type.startsWith('image/');
+                const isVideo = file.file.type.startsWith('video/');
+                const isAudio = file.file.type.startsWith('audio/');
+                const isPdf = file.file.type === 'application/pdf';
+
+                return (
+                  <div key={file.id} className="relative group/file flex-shrink-0 flex items-center gap-2 pr-2 h-16 rounded-xl overflow-hidden bg-black/20 border border-white/10" title={file.file.name}>
+                    {/* 图标/缩略图部分 */}
+                    <div className="w-16 h-16 flex-shrink-0 bg-[#2a2a2a] relative">
+                      {isImage ? (
+                        <img src={file.previewUrl} alt="preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          {isVideo ? <VideoIcon className="w-7 h-7 text-blue-400" /> :
+                           isAudio ? <AudioIcon className="w-7 h-7 text-purple-400" /> :
+                           isPdf ? <PdfIcon className="w-7 h-7 text-red-400" /> :
+                           <FileIcon className="w-7 h-7 text-gray-400" />}
+                        </div>
+                      )}
+                      
+                      {/* 加载/进度遮罩 */}
+                      {file.status === 'uploading' && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 text-white animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* 文件名部分 (图片也显示文件名，统一风格) */}
+                    <div className="flex flex-col justify-center max-w-[120px] min-w-[60px]">
+                      <span className="text-[12px] text-text-primary truncate font-medium">
+                        {file.file.name}
+                      </span>
+                      <span className="text-[10px] text-text-quaternary uppercase tracking-wider">
+                        {file.file.name.split('.').pop() || 'FILE'}
+                      </span>
+                    </div>
+                    
+                    {/* 删除按钮 */}
+                    <button 
+                      onClick={() => removeFile(file.id)}
+                      className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white hover:bg-red-500/80 transition-colors opacity-0 group-hover/file:opacity-100"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* 文本输入区 */}
           <div className="flex flex-col px-5 pt-3.5 pb-0">
             <textarea
@@ -209,26 +384,30 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
               value={content}
               onChange={(e) => setContent(e.target.value)}
               onKeyDown={handleKeyDown}
+              onPaste={handlePaste}
               placeholder="Ask anything..."
               className="w-full bg-transparent border-none focus:border-none focus:ring-0 focus:outline-none resize-none p-0 text-text-primary placeholder:text-text-quaternary text-[15px] max-h-[160px] leading-relaxed scrollbar-none min-h-[24px] selection:bg-primary/30"
               style={{ boxShadow: 'none', border: 'none', outline: 'none' }}
             />
           </div>
 
-          {/* 底部操作区 - 纵向极度紧凑 */}
-          <div className="flex items-center justify-between px-3 md:px-4 pb-2.5">
-            <div className="flex items-center gap-1 md:gap-2 flex-1 pb-1 flex-wrap sm:flex-nowrap">
-              {/* 左侧附件按钮 - 极小化 */}
-              <button className="p-1.5 rounded-lg hover:bg-white/5 text-text-tertiary hover:text-text-primary transition-all active:scale-90 flex-shrink-0">
-                <Plus className="w-4 h-4" />
-              </button>
-              
-              {/* 思考模式与搜索 - 极简扁平 */}
-              <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+          {/* 底部操作区 */}
+          <div className="flex items-center justify-between px-2 md:px-4 pb-2 gap-2">
+            {/* 左侧附件按钮 */}
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="p-1.5 rounded-lg hover:bg-white/5 text-text-tertiary hover:text-text-primary transition-all active:scale-90 flex-shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+            
+            {/* 中间功能区 - 支持横向滚动，但在大屏上移除 overflow 和遮罩以防裁剪绝对定位的下拉框 */}
+            <div className="flex-1 overflow-x-auto sm:overflow-visible scrollbar-none mask-linear-fade sm:mask-none min-w-0">
+              <div className="flex items-center gap-1 md:gap-2 w-max px-1">
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowThinkingDropdown(!showThinkingDropdown)}
-                    className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-[12px] md:text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
+                    className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-[11px] md:text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
                       thinkingMode === 'deep' 
                         ? 'bg-primary/10 text-primary' 
                         : 'text-text-quaternary hover:bg-white/5 hover:text-text-primary'
@@ -239,7 +418,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                   </button>
                   
                   {showThinkingDropdown && (
-                    <div className="absolute bottom-full left-0 mb-2 w-36 md:w-48 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-[99]">
+                    <div className="fixed sm:absolute sm:bottom-full bottom-[80px] left-[5vw] sm:left-0 mb-2 w-[90vw] sm:w-36 md:w-48 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-[9999] sm:translate-x-0 sm:mb-2 sm:transform-none">
                       {thinkingOptions.map((option) => {
                         const Icon = option.icon;
                         return (
@@ -267,7 +446,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                 <button
                   onClick={toolServices.length === 0 && !isLoadingTools ? loadTools : handleWebSearchToggle}
                   disabled={isLoadingTools}
-                  className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-[12px] md:text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-[11px] md:text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
                     isWebSearch
                       ? 'bg-primary/10 text-primary'
                       : isLoadingTools
@@ -286,7 +465,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                     <Globe className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
                   )}
                   <span className="inline whitespace-nowrap">
-                    {isLoadingTools ? 'Loading...' : toolServices.length === 0 ? 'Retry' : 'Search'}
+                    {isLoadingTools ? 'Loading...' : toolServices.length === 0 ? 'Retry' : 'Web'}
                   </span>
                 </button>
 
@@ -294,7 +473,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                 <div className="relative" ref={knowledgeDropdownRef}>
                   <button
                     onClick={() => setShowKnowledgeDropdown(!showKnowledgeDropdown)}
-                    className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-[12px] md:text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
+                    className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-[11px] md:text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
                       hasSelectedKnowledge
                         ? 'bg-primary/10 text-primary'
                         : 'text-text-quaternary hover:bg-white/5 hover:text-text-primary'
@@ -308,9 +487,23 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                   </button>
 
                   {showKnowledgeDropdown && (
-                    <div className="fixed sm:absolute sm:bottom-full bottom-[80px] left-[5vw] sm:left-0 mb-2 w-[90vw] sm:w-[280px] md:w-[320px] bg-[#161616] border border-white/10 rounded-2xl shadow-2xl p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-[99] flex flex-col h-[200px] sm:h-[240px] sm:translate-x-0">
-                      <div className="px-3 py-2 border-b border-white/10 flex-shrink-0">
+                    <div className="fixed sm:absolute sm:bottom-full bottom-[80px] left-[5vw] sm:left-auto sm:right-0 mb-2 w-[90vw] sm:w-[280px] md:w-[320px] bg-[#161616] border border-white/10 rounded-2xl shadow-2xl p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-[9999] flex flex-col h-[160px] sm:h-[200px] sm:translate-x-0 sm:mb-2 sm:transform-none">
+                      <div className="px-2 py-2 border-b border-white/10 flex-shrink-0 flex items-center justify-between">
                         <p className="text-xs text-text-tertiary">选择要检索的知识库</p>
+                        {knowledgeBases.length > 0 && (
+                          <button
+                            onClick={() => {
+                              if (selectedKnowledgeIds.length === knowledgeBases.length) {
+                                setSelectedKnowledgeIds([]);
+                              } else {
+                                setSelectedKnowledgeIds(knowledgeBases.map(kb => kb.id));
+                              }
+                            }}
+                            className="text-[10px] text-primary hover:text-primary-hover transition-colors"
+                          >
+                            {selectedKnowledgeIds.length === knowledgeBases.length ? '取消全选' : '全选'}
+                          </button>
+                        )}
                       </div>
                       <div className="overflow-y-scroll overflow-x-scroll flex-1 min-h-0 dropdown-scrollbar [scrollbar-gutter:stable_both-edges]" style={{ touchAction: 'pan-x pan-y' }}>
                         {knowledgeBases.length === 0 ? (
@@ -324,7 +517,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                               <button
                                 key={kb.id}
                                 onClick={() => toggleKnowledgeSelection(kb.id)}
-                                className={`min-w-full w-max flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-all duration-200 ${
+                                className={`min-w-full w-max flex items-center gap-2 px-2 py-2 rounded-xl text-[13px] transition-all duration-200 ${
                                   selectedKnowledgeIds.includes(kb.id)
                                     ? 'bg-white/10 text-white font-bold'
                                     : 'text-text-tertiary hover:bg-white/5 hover:text-text-primary'
@@ -347,17 +540,6 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                           </div>
                         )}
                       </div>
-                      {hasSelectedKnowledge && (
-                        <div className="px-3 py-2 border-t border-white/10 flex-shrink-0 mt-1">
-                          <button
-                            onClick={() => setSelectedKnowledgeIds([])}
-                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[12px] text-text-tertiary hover:bg-white/5 hover:text-text-primary transition-all duration-200"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                            <span>清除选择</span>
-                          </button>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -365,7 +547,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
             </div>
 
             {/* 右侧发送与语音 - 圆形按钮风格 */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 flex-shrink-0 pl-1">
               <button className="p-1.5 rounded-full hover:bg-white/5 text-text-tertiary hover:text-text-primary transition-all active:scale-90">
                 <Mic className="w-4 h-4" />
               </button>

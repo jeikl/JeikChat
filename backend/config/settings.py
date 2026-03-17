@@ -83,9 +83,54 @@ class Settings:
         self.CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "200") or "200")
         
         self.CORS_ORIGINS = os.getenv("CORS_ORIGINS", "")
+        
+        # 加载 YAML 配置
+        self._load_yaml_config()
     
-    def get(self, key: str, default: Any = None) -> Any:
-        return getattr(self, key, default)
+    def _load_yaml_config(self):
+        """加载 app_config.yaml 配置"""
+        config_path = PROJECT_ROOT / "backend" / "config" / "app_config.yaml"
+        if not config_path.exists():
+            # 尝试回退到旧的 app_info.yaml (如果存在)
+            config_path = PROJECT_ROOT / "backend" / "config" / "app_info.yaml"
+            
+        if config_path.exists():
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    config = yaml.safe_load(f) or {}
+                    
+                # 应用信息
+                if "app_info" in config:
+                    self.APP_INFO = config["app_info"]
+                    # 如果环境变量没设置，尝试从 yaml 覆盖 APP_NAME 等
+                    if not self.APP_NAME:
+                        self.APP_NAME = config["app_info"].get("name", "")
+                    if not self.APP_VERSION:
+                        self.APP_VERSION = config["app_info"].get("version", "")
+                
+                # 数据库配置 (优先使用环境变量，其次使用 YAML)
+                if "database" in config and config["database"].get("url"):
+                    # 只有当环境变量 DB_URL 是默认值或者未设置时，才考虑使用 YAML
+                    # 这里逻辑是：DB_URL 已经在 _load_from_env 里有了默认值，
+                    # 我们可以简单地覆盖它，或者让 YAML 优先级低于 .env
+                    # 通常 .env 用于本地覆盖，YAML 用于默认配置。
+                    # 但 Settings 类初始化时已经读了 os.getenv。
+                    # 如果 os.getenv 返回的是我们硬编码的默认值，我们可能无法区分。
+                    # 简单策略：如果 .env 里显式设置了（os.environ中有），就用 .env；否则用 YAML。
+                    if "DB_URL" not in os.environ:
+                        self.DB_URL = config["database"]["url"]
+                        
+                # 存储配置
+                if "storage" in config:
+                    self.STORAGE = config["storage"]
+                else:
+                    self.STORAGE = {}
+                    
+            except Exception as e:
+                print(f"加载配置文件失败: {e}")
+        else:
+            self.APP_INFO = {}
+            self.STORAGE = {}
     
     def __getattr__(self, name: str) -> Any:
         try:
@@ -185,6 +230,7 @@ class ModelsConfigManager:
     def _load_config(self):
         """加载YAML配置文件"""
         config_path = PROJECT_ROOT / "backend" / "config" / "models.yaml"
+        app_config_path = PROJECT_ROOT / "backend" / "config" / "app_config.yaml"
         app_info_path = PROJECT_ROOT / "backend" / "config" / "app_info.yaml"
         
         # 兼容旧路径
@@ -209,14 +255,16 @@ class ModelsConfigManager:
                 print(f"[ModelsConfig] 加载配置文件失败: {e}")
                 self._config_data = {"providers": {}, "model_mappings": {}}
                 
-        # 加载应用信息配置
+        # 加载应用信息配置 (优先使用 app_config.yaml)
         self._app_info = {}
-        if app_info_path.exists():
+        target_app_config_path = app_config_path if app_config_path.exists() else app_info_path
+        
+        if target_app_config_path.exists():
             try:
-                with open(app_info_path, 'r', encoding='utf-8') as f:
-                    app_info_config = yaml.safe_load(f)
-                    self._app_info = app_info_config.get("app_info", {})
-                print(f"[AppInfo] 成功加载应用信息配置")
+                with open(target_app_config_path, 'r', encoding='utf-8') as f:
+                    app_config = yaml.safe_load(f)
+                    self._app_info = app_config.get("app_info", {})
+                print(f"[AppInfo] 成功加载应用信息配置: {target_app_config_path}")
             except Exception as e:
                 print(f"[AppInfo] 加载应用信息配置失败: {e}")
     

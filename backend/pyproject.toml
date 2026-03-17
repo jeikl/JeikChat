@@ -40,6 +40,8 @@ dependencies = [
     "langchain-unstructured>=1.0.1",
     "libmagic>=1.0",
     "langchain-qdrant>=1.1.0",
+    "boto3>=1.42.69",
+    "dashscope>=1.25.14",
 ]
 
 [project.optional-dependencies]

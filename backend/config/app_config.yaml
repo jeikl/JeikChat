@@ -1,0 +1,43 @@
+# ============================================================
+# 应用全局配置文件 (App Configuration)
+# ============================================================
+
+app_info:
+  name: "JeikChat"
+  version: "3.0.0"
+  description: "JeikChat 智能客服系统"
+  
+  # 社交链接配置
+  social_links:
+    - name: "Github"
+      url: "https://github.com/jeikl/JeikChat"
+      icon: "Github"
+      
+    - name: "Gitee"
+      url: "https://gitee.com/jeikl/jeikchat"
+      icon: "Gitee"
+      
+    - name: "Email"
+      url: "mailto:jeikliu@outlook.com"
+      icon: "Mail"
+
+# ============================================================
+# 数据库配置 (Database)
+# ============================================================
+database:
+  # 默认 PostgreSQL 连接串
+  url: "postgresql://root:anhuang520@pan.junv.top:5432/postgres?sslmode=disable"
+
+# ============================================================
+# 对象存储配置 (Object Storage / S3)
+# ============================================================
+storage:
+  type: "s3"
+  endpoint_url: "http://2x.junv.top:9000"
+  display_url: "https://aiimg.junsk.cn"
+  access_key: "root"
+  secret_key: "anhuang520"
+  use_ssl: false
+  # region 配置已移除
+  bucket_name: "aiimg"
+  signature_version: "s3v4"

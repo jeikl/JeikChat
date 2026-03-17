@@ -71,8 +71,30 @@ interface MessageItemProps {
   message: Message;
 }
 
+const ImagePreview = ({ src, onClose }: { src: string; onClose: () => void }) => {
+  return (
+    <div 
+      className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center cursor-zoom-out animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <img 
+        src={src} 
+        alt="Preview" 
+        className="max-w-[95vw] max-h-[95vh] object-contain rounded-lg shadow-2xl"
+      />
+      <button 
+        onClick={onClose}
+        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+  );
+};
+
 const MessageItem = ({ message }: MessageItemProps) => {
   const [copied, setCopied] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const isUser = message.role === 'user';
   const isThinking = message.thinking && !message.content;
   const hasReasoning = message.reasoning && message.reasoning.length > 0;
@@ -174,6 +196,36 @@ const MessageItem = ({ message }: MessageItemProps) => {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  // 解析消息内容，分离媒体和文本
+  const { media, text: cleanText } = (() => {
+    const media: { type: 'image' | 'video' | 'audio', url: string }[] = [];
+    let text = message.content || '';
+
+    // 1. 提取 Markdown 图片: ![alt](url)
+    const imgRegex = /!\[.*?\]\((.*?)\)/g;
+    let match;
+    while ((match = imgRegex.exec(text)) !== null) {
+      media.push({ type: 'image', url: match[1] });
+    }
+    text = text.replace(imgRegex, '').trim();
+
+    // 2. 提取 HTML 视频: <video src="url"...>
+    const videoRegex = /<video[^>]+src="([^"]+)"[^>]*>.*?<\/video>/g;
+    while ((match = videoRegex.exec(text)) !== null) {
+      media.push({ type: 'video', url: match[1] });
+    }
+    text = text.replace(videoRegex, '').trim();
+
+    // 3. 提取 HTML 音频: <audio src="url"...>
+    const audioRegex = /<audio[^>]+src="([^"]+)"[^>]*>.*?<\/audio>/g;
+    while ((match = audioRegex.exec(text)) !== null) {
+      media.push({ type: 'audio', url: match[1] });
+    }
+    text = text.replace(audioRegex, '').trim();
+
+    return { media, text };
+  })();
 
   return (
     <div className={`w-full py-1.5 md:py-2 transition-colors`}>
@@ -330,9 +382,63 @@ const MessageItem = ({ message }: MessageItemProps) => {
                             a: ({ node, ...props }) => (
                               <a {...props} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors" />
                             ),
-                            // 图片 - 圆角阴影效果
-                            img: ({ node, ...props }) => (
-                              <img {...props} className="max-w-full h-auto rounded-xl my-3 border border-white/[0.08] shadow-lg" loading="lazy" />
+                            // 图片 - 智能识别视频/音频
+                            img: ({ node, ...props }) => {
+                              const src = props.src || '';
+                              const isVideo = /\.(mp4|webm|ogg|mov)(?:\?|$)/i.test(src);
+                              const isAudio = /\.(mp3|wav|ogg|m4a)(?:\?|$)/i.test(src);
+
+                              if (isVideo) {
+                                return (
+                                  <div className="my-3 rounded-xl overflow-hidden border border-white/[0.08] shadow-lg bg-black/20">
+                                    <video 
+                                      src={src} 
+                                      controls 
+                                      className="max-w-full w-full" 
+                                      preload="metadata"
+                                    />
+                                  </div>
+                                );
+                              }
+
+                              if (isAudio) {
+                                return (
+                                  <div className="my-3 rounded-lg border border-white/[0.08] shadow-sm bg-white/[0.05] p-2">
+                                    <audio 
+                                      src={src} 
+                                      controls 
+                                      className="w-full" 
+                                    />
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <img 
+                                  {...props} 
+                                  className="max-w-full h-auto rounded-xl my-3 border border-white/[0.08] shadow-lg" 
+                                  loading="lazy" 
+                                />
+                              );
+                            },
+                            // 视频标签支持
+                            video: ({ node, ...props }) => (
+                              <div className="my-3 rounded-xl overflow-hidden border border-white/[0.08] shadow-lg bg-black/20">
+                                <video 
+                                  {...props} 
+                                  className="max-w-full w-full" 
+                                  preload="metadata"
+                                />
+                              </div>
+                            ),
+                            // 音频标签支持
+                            audio: ({ node, ...props }) => (
+                              <div className="my-3 rounded-lg border border-white/[0.08] shadow-sm bg-white/[0.05] p-2">
+                                <audio 
+                                  {...props} 
+                                  className="w-full" 
+                                />
+                              </div>
                             ),
                             // 表格 - 现代化样式
                             table: ({ node, ...props }) => (
@@ -414,9 +520,40 @@ const MessageItem = ({ message }: MessageItemProps) => {
               </div>
             )}
 
-            {/* 内容气泡和操作栏 */}
-            
-              {/* 内容气泡 - 采用半透明"磨砂玻璃"质感，优雅悬浮 */}
+            {/* 媒体展示区 - 独立于气泡之外，类似豆包风格 */}
+            {media.length > 0 && (
+              <div className={`flex flex-wrap gap-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
+                {media.map((item, index) => (
+                  <div key={index} className="relative group overflow-hidden rounded-xl border border-white/10 shadow-lg cursor-zoom-in bg-black/20 hover:border-white/20 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+                    {item.type === 'image' && (
+                      <img 
+                        src={item.url} 
+                        alt="media" 
+                        className="w-auto h-32 md:h-40 object-cover"
+                        onClick={() => setPreviewImage(item.url)}
+                      />
+                    )}
+                    {item.type === 'video' && (
+                      <video 
+                        src={item.url} 
+                        controls 
+                        className="w-auto h-32 md:h-40 max-w-[200px]"
+                      />
+                    )}
+                    {item.type === 'audio' && (
+                      <div className="w-48 h-12 flex items-center justify-center bg-white/5 p-2">
+                        <audio src={item.url} controls className="w-full h-8" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 文本内容气泡和操作栏 */}
+            {(cleanText || (!media.length && !cleanText)) && (
+              <>
+                {/* 内容气泡 - 采用半透明"磨砂玻璃"质感，优雅悬浮 */}
                 <div className={`
                   ${isUser 
                     ? 'bg-[#2b2d31] border border-white/10 rounded-2xl px-3 py-2 text-white max-w-[85%] md:max-w-[75%] text-left text-[15px] md:text-[16px] shadow-md shadow-black/20 w-fit' 
@@ -425,10 +562,15 @@ const MessageItem = ({ message }: MessageItemProps) => {
                 `}>
                   <div className={`prose max-w-none ${isUser ? 'prose-invert' : 'prose-invert'}`}>
                     <ReactMarkdown
-                      children={message.content}
+                      children={cleanText}
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw]}
                       components={{
+                        // 移除之前的 img 渲染逻辑，因为已经在外部渲染了
+                        img: () => null, 
+                        // 移除之前的 video/audio 渲染逻辑，因为已经在外部渲染了
+                        video: () => null,
+                        audio: () => null,
                         code({ node, className, children, ...props }) {
                           const match = /language-(\w+)/.exec(className || '');
                           const inline = !match;
@@ -528,13 +670,65 @@ const MessageItem = ({ message }: MessageItemProps) => {
                             className="text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
                           />
                         ),
-                        // 图片
-                        img: ({ node, ...props }) => (
-                          <img 
-                            {...props} 
-                            className="max-w-full h-auto rounded-2xl my-6 border border-white/[0.08] shadow-xl"
-                            loading="lazy"
-                          />
+                        // 图片 - 智能识别视频/音频
+                        img: ({ node, ...props }) => {
+                          const src = props.src || '';
+                          // 支持带参数的 URL (如 ?token=...)
+                          const isVideo = /\.(mp4|webm|ogg|mov)(?:\?|$)/i.test(src);
+                          const isAudio = /\.(mp3|wav|ogg|m4a)(?:\?|$)/i.test(src);
+
+                          if (isVideo) {
+                            return (
+                              <div className="my-4 rounded-2xl overflow-hidden border border-white/[0.08] shadow-xl bg-black/20">
+                                <video 
+                                  src={src} 
+                                  controls 
+                                  className="max-w-full w-full" 
+                                  preload="metadata"
+                                />
+                              </div>
+                            );
+                          }
+
+                          if (isAudio) {
+                            return (
+                              <div className="my-4 rounded-xl border border-white/[0.08] shadow-md bg-white/[0.05] p-2">
+                                <audio 
+                                  src={src} 
+                                  controls 
+                                  className="w-full" 
+                                />
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <img 
+                              {...props} 
+                              className="max-w-[200px] max-h-[200px] w-auto h-auto rounded-xl my-2 border border-white/[0.08] shadow-md object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
+                              loading="lazy"
+                              onClick={() => setPreviewImage(src)}
+                            />
+                          );
+                        },
+                        // 视频标签支持
+                        video: ({ node, ...props }) => (
+                          <div className="my-4 rounded-2xl overflow-hidden border border-white/[0.08] shadow-xl bg-black/20">
+                            <video 
+                              {...props} 
+                              className="max-w-full w-full" 
+                              preload="metadata"
+                            />
+                          </div>
+                        ),
+                        // 音频标签支持
+                        audio: ({ node, ...props }) => (
+                          <div className="my-4 rounded-xl border border-white/[0.08] shadow-md bg-white/[0.05] p-2">
+                            <audio 
+                              {...props} 
+                              className="w-full" 
+                            />
+                          </div>
                         ),
                         // 表格 - 主题色表头
                         table: ({ node, ...props }) => (
@@ -638,10 +832,14 @@ const MessageItem = ({ message }: MessageItemProps) => {
                     })()}
                   </span>
                 </div>
+              </>
+            )}
             
           </div>
         </div>
       </div>
+      {/* 图片预览 Modal */}
+      {previewImage && <ImagePreview src={previewImage} onClose={() => setPreviewImage(null)} />}
     </div>
   );
 };
