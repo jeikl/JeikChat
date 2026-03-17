@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, Zap, Ban, Plus, Globe, Mic, Square, Send, Loader2, BookOpen, X } from 'lucide-react';
+import { Sparkles, Brain, Ban, Plus, Globe, Mic, Square, Send, Loader2, BookOpen, X } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useKnowledgeStore } from '@/stores/knowledgeStore';
@@ -16,7 +16,7 @@ interface InputAreaProps {
 
 const thinkingOptions = [
   { value: 'auto', label: 'Auto', icon: Sparkles },
-  { value: 'deep', label: 'Thinking', icon: Zap },
+  { value: 'deep', label: 'Thinking', icon: Brain },
   { value: 'false', label: 'Close', icon: Ban },
 ] as const;
 
@@ -40,6 +40,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
   const knowledgeDropdownRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(false);
   
+  // 使用 shallow 比较或者分离 store 选择，避免整个 chatStore 变化导致 InputArea 重渲染
   const thinkingMode = useChatStore((state) => state.thinkingMode);
   const setThinkingMode = useChatStore((state) => state.setThinkingMode);
   
@@ -189,15 +190,19 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
 
   return (
     <div className="w-full max-w-[1000px] relative px-4 md:px-8">
-      {/* 输入框主体 - 极致纤长且扁平的"指挥棒"感 */}
+      {/* 
+        由于父级可能存在 overflow 限制，为了确保下拉菜单能够完美显示，
+        我们将菜单通过 absolute 定位挂载在最外层（或者在不受 overflow 限制的层级），
+        这里我们依然把它们放在各自的相对容器里，但去除了所有父级的 overflow-hidden 相关的类
+      */}
       <div className="relative group gemini-aura pointer-events-auto">
         <div className={`
           relative flex flex-col w-full
           bg-[#1E1E1E] transition-all duration-500
-          rounded-[24px] overflow-visible
+          rounded-[24px]
           ${isStreaming ? 'ring-[0.5px] ring-primary/20' : ''}
         `}>
-          {/* 文本输入区 - 纵向极致压缩 50% */}
+          {/* 文本输入区 */}
           <div className="flex flex-col px-5 pt-3.5 pb-0">
             <textarea
               ref={textareaRef}
@@ -211,30 +216,30 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
           </div>
 
           {/* 底部操作区 - 纵向极度紧凑 */}
-          <div className="flex items-center justify-between px-4 pb-2.5">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between px-3 md:px-4 pb-2.5">
+            <div className="flex items-center gap-1 md:gap-2 flex-1 pb-1 flex-wrap sm:flex-nowrap">
               {/* 左侧附件按钮 - 极小化 */}
               <button className="p-1.5 rounded-lg hover:bg-white/5 text-text-tertiary hover:text-text-primary transition-all active:scale-90 flex-shrink-0">
                 <Plus className="w-4 h-4" />
               </button>
               
               {/* 思考模式与搜索 - 极简扁平 */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowThinkingDropdown(!showThinkingDropdown)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
+                    className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-[12px] md:text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
                       thinkingMode === 'deep' 
                         ? 'bg-primary/10 text-primary' 
                         : 'text-text-quaternary hover:bg-white/5 hover:text-text-primary'
                     }`}
                   >
-                    <CurrentIcon className={`w-4 h-4 flex-shrink-0 ${thinkingMode === 'deep' ? 'animate-pulse' : ''}`} />
+                    <CurrentIcon className={`w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0 ${thinkingMode === 'deep' ? 'animate-pulse' : ''}`} />
                     <span className="inline whitespace-nowrap">{currentOption.label}</span>
                   </button>
                   
                   {showThinkingDropdown && (
-                    <div className="absolute bottom-full left-0 mb-4 w-48 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-[100]">
+                    <div className="absolute bottom-full left-0 mb-2 w-36 md:w-48 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-[99]">
                       {thinkingOptions.map((option) => {
                         const Icon = option.icon;
                         return (
@@ -244,7 +249,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                               setThinkingMode(option.value);
                               setShowThinkingDropdown(false);
                             }}
-                            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-all duration-200 ${
+                            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[12px] md:text-[13px] transition-all duration-200 ${
                               thinkingMode === option.value
                                 ? 'bg-white/10 text-white font-bold'
                                 : 'text-text-tertiary hover:bg-white/5 hover:text-text-primary'
@@ -262,7 +267,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                 <button
                   onClick={toolServices.length === 0 && !isLoadingTools ? loadTools : handleWebSearchToggle}
                   disabled={isLoadingTools}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-[12px] md:text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
                     isWebSearch
                       ? 'bg-primary/10 text-primary'
                       : isLoadingTools
@@ -274,11 +279,11 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                   title={isLoadingTools ? '正在加载工具...' : isWebSearch ? '点击取消网络搜索' : toolServices.length === 0 ? '点击重新加载工具' : '点击启用网络搜索'}
                 >
                   {isLoadingTools ? (
-                    <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin" />
+                    <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0 animate-spin" />
                   ) : toolServices.length === 0 ? (
-                    <Globe className="w-4 h-4 flex-shrink-0 opacity-50" />
+                    <Globe className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0 opacity-50" />
                   ) : (
-                    <Globe className="w-4 h-4 flex-shrink-0" />
+                    <Globe className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
                   )}
                   <span className="inline whitespace-nowrap">
                     {isLoadingTools ? 'Loading...' : toolServices.length === 0 ? 'Retry' : 'Search'}
@@ -289,59 +294,61 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
                 <div className="relative" ref={knowledgeDropdownRef}>
                   <button
                     onClick={() => setShowKnowledgeDropdown(!showKnowledgeDropdown)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
+                    className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-[12px] md:text-[13px] font-bold tracking-tight transition-all duration-300 min-w-fit whitespace-nowrap ${
                       hasSelectedKnowledge
                         ? 'bg-primary/10 text-primary'
                         : 'text-text-quaternary hover:bg-white/5 hover:text-text-primary'
                     }`}
                     title={hasSelectedKnowledge ? `已选择 ${selectedKnowledgeIds.length} 个知识库` : '点击选择知识库'}
                   >
-                    <BookOpen className="w-4 h-4 flex-shrink-0" />
+                    <BookOpen className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
                     <span className="inline whitespace-nowrap">
                       {hasSelectedKnowledge ? `知识库 (${selectedKnowledgeIds.length})` : '知识库'}
                     </span>
                   </button>
 
                   {showKnowledgeDropdown && (
-                    <div className="absolute bottom-full left-0 mb-4 w-64 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-[100]">
-                      <div className="px-3 py-2 border-b border-white/10">
+                    <div className="fixed sm:absolute sm:bottom-full bottom-[80px] left-[5vw] sm:left-0 mb-2 w-[90vw] sm:w-[280px] md:w-[320px] bg-[#161616] border border-white/10 rounded-2xl shadow-2xl p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-[99] flex flex-col h-[200px] sm:h-[240px] sm:translate-x-0">
+                      <div className="px-3 py-2 border-b border-white/10 flex-shrink-0">
                         <p className="text-xs text-text-tertiary">选择要检索的知识库</p>
                       </div>
-                      {knowledgeBases.length === 0 ? (
-                        <div className="px-3 py-4 text-center">
-                          <p className="text-xs text-text-tertiary">暂无知识库</p>
-                          <p className="text-[10px] text-text-quaternary mt-1">请先在知识库管理页面创建</p>
-                        </div>
-                      ) : (
-                        <div className="max-h-48 overflow-y-auto py-1">
-                          {knowledgeBases.map((kb) => (
-                            <button
-                              key={kb.id}
-                              onClick={() => toggleKnowledgeSelection(kb.id)}
-                              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-all duration-200 ${
-                                selectedKnowledgeIds.includes(kb.id)
-                                  ? 'bg-white/10 text-white font-bold'
-                                  : 'text-text-tertiary hover:bg-white/5 hover:text-text-primary'
-                              }`}
-                            >
-                              <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
-                                selectedKnowledgeIds.includes(kb.id)
-                                  ? 'bg-primary border-primary'
-                                  : 'border-text-tertiary'
-                              }`}>
-                                {selectedKnowledgeIds.includes(kb.id) && (
-                                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <div className="overflow-y-scroll overflow-x-scroll flex-1 min-h-0 dropdown-scrollbar [scrollbar-gutter:stable_both-edges]" style={{ touchAction: 'pan-x pan-y' }}>
+                        {knowledgeBases.length === 0 ? (
+                          <div className="px-3 py-4 text-center">
+                            <p className="text-xs text-text-tertiary">暂无知识库</p>
+                            <p className="text-[10px] text-text-quaternary mt-1">请先在知识库管理页面创建</p>
+                          </div>
+                        ) : (
+                          <div className="py-1 min-w-max">
+                            {knowledgeBases.map((kb) => (
+                              <button
+                                key={kb.id}
+                                onClick={() => toggleKnowledgeSelection(kb.id)}
+                                className={`min-w-full w-max flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] transition-all duration-200 ${
+                                  selectedKnowledgeIds.includes(kb.id)
+                                    ? 'bg-white/10 text-white font-bold'
+                                    : 'text-text-tertiary hover:bg-white/5 hover:text-text-primary'
+                                }`}
+                              >
+                                <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                                  selectedKnowledgeIds.includes(kb.id)
+                                    ? 'bg-primary border-primary'
+                                    : 'border-text-tertiary'
+                                }`}>
+                                  {selectedKnowledgeIds.includes(kb.id) && (
+                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                   </svg>
                                 )}
                               </div>
-                              <span className="truncate text-left flex-1">{kb.name}</span>
+                              <span className="whitespace-nowrap text-left flex-1 pr-4 min-w-max">{kb.name}</span>
                             </button>
                           ))}
-                        </div>
-                      )}
+                          </div>
+                        )}
+                      </div>
                       {hasSelectedKnowledge && (
-                        <div className="px-3 py-2 border-t border-white/10">
+                        <div className="px-3 py-2 border-t border-white/10 flex-shrink-0 mt-1">
                           <button
                             onClick={() => setSelectedKnowledgeIds([])}
                             className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[12px] text-text-tertiary hover:bg-white/5 hover:text-text-primary transition-all duration-200"

@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .fixed-dropdown {
+    position: fixed !important;
+    bottom: auto !important;
+    transform: translateY(calc(-100% - 16px));
+  }
+}
+
 /* 默认使用暗色模式 */
 :root {
   /* Gemini 风格高级暗色模式 */
@@ -150,6 +166,30 @@ textarea {
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, rgba(66, 133, 244, 0.5), rgba(155, 114, 255, 0.5));
   box-shadow: 0 0 10px rgba(66, 133, 244, 0.4);
+}
+
+.dropdown-scrollbar {
+  scrollbar-width: auto;
+  scrollbar-color: rgba(66, 133, 244, 0.7) rgba(255, 255, 255, 0.06);
+}
+
+.dropdown-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.dropdown-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+}
+
+.dropdown-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(66, 133, 244, 0.75), rgba(155, 114, 255, 0.75));
+  border-radius: 10px;
+}
+
+.dropdown-scrollbar::-webkit-scrollbar-corner {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .scrollbar-none::-webkit-scrollbar {

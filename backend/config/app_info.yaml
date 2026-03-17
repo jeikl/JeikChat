@@ -14,9 +14,9 @@ app_info:
       icon: "Github"
       
     - name: "Gitee"
-      url: "https://gitee.com/your-repo"
-      icon: "Code"  # Gitee 没有专属 Lucide 图标，通常用 Code 代替或自定义
+      url: "https://gitee.com/jeikl/jeikchat"
+      icon: "Gitee"
       
     - name: "Email"
-      url: "mailto:support@jeikchat.com"
+      url: "mailto:jeikliu@outlook.com"
       icon: "Mail"

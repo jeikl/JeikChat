@@ -127,7 +127,12 @@ export const useChatStore = create<ChatState>()(
         ),
       })),
       
-      setThinkingMode: (mode) => set({ thinkingMode: mode }),
+      setThinkingMode: (mode) => {
+        // Only update if changed to avoid unnecessary re-renders
+        if (get().thinkingMode !== mode) {
+          set({ thinkingMode: mode });
+        }
+      },
       
       updateSession: (sessionId, updates) => set((state) => ({
         sessions: state.sessions.map((session) =>

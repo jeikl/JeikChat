@@ -166,6 +166,11 @@ async def delete_session(session_uuid: str):
         del uuid_to_session_map[session_uuid]
     return success({"deleted": True})
 
+@router.delete("/chat/history/{session_uuid}")
+async def delete_session_history_compat(session_uuid: str):
+    """兼容旧版本的删除会话接口"""
+    return await delete_session(session_uuid)
+
 
 @router.post("/chat/session/{session_uuid}/clear")
 async def clear_session(session_uuid: str):

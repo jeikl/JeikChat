@@ -1,6 +1,5 @@
-import { Menu, ChevronDown, Bot, BookOpen, RotateCcw, Github, Mail, Code } from 'lucide-react';
+import { Menu, ChevronDown, Bot, RotateCcw, Github, Mail, Code } from 'lucide-react';
 import { useSettingsStore } from '@/stores/settingsStore';
-import { useKnowledgeStore } from '@/stores/knowledgeStore';
 import { useState, useEffect } from 'react';
 import { showToast } from '@/utils/toast';
 import { modelApi, configApi } from '@/services/api';
@@ -10,11 +9,27 @@ const toLLMProvider = (provider: string): LLMProvider => {
   return provider as LLMProvider;
 };
 
+// 自定义 Gitee 图标组件 (官方简化版 Logo)
+const GiteeIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg 
+    className={className} 
+    style={{...style, width: '1.25rem', height: '1.25rem'}}
+    viewBox="0 0 1024 1024" 
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path 
+      fill="currentColor" 
+      d="M512 1024C230.4 1024 0 793.6 0 512S230.4 0 512 0s512 230.4 512 512-230.4 512-512 512z m259.2-569.6H480c-12.8 0-25.6 12.8-25.6 25.6v64c0 12.8 12.8 25.6 25.6 25.6h176c12.8 0 25.6 12.8 25.6 25.6v12.8c0 41.6-35.2 76.8-76.8 76.8h-240c-41.6 0-76.8-35.2-76.8-76.8V416c0-41.6 35.2-76.8 76.8-76.8h214.4c12.8 0 25.6-12.8 25.6-25.6v-64c0-12.8-12.8-25.6-25.6-25.6H364.8C259.2 224 176 307.2 176 412.8v201.6c0 105.6 83.2 188.8 188.8 188.8h294.4c105.6 0 188.8-83.2 188.8-188.8v-60.8c0-54.4-35.2-99.2-76.8-99.2z"
+    />
+  </svg>
+);
+
 // 图标映射
 const ICON_MAP: Record<string, any> = {
   Github,
   Mail,
-  Code
+  Code,
+  Gitee: GiteeIcon
 };
 
 interface HeaderProps {
@@ -24,9 +39,7 @@ interface HeaderProps {
 
 const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
   const { configs, activeConfigId } = useSettingsStore();
-  const { knowledgeBases, selectedKnowledgeIds, toggleKnowledgeSelection } = useKnowledgeStore();
   const [showModelSelector, setShowModelSelector] = useState(false);
-  const [showKnowledgeSelector, setShowKnowledgeSelector] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [appInfo, setAppInfo] = useState<any>(null);
 
@@ -145,19 +158,51 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
 
         {/* 社交链接图标 */}
         {appInfo?.social_links && (
-          <div className="hidden md:flex items-center gap-1 ml-4 border-l border-border/20 pl-4">
+          <div className="flex items-center gap-0.5 sm:gap-1 ml-2 sm:ml-4 border-l border-border/20 pl-2 sm:pl-4">
             {appInfo.social_links.map((link: any, index: number) => {
               const Icon = ICON_MAP[link.icon] || Code;
+              const isEmail = link.url.startsWith('mailto:');
+              
               return (
                 <a
                   key={index}
                   href={link.url}
-                  target="_blank"
+                  target={isEmail ? "_self" : "_blank"}
                   rel="noopener noreferrer"
-                  className="p-2 text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-all"
+                  className="p-1.5 sm:p-2 text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-all flex items-center justify-center cursor-pointer"
                   title={link.name}
+                  onClick={() => {
+                    if (isEmail) {
+                      const emailAddress = link.url.replace('mailto:', '');
+                      navigator.clipboard.writeText(emailAddress)
+                        .then(() => {
+                          showToast('邮箱已复制到剪贴板', 'success');
+                        })
+                        .catch(() => {
+                          console.error('复制失败');
+                        });
+                    }
+                  }}
                 >
-                  <Icon className="w-5 h-5" />
+                  {link.icon_url ? (
+                    <img 
+                      src={link.icon_url} 
+                      alt={link.name} 
+                      className="w-4 h-4 sm:w-5 sm:h-5 object-contain" 
+                      onError={(e) => {
+                        // 图片加载失败时，隐藏 img 标签并显示备用图标
+                        e.currentTarget.style.display = 'none';
+                        const fallbackIcon = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (fallbackIcon) fallbackIcon.style.display = 'block';
+                      }}
+                    />
+                  ) : null}
+                  
+                  {/* 默认图标作为 fallback 或首选 */}
+                  <Icon 
+                    className="w-4 h-4 sm:w-5 sm:h-5" 
+                    style={{ display: link.icon_url ? 'none' : 'block' }} 
+                  />
                 </a>
               );
             })}
@@ -165,10 +210,10 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
         )}
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-1 sm:gap-3 ml-auto">
         {/* 模型选择器 */}
         <div className="relative group">
-          <div className="flex items-center h-10">
+          <div className="flex items-center h-8 sm:h-10">
             <button
               onClick={() => {
                 if (!configs.length) {
@@ -177,171 +222,81 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
                   setShowModelSelector(!showModelSelector);
                 }
               }}
-              className="flex items-center gap-2.5 px-3 h-full bg-[#1E1E1E] hover:bg-[#262626] border border-white/[0.05] rounded-l-xl transition-all hover:border-primary/40 min-w-0 shadow-xl"
+              className="flex items-center gap-1.5 sm:gap-2.5 px-2 sm:px-3 h-full bg-[#1E1E1E] hover:bg-[#262626] border border-white/[0.05] rounded-l-xl transition-all hover:border-primary/40 min-w-0 shadow-xl"
             >
-              <div className="w-5 h-5 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Bot className="w-3.5 h-3.5 text-primary" />
+              <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Bot className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
               </div>
-              <span className="max-w-[100px] sm:max-w-[150px] truncate font-semibold text-text-primary text-sm">
+              <span className="max-w-[70px] sm:max-w-[150px] truncate font-semibold text-text-primary text-[11px] sm:text-sm">
                 {activeConfig?.name || (configs.length > 0 ? configs[0].name : '选择模型')}
               </span>
-              <ChevronDown className={`w-3.5 h-3.5 text-text-quaternary flex-shrink-0 transition-transform duration-200 ${showModelSelector ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3 h-3 sm:w-3.5 sm:h-3.5 text-text-quaternary flex-shrink-0 transition-transform duration-200 ${showModelSelector ? 'rotate-180' : ''}`} />
             </button>
             <button 
               onClick={handleRefreshModels}
               disabled={isLoading}
-              className={`px-3 h-full bg-[#1E1E1E] hover:bg-[#262626] border-y border-r border-white/[0.05] rounded-r-xl transition-all group shadow-xl flex items-center justify-center ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
+              className={`px-2 sm:px-3 h-full bg-[#1E1E1E] hover:bg-[#262626] border-y border-r border-white/[0.05] rounded-r-xl transition-all group shadow-xl flex items-center justify-center ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
               title="刷新模型列表"
             >
-              <RotateCcw className={`w-3.5 h-3.5 text-text-quaternary group-hover:text-primary transition-all ${isLoading ? 'animate-spin' : 'group-active:rotate-180'}`} />
+              <RotateCcw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 text-text-quaternary group-hover:text-primary transition-all ${isLoading ? 'animate-spin' : 'group-active:rotate-180'}`} />
             </button>
           </div>
 
           {showModelSelector && (
-            <div className="absolute top-full right-0 mt-2 w-64 bg-[#1E1E1E] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50 max-w-[90vw]">
-              <div className="px-4 py-2 mb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-widest">选择模型</div>
-              {configs.length === 0 ? (
-                <div className="px-4 py-8 text-sm text-text-tertiary text-center flex flex-col items-center gap-2">
-                  <Bot className="w-8 h-8 opacity-20" />
-                  {isLoading ? '正在获取模型列表...' : '暂无模型，请刷新'}
-                </div>
-              ) : (
-                <div className="space-y-0.5 px-1.5 min-w-full max-h-[60vh] overflow-y-auto custom-scrollbar">
-                  {configs.map(config => (
-                    <button
-                      key={config.id}
-                      onClick={() => {
-                        useSettingsStore.getState().setActiveConfig(config.id);
-                        setShowModelSelector(false);
-                      }}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center justify-between group/item ${
-                        activeConfigId === config.id
-                          ? 'bg-primary/10 text-primary font-bold'
-                          : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <Bot className={`w-4 h-4 flex-shrink-0 ${activeConfigId === config.id ? 'text-primary' : 'text-text-quaternary group/item:text-text-primary'}`} />
-                        <div className="flex flex-col gap-1 min-w-0 flex-1">
-                          <span className="truncate">{config.name}</span>
-                          {/* 显示模型标签 */}
-                          {config.tags && config.tags.length > 0 && (
-                            <div className="flex items-center gap-1 flex-wrap">
-                              {config.tags.map((tag, idx) => (
-                                <span
-                                  key={idx}
-                                  className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                                    activeConfigId === config.id
-                                      ? 'bg-primary/20 text-primary'
-                                      : 'bg-bg-tertiary text-text-quaternary'
-                                  }`}
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+            <div className="absolute top-full right-0 mt-2 w-[min(90vw,280px)] sm:w-[280px] bg-[#1E1E1E] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50 flex flex-col h-[200px] sm:h-[260px]">
+              <div className="px-4 py-2 mb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-widest flex-shrink-0">选择模型</div>
+              <div className="overflow-y-scroll overflow-x-scroll flex-1 min-h-0 dropdown-scrollbar [scrollbar-gutter:stable_both-edges]" style={{ touchAction: 'pan-x pan-y' }}>
+                {configs.length === 0 ? (
+                  <div className="px-4 py-8 text-sm text-text-tertiary text-center flex flex-col items-center gap-2">
+                    <Bot className="w-8 h-8 opacity-20" />
+                    {isLoading ? '正在获取模型列表...' : '暂无模型，请刷新'}
+                  </div>
+                ) : (
+                  <div className="space-y-0.5 px-1.5 pb-2 min-w-max">
+                    {configs.map(config => (
+                      <button
+                        key={config.id}
+                        onClick={() => {
+                          useSettingsStore.getState().setActiveConfig(config.id);
+                          setShowModelSelector(false);
+                        }}
+                        className={`min-w-full w-max text-left px-3 py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center justify-between group/item ${
+                          activeConfigId === config.id
+                            ? 'bg-primary/10 text-primary font-bold'
+                            : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-max">
+                          <Bot className={`w-4 h-4 flex-shrink-0 ${activeConfigId === config.id ? 'text-primary' : 'text-text-quaternary group/item:text-text-primary'}`} />
+                          <div className="flex flex-col gap-1 flex-1 pr-4 min-w-max">
+                            <span className="whitespace-nowrap">{config.name}</span>
+                            {/* 显示模型标签 */}
+                            {config.tags && config.tags.length > 0 && (
+                              <div className="flex items-center gap-1 flex-nowrap">
+                                {config.tags.map((tag, idx) => (
+                                  <span
+                                    key={idx}
+                                    className={`text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap ${
+                                      activeConfigId === config.id
+                                        ? 'bg-primary/20 text-primary'
+                                        : 'bg-bg-tertiary text-text-quaternary'
+                                    }`}
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      {activeConfigId === config.id && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(99,102,241,0.6)] flex-shrink-0 ml-2" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* 知识库选择器 */}
-        <div className="relative">
-          <button
-            onClick={() => setShowKnowledgeSelector(!showKnowledgeSelector)}
-            className={`flex items-center gap-2 px-3 py-2 text-sm rounded-xl font-semibold transition-all shadow-sm ${
-              selectedKnowledgeIds.length > 0
-                ? 'bg-primary/10 text-primary border border-primary/20'
-                : 'bg-bg-secondary/50 hover:bg-bg-secondary border border-border/40 hover:border-primary/40 text-text-secondary'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span className="hidden xs:inline">知识库</span>
-            {selectedKnowledgeIds.length > 0 && (
-              <div className="flex items-center justify-center min-w-[18px] h-[18px] bg-primary text-white text-[10px] font-bold rounded-full px-1">
-                {selectedKnowledgeIds.length}
-              </div>
-            )}
-          </button>
-
-          {showKnowledgeSelector && (
-            <div className="absolute right-0 mt-3 w-64 bg-[#1E1E1E] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden py-2 z-50 max-h-[400px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="px-4 py-2 mb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-widest">关联知识库</div>
-              {knowledgeBases.length === 0 ? (
-                <div className="px-4 py-8 text-sm text-text-tertiary text-center flex flex-col items-center gap-2">
-                  <BookOpen className="w-8 h-8 opacity-20" />
-                  暂无可用知识库
-                </div>
-              ) : (
-                <div className="space-y-0.5 px-1.5">
-                  <button
-                    onClick={() => {
-                      if (selectedKnowledgeIds.length === knowledgeBases.length) {
-                        useKnowledgeStore.getState().setSelectedKnowledgeIds([]);
-                      } else {
-                        const allIds = knowledgeBases.map(kb => kb.id);
-                        useKnowledgeStore.getState().setSelectedKnowledgeIds(allIds);
-                      }
-                    }}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all text-text-secondary hover:bg-bg-tertiary hover:text-text-primary"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-4 h-4 rounded-md border-2 transition-all flex items-center justify-center ${
-                        selectedKnowledgeIds.length === knowledgeBases.length
-                          ? 'border-primary bg-primary'
-                          : selectedKnowledgeIds.length > 0
-                          ? 'border-primary bg-primary/50'
-                          : 'border-text-quaternary'
-                      }`}>
-                        {selectedKnowledgeIds.length === knowledgeBases.length && (
-                          <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
-                          </svg>
+                        {activeConfigId === config.id && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(99,102,241,0.6)] flex-shrink-0 ml-2" />
                         )}
-                      </div>
-                      <span className="font-medium">全部选择</span>
-                    </div>
-                  </button>
-                  
-                  <div className="h-[1px] bg-border/10 my-1 mx-2" />
-                  
-                  {knowledgeBases.map(kb => (
-                    <button
-                      key={kb.id}
-                      onClick={() => toggleKnowledgeSelection(kb.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group/kb ${
-                        selectedKnowledgeIds.includes(kb.id)
-                          ? 'bg-primary/5 text-primary font-medium'
-                          : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 truncate">
-                        <div className={`w-4 h-4 rounded-md border-2 transition-all flex items-center justify-center flex-shrink-0 ${
-                          selectedKnowledgeIds.includes(kb.id)
-                            ? 'border-primary bg-primary'
-                            : 'border-text-quaternary group/kb:border-text-tertiary'
-                        }`}>
-                          {selectedKnowledgeIds.includes(kb.id) && (
-                            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </div>
-                        <span className="truncate">{kb.name}</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
