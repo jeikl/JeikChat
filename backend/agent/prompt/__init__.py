@@ -134,9 +134,6 @@ def build_messages(system_prompt: str, user_content: str | list):
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_content}
 ]
-
-    print(f"发送数据:\n\n{msg_list_agent}\n\n")
-
     return {"messages": msg_list_agent}
 
 

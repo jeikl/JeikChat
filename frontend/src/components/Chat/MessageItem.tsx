@@ -566,10 +566,45 @@ const MessageItem = ({ message }: MessageItemProps) => {
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw]}
                       components={{
-                        // 移除之前的 img 渲染逻辑，因为已经在外部渲染了
-                        img: () => null, 
-                        // 移除之前的 video/audio 渲染逻辑，因为已经在外部渲染了
+                        // 图片 - 智能识别视频/音频
+                        img: ({ node, ...props }) => {
+                          const src = props.src || '';
+                          // 支持带参数的 URL (如 ?token=...)
+                          const isVideo = /\.(mp4|webm|ogg|mov)(?:\?|$)/i.test(src);
+                          const isAudio = /\.(mp3|wav|ogg|m4a)(?:\?|$)/i.test(src);
+
+                          if (isVideo) {
+                            return (
+                              <div className="my-4 rounded-2xl overflow-hidden border border-white/[0.08] shadow-xl bg-black/20">
+                                <video 
+                                  src={src} 
+                                  controls 
+                                  className="max-w-full w-full" 
+                                  preload="metadata"
+                                />
+                              </div>
+                            );
+                          }
+
+                          if (isAudio) {
+                            return (
+                              <div className="my-4 rounded-xl border border-white/[0.08] shadow-md bg-white/[0.05] p-2">
+                                <audio 
+                                  src={src} 
+                                  controls 
+                                  className="w-full" 
+                                />
+                              </div>
+                            );
+                          }
+
+                          // 如果是独立图片气泡布局中的文本内容，我们不在文本区域渲染图片
+                          // 如果没有被解析为多媒体数组，或者就是普通的 markdown 文本，则这里可以隐藏
+                          return null; 
+                        },
+                        // 视频标签支持
                         video: () => null,
+                        // 音频标签支持
                         audio: () => null,
                         code({ node, className, children, ...props }) {
                           const match = /language-(\w+)/.exec(className || '');
@@ -669,66 +704,6 @@ const MessageItem = ({ message }: MessageItemProps) => {
                             rel="noopener noreferrer"
                             className="text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
                           />
-                        ),
-                        // 图片 - 智能识别视频/音频
-                        img: ({ node, ...props }) => {
-                          const src = props.src || '';
-                          // 支持带参数的 URL (如 ?token=...)
-                          const isVideo = /\.(mp4|webm|ogg|mov)(?:\?|$)/i.test(src);
-                          const isAudio = /\.(mp3|wav|ogg|m4a)(?:\?|$)/i.test(src);
-
-                          if (isVideo) {
-                            return (
-                              <div className="my-4 rounded-2xl overflow-hidden border border-white/[0.08] shadow-xl bg-black/20">
-                                <video 
-                                  src={src} 
-                                  controls 
-                                  className="max-w-full w-full" 
-                                  preload="metadata"
-                                />
-                              </div>
-                            );
-                          }
-
-                          if (isAudio) {
-                            return (
-                              <div className="my-4 rounded-xl border border-white/[0.08] shadow-md bg-white/[0.05] p-2">
-                                <audio 
-                                  src={src} 
-                                  controls 
-                                  className="w-full" 
-                                />
-                              </div>
-                            );
-                          }
-
-                          return (
-                            <img 
-                              {...props} 
-                              className="max-w-[200px] max-h-[200px] w-auto h-auto rounded-xl my-2 border border-white/[0.08] shadow-md object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
-                              loading="lazy"
-                              onClick={() => setPreviewImage(src)}
-                            />
-                          );
-                        },
-                        // 视频标签支持
-                        video: ({ node, ...props }) => (
-                          <div className="my-4 rounded-2xl overflow-hidden border border-white/[0.08] shadow-xl bg-black/20">
-                            <video 
-                              {...props} 
-                              className="max-w-full w-full" 
-                              preload="metadata"
-                            />
-                          </div>
-                        ),
-                        // 音频标签支持
-                        audio: ({ node, ...props }) => (
-                          <div className="my-4 rounded-xl border border-white/[0.08] shadow-md bg-white/[0.05] p-2">
-                            <audio 
-                              {...props} 
-                              className="w-full" 
-                            />
-                          </div>
                         ),
                         // 表格 - 主题色表头
                         table: ({ node, ...props }) => (
