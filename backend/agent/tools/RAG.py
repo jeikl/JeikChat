@@ -523,9 +523,9 @@ def retrieve_documents(query: str, knowledge_base: str = None) -> str:
                     # 清理特殊字符，返回完整内容
                     content = doc.page_content.replace('\x01', '').replace('\x02', '').strip()
                     if page:
-                        all_results.append(f"\n[来源：{source} 页码：{page}]\n{content}")
+                        all_results.append(f"\n[页码：{page}]\n{content}")
                     else:
-                        all_results.append(f"\n[来源：{source}]\n{content}")
+                        all_results.append(f"\n{content}")
         except Exception as e:
             writer( f" \n\n❌ 查询失败: {e} \n\n")
             # 静默失败，不阻塞其他知识库查询
@@ -583,8 +583,8 @@ if __name__ == "__main__":
     print(f"✅ 找到 {len(results)} 条结果\n")
     for i, doc in enumerate(results, 1):
         print(f"--- 结果 {i} ---")
-        print(f"来源：{doc.metadata.get('source', '未知')}")
-        print(f"页码：{doc.metadata.get('page_number', '')}")
+        #print(f"来源：{doc.metadata.get('source', '未知')}")
+        #print(f"页码：{doc.metadata.get('page_number', '')}")
         print(f"内容：{doc.page_content[:300]}...\n")
     manager2.close()
 
