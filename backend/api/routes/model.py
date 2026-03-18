@@ -25,6 +25,11 @@ class ModelConfigRequest(BaseModel):
     enabled: bool = True
 
 
+class ToggleModelRequest(BaseModel):
+    model_id: str
+    enabled: bool
+
+
 def get_all_enabled_models():
     """获取所有启用的模型列表（扁平化，不包含提供商层级）"""
     models_config = get_models_config()
@@ -46,18 +51,21 @@ def get_all_enabled_models():
                 "name": model.name,
                 "tags": model.tags,
                 "default": model.default,
-                "provider": provider_key
+                "provider": provider_key,
+                "enabled": model.enabled
             }
             all_models.append(model_data)
             
-            # 记录第一个标记为 default 的模型
-            if model.default and default_model is None:
+            # 记录第一个标记为 default 且启用的模型
+            if model.default and default_model is None and model.enabled:
                 default_model = model.id
                 # logger.info(f"[DEBUG] Found default model: {default_model}")
     
-    # 如果没有找到标记为 default 的模型，使用第一个模型
-    if default_model is None and all_models:
-        default_model = all_models[0]["id"]
+    # 如果没有找到标记为 default 的模型，使用第一个启用的模型
+    if default_model is None:
+        enabled_models = [m for m in all_models if m.get("enabled")]
+        if enabled_models:
+            default_model = enabled_models[0]["id"]
         # logger.info(f"[DEBUG] No default model found, using first: {default_model}")
     
     # logger.info(f"[DEBUG] Returning default_model: {default_model}")
@@ -198,6 +206,61 @@ async def get_model_config_info(model_id: str):
 async def save_model_config(config: ModelConfigRequest):
     """保存模型配置"""
     return success(data=config.model_dump(), msg="保存成功")
+
+
+@router.post("/models/toggle")
+async def toggle_model(request: ToggleModelRequest):
+    """切换模型的启用状态并保存到 models.yaml"""
+    from config.settings import PROJECT_ROOT
+    config_path = PROJECT_ROOT / "backend" / "config" / "models.yaml"
+    if not config_path.exists():
+        return success(data=None, msg="配置文件不存在", code=404)
+        
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            # Match '- id: "model_id"' or '- id: model_id' or "- id: 'model_id'"
+            if f'id: "{request.model_id}"' in line or f"id: '{request.model_id}'" in line or f"id: {request.model_id}" in line:
+                j = i + 1
+                found_enable = False
+                while j < len(lines):
+                    next_line = lines[j]
+                    if next_line.strip().startswith("- "):
+                        break
+                    # If it un-indents beyond the current item
+                    if next_line.strip() and not next_line.startswith(" ") and not next_line.startswith("\t"):
+                        break
+                    if "enable:" in next_line:
+                        found_enable = True
+                        indent_str = next_line[:len(next_line) - len(next_line.lstrip())]
+                        lines[j] = f"{indent_str}enable: {'true' if request.enabled else 'false'}\n"
+                        break
+                    j += 1
+                
+                if not found_enable:
+                    base_indent = line[:len(line) - len(line.lstrip())]
+                    insert_indent = base_indent + "  "
+                    lines.insert(i + 1, f"{insert_indent}enable: {'true' if request.enabled else 'false'}\n")
+                    i += 1 # skip the newly inserted line
+            i += 1
+            
+        with open(config_path, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+            
+        # 重新加载配置
+        from config.settings import get_models_config
+        models_config = get_models_config()
+        models_config._load_config()
+        
+        return success(data={"enabled": request.enabled}, msg="状态已更新")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return success(data=None, msg=f"更新失败: {str(e)}", code=500)
 
 
 @router.get("/models/test")

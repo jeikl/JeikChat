@@ -83,8 +83,9 @@ if not TEST_MODE:
     app.include_router(tools.router, prefix="/api", tags=["工具"])
     app.include_router(tools_stream.router, prefix="/api", tags=["工具流式"])
     
-    from api.routes import file
+    from api.routes import file, prompt
     app.include_router(file.router, prefix="/api", tags=["文件"])
+    app.include_router(prompt.router, prefix="/api", tags=["提示词"])
 
 
 @app.get("/")

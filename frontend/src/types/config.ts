@@ -1,34 +1,24 @@
 export interface LLMConfig {
   id: string;
-  name: string;
-  provider: LLMProvider;
-  model: string;
+  name: string; // 模型显示名称
+  provider: string; // 模型供应商名字
+  format?: 'openai' | 'google'; // 接口格式
+  model: string; // 模型ID
   apiKey?: string;
   baseUrl?: string;
   temperature: number;
   maxTokens: number;
   topP: number;
   enabled: boolean;
-  tags?: string[];  // 模型标签，如 ["多模态", "文生图"]
+  tags?: string[];
 }
 
-export type LLMProvider = 
-  | 'openai' 
-  | 'anthropic' 
-  | 'google' 
-  | 'qwen' 
-  | 'doubao' 
-  | 'moonshot' 
-  | 'zhipu'
-  | 'baidu'
-  | 'xfyun'
-  | 'test'
-  | 'ollama';
+export type LLMProvider = string;
 
 export interface ModelInfo {
   id: string;
   name: string;
-  provider: LLMProvider;
+  provider: string;
   maxTokens: number;
   supportsStreaming: boolean;
   supportsVision: boolean;

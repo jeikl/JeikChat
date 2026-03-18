@@ -1,8 +1,7 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
-  Plus, Upload, FileText, Trash2, RefreshCw, Loader2, X, 
+  Plus, FileText, Trash2, Loader2, X, 
   Check, BookOpen, FolderOpen, FileUp, AlertCircle, Edit2
 } from 'lucide-react';
 import { showToast } from '@/utils/toast';
@@ -10,7 +9,7 @@ import { useKnowledgeStore } from '@/stores/knowledgeStore';
 import { knowledgeApi } from '@/services/api';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import type { UploadStatus } from '@/types/knowledge';
+import type { UploadStatus, KnowledgeBase } from '@/types/knowledge';
 
 const showToastOnce = (() => {
   const shown = new Set<string>();
@@ -53,23 +52,11 @@ const isFileTypeAllowed = (file: File): boolean => {
   return ALLOWED_FILE_TYPES.some(t => t.extensions.includes(ext));
 };
 
-// 获取文件类型标签
-const getFileTypeLabel = (file: File): string => {
-  const type = ALLOWED_FILE_TYPES.find(t => t.type === file.type);
-  if (type) return type.label;
-  const ext = getFileExtension(file.name);
-  const typeByExt = ALLOWED_FILE_TYPES.find(t => t.extensions.includes(ext));
-  return typeByExt?.label || '未知';
-};
-
 const KnowledgePage = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
   const {
     knowledgeBases,
     selectedKnowledgeIds,
-    isUploading,
     uploadProgress,
-    uploadStatuses,
     currentUploadFile,
     addKnowledgeBase,
     removeKnowledgeBase,
@@ -146,12 +133,6 @@ const KnowledgePage = () => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  // 清空所有已选择的文件
-  const handleClearFiles = () => {
-    setSelectedFiles([]);
-    setNewKnowledgeName('');
-  };
-
   // 处理拖拽
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -191,8 +172,6 @@ const KnowledgePage = () => {
     }));
     setUploadStatuses(initialStatuses);
 
-    let closeProgressStream: (() => void) | null = null;
-
     try {
       // 使用异步创建API，启动创建任务
       const { taskId, knowledgeBase } = await knowledgeApi.createAsync(
@@ -209,7 +188,7 @@ const KnowledgePage = () => {
       setSelectedFiles([]);
 
       // 连接SSE获取实时进度
-      closeProgressStream = knowledgeApi.getCreateProgress(
+      knowledgeApi.getCreateProgress(
         taskId,
         (data) => {
           // 更新进度

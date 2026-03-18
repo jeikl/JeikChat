@@ -3,11 +3,8 @@ import { useSettingsStore } from '@/stores/settingsStore';
 import { useState, useEffect } from 'react';
 import { showToast } from '@/utils/toast';
 import { modelApi, configApi } from '@/services/api';
-import type { LLMProvider, LLMConfig } from '@/types/config';
+import type { LLMConfig } from '@/types/config';
 
-const toLLMProvider = (provider: string): LLMProvider => {
-  return provider as LLMProvider;
-};
 
 // 自定义 Gitee 图标组件 (官方简化版 Logo)
 const GiteeIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
@@ -73,12 +70,12 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
           newConfigs.push({
             id: `config_${configId++}`,
             name: model.name || model.id,
-            provider: toLLMProvider(model.provider),
+            provider: model.provider,
             model: model.id,
             temperature: 0.7,
             maxTokens: 4096,
             topP: 0.9,
-            enabled: true,
+            enabled: model.enabled !== false,
             tags: model.tags || []
           });
         }
@@ -253,7 +250,7 @@ const Header = ({ onToggleSidebar, onToggleMobileSidebar }: HeaderProps) => {
                   </div>
                 ) : (
                   <div className="space-y-0.5 px-1.5 pb-2 min-w-max">
-                    {configs.map(config => (
+                    {configs.filter(c => c.enabled).map(config => (
                       <button
                         key={config.id}
                         onClick={() => {

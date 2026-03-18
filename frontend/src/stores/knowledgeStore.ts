@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { KnowledgeBase, KnowledgeFile, UploadStatus } from '@/types/knowledge';
+import type { KnowledgeBase, UploadStatus } from '@/types/knowledge';
 
 // 工具选择回调类型
 type OnKnowledgeSelectionChange = (selectedIds: string[]) => void;

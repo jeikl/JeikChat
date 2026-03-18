@@ -33,6 +33,11 @@ class Prompts:
             self._load_prompts()
             Prompts._initialized = True
 
+    def reload(self):
+        """重新加载提示词配置"""
+        self._load_prompts()
+        print("提示词配置已重新加载")
+
     def _load_prompts(self):
         # 新的路径：从 config/prompts.yaml 加载
         prompts_file = Path(__file__).parent.parent.parent / "config" / "prompts.yaml"
@@ -47,11 +52,16 @@ class Prompts:
             with open(prompts_file, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
             
-            self.CHAT_SYSTEM_PROMPT = data.get("chat", {}).get("system", "")
-            self.CHAT_WELCOME_PROMPT = data.get("chat", {}).get("welcome", "")
-            self.AGENT_SYSTEM_PROMPT = data.get("agent", {}).get("system", "")
-            self.RAG_SYSTEM_PROMPT = data.get("rag", {}).get("system", "")
-            self.RAG_NO_CONTEXT_PROMPT = data.get("rag", {}).get("no_context", "")
+            # 使用 get 时提供空字符串作为默认值，防止 NoneType 错误
+            chat_config = data.get("chat") or {}
+            agent_config = data.get("agent") or {}
+            rag_config = data.get("rag") or {}
+            
+            self.CHAT_SYSTEM_PROMPT = chat_config.get("system", "")
+            self.CHAT_WELCOME_PROMPT = chat_config.get("welcome", "")
+            self.AGENT_SYSTEM_PROMPT = agent_config.get("system", "")
+            self.RAG_SYSTEM_PROMPT = rag_config.get("system", "")
+            self.RAG_NO_CONTEXT_PROMPT = rag_config.get("no_context", "")
         else:
             self._load_default_prompts()
 

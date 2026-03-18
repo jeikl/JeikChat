@@ -823,6 +823,43 @@ export const modelApi = {
     const response = await apiClient.get<ApiResponse<any>>('/models/list');
     return response.data;
   },
+
+  /**
+   * 切换模型启用状态
+   * @请求方式 POST /api/models/toggle
+   * @触发位置 SettingsPage.tsx - handleToggleModel
+   * @返回 { status: 1, data: { enabled: boolean }, msg: "状态已更新" }
+   */
+  toggleModel: async (modelId: string, enabled: boolean): Promise<any> => {
+    const response = await apiClient.post<ApiResponse<any>>('/models/toggle', {
+      model_id: modelId,
+      enabled: enabled
+    });
+    return response.data;
+  },
+};
+
+// ============================================================
+// 提示词服务 API
+// ============================================================
+
+export const promptApi = {
+  /**
+   * 获取提示词配置
+   * @请求方式 GET /api/prompts/list
+   */
+  list: async (): Promise<any> => {
+    const response = await apiClient.get<ApiResponse<any>>('/prompts/list');
+    return response.data.data;
+  },
+
+  /**
+   * 保存提示词配置
+   * @请求方式 POST /api/prompts/save
+   */
+  save: async (data: any): Promise<void> => {
+    await apiClient.post('/prompts/save', { data });
+  },
 };
 
 // ============================================================
@@ -835,4 +872,5 @@ export default {
   configApi,
   toolsApi,
   modelApi,
+  promptApi,
 };

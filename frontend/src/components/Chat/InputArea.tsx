@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, Brain, Ban, Plus, Globe, Mic, Square, Send, Loader2, BookOpen, X, File as FileIcon, Image as ImageIcon, Video as VideoIcon, Music as AudioIcon, FileText as PdfIcon } from 'lucide-react';
+import { Sparkles, Brain, Ban, Plus, Globe, Mic, Square, Send, Loader2, BookOpen, X, File as FileIcon, Video as VideoIcon, Music as AudioIcon, FileText as PdfIcon } from 'lucide-react';
 import { useChatStore } from '@/stores/chatStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useKnowledgeStore } from '@/stores/knowledgeStore';

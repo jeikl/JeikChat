@@ -6,7 +6,6 @@ import type { MCPToolService, Tool, ToolConfig } from '@/services/api';
 interface SettingsState {
   configs: LLMConfig[];
   activeConfigId: string | null;
-  defaultSystemPrompt: string;
   tools: Tool[];
   toolServices: MCPToolService[];  // 按服务分组的工具
   selectedTools: ToolConfig[];  // 改为存储完整的 ToolConfig 对象
@@ -18,7 +17,6 @@ interface SettingsState {
   setActiveConfig: (id: string | null) => void;
   setConfigs: (configs: LLMConfig[]) => void;
   clearConfigs: () => void;
-  setDefaultSystemPrompt: (prompt: string) => void;
   setTools: (tools: Tool[]) => void;
   setToolServices: (services: MCPToolService[]) => void;  // 设置服务分组
   toggleTool: (tool: Tool) => void;  // 改为接收 Tool 对象
@@ -57,7 +55,6 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       configs: DEFAULT_CONFIGS,
       activeConfigId: 'openai-default',
-      defaultSystemPrompt: '你是一个专业的AI客服助手，请用友好、专业的方式回答用户的问题。',
       tools: [],
       toolServices: [],
       selectedTools: [],
@@ -85,7 +82,6 @@ export const useSettingsStore = create<SettingsState>()(
       setActiveConfig: (id) => set({ activeConfigId: id }),
       setConfigs: (configs) => set({ configs }),
       clearConfigs: () => set({ configs: [], activeConfigId: null }),
-      setDefaultSystemPrompt: (prompt) => set({ defaultSystemPrompt: prompt }),
       setTools: (tools) => set({ tools }),
       setToolServices: (services) => set({ toolServices: services }),
       toggleTool: (tool) =>
@@ -208,7 +204,6 @@ export const useSettingsStore = create<SettingsState>()(
         // 持久化用户选择，这样后端重启后不会丢失
         configs: state.configs,
         activeConfigId: state.activeConfigId,
-        defaultSystemPrompt: state.defaultSystemPrompt,
         tools: state.tools,
         toolServices: state.toolServices,
         selectedTools: state.selectedTools,
