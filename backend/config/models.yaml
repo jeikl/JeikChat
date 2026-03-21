@@ -6,7 +6,7 @@ embeddings:
   providers:
     modelscope:
       name: "魔塔"
-      api_key: "ms-1722d753-a473-4a8a-bb51-8dc77bd86c24"
+      api_key: ""
       base_url: "https://api-inference.modelscope.cn/v1"
       models:
         - id: "Qwen/Qwen3-Embedding-8B"
@@ -25,7 +25,7 @@ embeddings:
 providers:
   modelscope:
     name: "魔塔"
-    api_key: "ms-1722d753-a473-4a8a-bb51-8dc77bd86c24"
+    api_key: ""
     base_url: https://api-inference.modelscope.cn/v1
     display_name: 魔塔
     models:
@@ -61,7 +61,7 @@ providers:
 
   google:
     name: "谷歌"
-    api_key: "AIzaSyAWf93gkEhuwtTZnigBmumFt4k_b1oa1rw"
+    api_key: ""
     models:
       - id: "gemini-3.1-pro-preview"
         tags: ["多模态", "限制token与请求数"]
