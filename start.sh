@@ -15,10 +15,24 @@ echo "📋 PYTHONPATH: $PYTHONPATH"
 echo "📂 当前目录: $(pwd)"
 echo "📂 目录内容:"
 ls -la /backend/
+
+echo "📂 .venv 目录内容:"
+ls -la /backend/.venv/ 2>/dev/null || echo "❌ .venv 不存在"
+
+echo "📂 .venv/bin 目录内容:"
+ls -la /backend/.venv/bin/ 2>/dev/null || echo "❌ .venv/bin 不存在"
+
 echo "📂 config 目录内容:"
 ls -la /backend/config/
 
-uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+# 检查 uvicorn 是否存在
+echo "🔍 检查 uvicorn:"
+which uvicorn 2>/dev/null || echo "❌ uvicorn 不在 PATH 中"
+ls -la /backend/.venv/bin/uvicorn 2>/dev/null || echo "❌ /backend/.venv/bin/uvicorn 不存在"
+
+# 尝试使用完整路径启动
+echo "🚀 启动 uvicorn..."
+/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
 
 # 等待后端启动
