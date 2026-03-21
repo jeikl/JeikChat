@@ -20,5 +20,5 @@ services:
       - jeikchat-networke
 
 networks:
-  jeikchat-network:
+  jeikchat-networke:
     driver: bridge
