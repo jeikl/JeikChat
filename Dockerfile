@@ -64,8 +64,9 @@ COPY backend/agent/ ./agent/
 COPY backend/fileUntils/ ./fileUntils/
 COPY backend/__init__.py ./
 
-# 激活虚拟环境
+# 激活虚拟环境并设置 Python 路径
 ENV PATH="/backend/.venv/bin:$PATH"
+ENV PYTHONPATH=/backend
 
 # ============================================================
 # 第四阶段：配置 Nginx
