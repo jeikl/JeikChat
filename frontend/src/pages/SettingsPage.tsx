@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { 
   Bot, 
-  Database, 
   Plus, 
   Trash2, 
   X,
@@ -18,14 +17,6 @@ import { useSettingsStore } from '@/stores/settingsStore';
 import { showToast } from '@/utils/toast';
 import { modelApi, promptApi } from '@/services/api';
 import type { LLMConfig } from '@/types/config';
-
-const EMBEDDING_MODELS = [
-  { id: 'all-MiniLM-L6-v2', name: 'all-MiniLM-L6-v2 (速度快)', description: '适合轻量级使用' },
-  { id: 'text-embedding-ada-002', name: 'text-embedding-ada-002', description: 'OpenAI官方' },
-  { id: 'text-embedding-3-small', name: 'text-embedding-3-small', description: '新一代小型模型' },
-  { id: 'bge-small-zh-v1.5', name: 'bge-small-zh-v1.5', description: '中文优化' },
-  { id: 'bge-base-zh-v1.5', name: 'bge-base-zh-v1.5', description: '中文基础模型' },
-];
 
 const SettingsPage = () => {
   const { 

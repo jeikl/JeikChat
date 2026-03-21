@@ -1,0 +1,33 @@
+# ============================================================
+# JeikChat 前后端合并部署配置
+# 使用单个镜像包含前端(Nginx) + 后端(FastAPI)
+# ============================================================
+
+version: '3.8'
+
+services:
+  jeikchat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jeikchat:latest
+    container_name: jeikchat
+    ports:
+      - "88:80"  # 只暴露 Nginx 端口
+    volumes:
+      # 配置文件挂载
+      - ./backend/config:/backend/config
+      # 知识库数据挂载
+      - ./backend/agent/knowledges:/backend/agent/knowledges
+      # MCP 配置挂载
+      - ./backend/agent/mcp:/backend/agent/mcp
+    environment:
+      # 基础配置
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - jeikchat-network
+
+networks:
+  jeikchat-network:
+    driver: bridge
