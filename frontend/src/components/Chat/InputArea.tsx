@@ -47,7 +47,7 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
   const [showThinkingDropdown, setShowThinkingDropdown] = useState(false);
   const [showKnowledgeDropdown, setShowKnowledgeDropdown] = useState(false);
   const [isLoadingTools, setIsLoadingTools] = useState(false);
-  const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
+
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -67,6 +67,8 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
   const selectedKnowledgeIds = useKnowledgeStore((state) => state.selectedKnowledgeIds);
   const toggleKnowledgeSelection = useKnowledgeStore((state) => state.toggleKnowledgeSelection);
   const setSelectedKnowledgeIds = useKnowledgeStore((state) => state.setSelectedKnowledgeIds);
+  const knowledgeBases = useKnowledgeStore((state) => state.knowledgeBases);
+  const setKnowledgeBases = useKnowledgeStore((state) => state.setKnowledgeBases);
   
   const isWebSearch = selectedTools.some(t => WEB_SEARCH_TOOL_IDS.includes(t.toolid));
   const hasSelectedKnowledge = selectedKnowledgeIds.length > 0;
@@ -78,13 +80,20 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
         const result = await knowledgeApi.list();
         if (result.status === 1) {
           setKnowledgeBases(result.data);
+          
+          // 清理已选择但已不存在的知识库ID
+          const validIds = result.data.map((kb: KnowledgeBase) => kb.id);
+          const cleanedIds = selectedKnowledgeIds.filter(id => validIds.includes(id));
+          if (cleanedIds.length !== selectedKnowledgeIds.length) {
+            setSelectedKnowledgeIds(cleanedIds);
+          }
         }
       } catch (error) {
         console.error('加载知识库失败:', error);
       }
     };
     loadKnowledgeBases();
-  }, []);
+  }, [setKnowledgeBases, setSelectedKnowledgeIds, selectedKnowledgeIds]);
 
   const loadTools = () => {
     setIsLoadingTools(true);
@@ -221,6 +230,44 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
     }
   };
 
+  // 拖拽状态
+  const [isDragging, setIsDragging] = useState(false);
+
+  // 处理拖拽事件
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // 检查是否真的离开了容器（而不是进入了子元素）
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleFileUpload(files);
+    }
+  };
+
   const removeFile = (id: string) => {
     setUploadingFiles(prev => prev.filter(f => f.id !== id));
   };
@@ -315,12 +362,33 @@ const InputArea = ({ onSend, onStop, disabled, isStreaming }: InputAreaProps) =>
         onChange={handleFileSelect}
       />
 
-      <div className="relative group gemini-aura pointer-events-auto z-[60]">
+      <div 
+        className="relative group gemini-aura pointer-events-auto z-[60]"
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        {/* 拖拽时的遮罩层 */}
+        {isDragging && (
+          <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary rounded-[24px] flex items-center justify-center backdrop-blur-sm">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-primary/20 flex items-center justify-center">
+                <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </div>
+              <p className="text-primary font-medium text-lg">释放以上传文件</p>
+              <p className="text-text-tertiary text-sm mt-1">支持图片、视频、音频、PDF 等格式</p>
+            </div>
+          </div>
+        )}
         <div className={`
           relative flex flex-col w-full
           bg-[#1E1E1E] transition-all duration-500
           rounded-[24px]
           ${isStreaming ? 'ring-[0.5px] ring-primary/20' : ''}
+          ${isDragging ? 'scale-[0.98] opacity-50' : ''}
         `}>
           {/* 文件预览区 */}
           {uploadingFiles.length > 0 && (

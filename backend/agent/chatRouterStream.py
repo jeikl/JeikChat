@@ -544,13 +544,24 @@ async def agent_stream1(
                     if chunk_type == "messages":
                         message, meta = chunk_data
                         node = meta.get("langgraph_node")
-    
+
                         if node == "agent":
                             if hasattr(message, "tool_calls") and message.tool_calls:
                                 # if hasattr(message, "content") and message.content:
                                 #     yield {"reasoning": message.content}
                                 continue
-    
+
+                            # 提取推理内容 (Reasoning / Thinking)
+                            # 兼容 deepseek/qwen 等模型的思维链字段
+                            if hasattr(message, "additional_kwargs"):
+                                reasoning = message.additional_kwargs.get("reasoning_content", "")
+                                if reasoning and "[完成]" not in reasoning:
+                                    if isinstance(reasoning, list):
+                                        reasoning = "".join(str(r) for r in reasoning)
+                                    else:
+                                        reasoning = str(reasoning)
+                                    yield {"reasoning": reasoning}
+
                             if message.content:
                                 if last == "reasoning":
                                     # print("\n\n\n====开始内容======\n\n\n")
@@ -560,7 +571,7 @@ async def agent_stream1(
     
     
                         elif node == "tools":
-                            if message.content:
+                            if message.content and "[完成]" not in message.content:
                                 last = "reasoning"
                                 yield {"reasoning": f"{message.content}\n"}
     

@@ -863,6 +863,97 @@ export const promptApi = {
 };
 
 // ============================================================
+// MCP 配置服务 API
+// ============================================================
+
+export interface MCPServerConfig {
+  name: string;
+  transport: 'stdio' | 'sse' | 'streamable_http';
+  command?: string;
+  args: string[];
+  env: Record<string, string>;
+  url?: string;
+  headers: Record<string, string>;
+  windows?: Record<string, any>;
+  linux?: Record<string, any>;
+  macos?: Record<string, any>;
+  timeout: number;
+  enabled: boolean;
+}
+
+export interface MCPConfig {
+  servers: MCPServerConfig[];
+  settings: {
+    timeout: number;
+    auto_reload: boolean;
+    log_level: string;
+  };
+  default_selected_tools: string[];
+}
+
+export interface MCPConfigResponse {
+  config: MCPConfig;
+  config_path: string;
+}
+
+export interface MCPValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+export interface MCPConfigSaveResult {
+  config_path: string;
+  changes: {
+    deleted: string[];
+    added: { name: string; tools: number }[];
+    modified: string[];
+    cached: string[];
+    pending: string[];  // 后台处理中的服务
+    failed: { name: string; error: string }[];
+  };
+}
+
+export const mcpConfigApi = {
+  /**
+   * 获取 MCP 配置
+   * @请求方式 GET /api/tools/mcp/config
+   */
+  get: async (): Promise<MCPConfigResponse> => {
+    const response = await apiClient.get<ApiResponse<MCPConfigResponse>>('/tools/mcp/config');
+    return response.data.data;
+  },
+
+  /**
+   * 保存 MCP 配置（智能差异化处理）
+   * @请求方式 POST /api/tools/mcp/config
+   * @说明 保存时会智能处理：删除的服务从缓存移除，新增的服务检查缓存，存在则直接使用
+   */
+  save: async (config: MCPConfig): Promise<MCPConfigSaveResult> => {
+    const response = await apiClient.post<ApiResponse<MCPConfigSaveResult>>('/tools/mcp/config', config);
+    return response.data.data;
+  },
+
+  /**
+   * 重新加载 MCP 配置（热重载）
+   * @请求方式 POST /api/tools/mcp/config/reload
+   * @说明 在不重启服务的情况下重新加载 mcp.yaml 配置
+   */
+  reload: async (): Promise<void> => {
+    await apiClient.post('/tools/mcp/config/reload');
+  },
+
+  /**
+   * 验证 MCP 配置
+   * @请求方式 GET /api/tools/mcp/validate
+   */
+  validate: async (): Promise<MCPValidationResult> => {
+    const response = await apiClient.get<ApiResponse<MCPValidationResult>>('/tools/mcp/validate');
+    return response.data.data;
+  },
+};
+
+// ============================================================
 // 默认导出
 // ============================================================
 
@@ -873,4 +964,5 @@ export default {
   toolsApi,
   modelApi,
   promptApi,
+  mcpConfigApi,
 };

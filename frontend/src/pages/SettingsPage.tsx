@@ -411,65 +411,7 @@ const SettingsPage = () => {
             </div>
           </section>
 
-          <section className="bg-bg-secondary rounded-xl border border-border overflow-hidden">
-            <div className="p-4 border-b border-border flex items-center gap-3">
-              <Database className="w-5 h-5 text-primary" />
-              <h2 className="font-semibold text-text-primary">向量数据库配置</h2>
-            </div>
 
-            <div className="p-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Embedding 模型
-                </label>
-                <select className="w-full px-3 py-2 bg-bg-tertiary border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-                  {EMBEDDING_MODELS.map(model => (
-                    <option key={model.id} value={model.id} className="bg-bg-secondary">
-                      {model.name}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-text-tertiary mt-2">
-                  用于将文本转换为向量表示，影响检索质量
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
-                  向量库类型
-                </label>
-                <select className="w-full px-3 py-2 bg-bg-tertiary border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-                  <option value="chroma" className="bg-bg-secondary">ChromaDB (轻量级)</option>
-                  <option value="milvus" className="bg-bg-secondary">Milvus (企业级)</option>
-                  <option value="pinecone" className="bg-bg-secondary">Pinecone (云服务)</option>
-                  <option value="qdrant" className="bg-bg-secondary">Qdrant (开源)</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-2">
-                    Chunk Size
-                  </label>
-                  <input
-                    type="number"
-                    defaultValue={1000}
-                    className="w-full px-3 py-2 bg-bg-tertiary border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-2">
-                    Chunk Overlap
-                  </label>
-                  <input
-                    type="number"
-                    defaultValue={200}
-                    className="w-full px-3 py-2 bg-bg-tertiary border border-border rounded-lg text-text-primary focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
         </div>
       </div>
 
