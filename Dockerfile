@@ -1,98 +1,77 @@
 # ============================================================
-# JeikChat 前后端合并镜像
-# 包含：Python后端(FastAPI) + Node.js前端构建 + Nginx
+# 阶段 1：构建前端（Node + pnpm）
 # ============================================================
+FROM node:22-bookworm-slim AS frontend-builder
 
-FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+WORKDIR /build/frontend
 
-# ============================================================
-# 第一阶段：安装系统依赖
-# ============================================================
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    gnupg \
-    libmagic1 \
-    nginx \
-    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y nodejs \
-    && npm install -g pnpm \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# 先拷贝依赖文件 → 缓存 pnpm install 层
+COPY frontend/package.json frontend/pnpm-lock.yaml* ./
 
-# ============================================================
-# 第二阶段：构建前端
-# ============================================================
-WORKDIR /frontend-build
+RUN corepack enable && \
+    pnpm install --frozen-lockfile --prod
 
-# 复制前端依赖文件
-COPY frontend/package.json ./
-
-# 使用 pnpm 安装依赖（更快）
-RUN pnpm install
-
-# 复制前端源码
+# 再拷贝源码并构建
 COPY frontend/ ./
-
-# 构建前端
 RUN pnpm run build
 
-# 将构建产物复制到 Nginx 目录
-RUN cp -r dist/* /usr/share/nginx/html/
-
-# 清理前端构建目录
-RUN rm -rf /frontend-build
-
+# 只保留 dist 目录供下一阶段使用
 # ============================================================
-# 第三阶段：配置后端
+# 阶段 2：构建 Python 依赖（使用 uv）
 # ============================================================
-WORKDIR /backend
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS backend-deps
 
-# 复制后端依赖文件
+WORKDIR /build/backend
+
+# 只拷贝锁文件和项目元数据 → 最大化缓存
 COPY backend/pyproject.toml backend/uv.lock ./
 
-# 安装后端依赖
-RUN uv sync --frozen
-
-# 复制后端项目文件
-COPY backend/cli.py ./
-COPY backend/app/ ./app/
-COPY backend/api/ ./api/
-COPY backend/schemas/ ./schemas/
-COPY backend/services/ ./services/
-COPY backend/config/ ./config/
-COPY backend/agent/ ./agent/
-COPY backend/fileUntils/ ./fileUntils/
-COPY backend/__init__.py ./
-
-# 激活虚拟环境并设置 Python 路径
-ENV PATH="/backend/.venv/bin:$PATH"
-ENV PYTHONPATH=/backend
+# 只安装依赖（不安装项目本身、不装开发依赖）
+# 使用 cache mount 加速下载
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
+    uv sync --frozen --no-dev --no-install-project
 
 # ============================================================
-# 第四阶段：配置 Nginx
+# 阶段 3：最终运行时镜像（最小化）
 # ============================================================
+FROM python:3.11-slim-bookworm AS runtime
 
-# 复制 Nginx 配置
+# 安装运行时需要的系统包（nginx + 运行时库）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nginx \
+    libmagic1 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# 从前端构建阶段拷贝静态文件
+COPY --from=frontend-builder /build/frontend/dist /usr/share/nginx/html
+
+# 从依赖阶段拷贝已安装的 .venv
+COPY --from=backend-deps /build/backend/.venv /app/.venv
+
+WORKDIR /app
+
+# 拷贝应用代码（最后拷贝 → 改动最频繁，缓存失效最晚）
+COPY backend/ ./
+
+# 确保 PATH 包含虚拟环境
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Nginx 配置
 COPY frontend/nginx.conf /etc/nginx/sites-available/default
+RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default && \
+    nginx -t
 
-# 启用配置
-RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
-
-# 测试 Nginx 配置
-RUN nginx -t
-
-# ============================================================
-# 第五阶段：启动脚本
-# ============================================================
+# 启动脚本（前后端一起启动）
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-# ============================================================
-# 暴露端口和启动
-# ============================================================
-
-# 只暴露 Nginx 端口（80），后端通过内部代理访问
+# 暴露端口
 EXPOSE 80
 
-# 启动命令
+# 推荐使用非 root 用户（可选，生产更安全）
+# RUN useradd -m appuser
+# USER appuser
+
 CMD ["/start.sh"]
