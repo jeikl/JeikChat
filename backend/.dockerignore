@@ -1,0 +1,56 @@
+# Python 虚拟环境和相关
+.venv
+venv
+env
+.env
+.env.*
+.venv*
+venv*
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.Python
+*.egg-info/
+pip-log.txt
+pip-delete-this-directory.txt
+uvlock.db               # uv 有时会生成这个调试文件
+
+# Node / 前端构建产物（如果 frontend 有）
+node_modules/
+frontend/node_modules/
+frontend/.next/         # 如果是 Next.js
+frontend/dist/          # 如果是 Vite/React/Vue 等
+frontend/build/
+
+# 测试、日志、临时
+logs/
+*.log
+coverage/
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# 编辑器 / IDE
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+*.swo
+
+# 系统 / macOS / Windows
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Git
+.git
+.gitignore              # 这个其实可以不忽略，但很多人习惯忽略
+
+# 其他项目特定大文件（看你情况加）
+*.db                    # 如果有本地 sqlite 测试库
+*.sqlite3
+media/                  # 如果有用户上传文件测试目录
+staticfiles/            # Django 收集的静态文件（如果有）

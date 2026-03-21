@@ -7,13 +7,10 @@ _mcp_client_global = None
 _mcp_tools_global = []
 _mcp_config_hash_global = None  # 用于检测配置是否变化
 
-from agent.prompt import get_prompts, build_messages
-from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.graph import StateGraph, START, END
-from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.prebuilt import tools_condition
 from langgraph.graph.message import MessagesState
-from langchain_deepseek import ChatDeepSeek
-from langchain_core.messages import ToolMessage, AIMessage,AIMessageChunk
+from langchain_core.messages import AIMessageChunk
 from typing import Any, List, Optional, Dict, Callable, AsyncGenerator
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from services.llm import create_client

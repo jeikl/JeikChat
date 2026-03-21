@@ -3,7 +3,6 @@ LLM 客户端服务
 支持多种模型提供商的流式对话
 """
 
-from langchain_core.tools import tool
 from langchain_deepseek import ChatDeepSeek
 from langchain_google_genai import ChatGoogleGenerativeAI
 import os
@@ -11,7 +10,7 @@ import sys
 import time
 import threading
 import asyncio
-from typing import Optional, Callable
+from typing import Optional
 
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

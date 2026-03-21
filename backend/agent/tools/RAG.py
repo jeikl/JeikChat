@@ -12,7 +12,7 @@ from langchain.tools import tool
 from langgraph.config import get_stream_writer
 
 # 抑制警告
-logging.getLogger("unstructured").setLevel(logging.ERROR)
+# logging.getLogger("unstructured").setLevel(logging.ERROR)
 logging.getLogger("pdfminer").setLevel(logging.ERROR)
 warnings.filterwarnings("ignore", message=".*FontBBox.*")
 warnings.filterwarnings("ignore", message=".*pdfminer.*")

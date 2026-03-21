@@ -232,13 +232,7 @@ class ModelsConfigManager:
         config_path = PROJECT_ROOT / "backend" / "config" / "models.yaml"
         app_config_path = PROJECT_ROOT / "backend" / "config" / "app_config.yaml"
         app_info_path = PROJECT_ROOT / "backend" / "config" / "app_info.yaml"
-        
-        # 兼容旧路径
-        if not config_path.exists():
-            old_config_path = PROJECT_ROOT / "backend" / "app" / "models_config.yaml"
-            if old_config_path.exists():
-                config_path = old_config_path
-                
+
         if not config_path.exists():
             print(f"[ModelsConfig] 配置文件不存在: {config_path}")
             self._config_data = {"providers": {}, "model_mappings": {}}

@@ -4,14 +4,14 @@
 # ========== 抑制警告（添加在开头） ==========
 import logging
 import warnings
-logging.getLogger("unstructured").setLevel(logging.ERROR)
+# logging.getLogger("unstructured").setLevel(logging.ERROR)
 warnings.filterwarnings("ignore", message=".*FontBBox.*")
 warnings.filterwarnings("ignore", message=".*pdfminer.*")
 
 from qdrant_client.models import Distance, VectorParams
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
-from langchain_unstructured import UnstructuredLoader
+# from langchain_unstructured import UnstructuredLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import sys
 from pathlib import Path
