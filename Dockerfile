@@ -94,8 +94,5 @@ RUN chmod +x /start.sh
 # 只暴露 Nginx 端口（80），后端通过内部代理访问
 EXPOSE 80
 
-# 数据卷挂载点
-VOLUME ["/backend/config", "/backend/agent/knowledges", "/backend/agent/mcp"]
-
 # 启动命令
 CMD ["/start.sh"]
