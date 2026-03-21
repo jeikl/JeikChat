@@ -50,13 +50,22 @@ COPY --from=frontend-builder /build/frontend/dist /usr/share/nginx/html
 
 WORKDIR /backend
 
-# 先拷贝应用代码（不包括 .venv）
-COPY backend/ ./
+# 显式复制后端代码文件和文件夹（按字母顺序）
+COPY backend/__init__.py ./
+COPY backend/cli.py ./
+COPY backend/pyproject.toml ./
+COPY backend/uv.lock ./
 
-# 删除可能存在的旧 .venv（如果有的话）
-RUN rm -rf /backend/.venv
+# 复制文件夹
+COPY backend/agent/ ./agent/
+COPY backend/api/ ./api/
+COPY backend/app/ ./app/
+COPY backend/config/ ./config/
+COPY backend/fileUntils/ ./fileUntils/
+COPY backend/schemas/ ./schemas/
+COPY backend/services/ ./services/
 
-# 从依赖阶段拷贝已安装的 .venv（覆盖旧的）
+# 从依赖阶段拷贝已安装的 .venv
 COPY --from=backend-deps /build/backend/.venv /backend/.venv
 
 # 设置环境变量
