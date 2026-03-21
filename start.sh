@@ -16,23 +16,24 @@ echo "📂 当前目录: $(pwd)"
 echo "📂 目录内容:"
 ls -la /backend/
 
-echo "📂 .venv 目录内容:"
-ls -la /backend/.venv/ 2>/dev/null || echo "❌ .venv 不存在"
-
 echo "📂 .venv/bin 目录内容:"
-ls -la /backend/.venv/bin/ 2>/dev/null || echo "❌ .venv/bin 不存在"
+ls -la /backend/.venv/bin/ | head -20
 
 echo "📂 config 目录内容:"
 ls -la /backend/config/
 
-# 检查 uvicorn 是否存在
-echo "🔍 检查 uvicorn:"
-which uvicorn 2>/dev/null || echo "❌ uvicorn 不在 PATH 中"
-ls -la /backend/.venv/bin/uvicorn 2>/dev/null || echo "❌ /backend/.venv/bin/uvicorn 不存在"
+# 检查 uvicorn 的 shebang
+echo "🔍 检查 uvicorn 的 shebang:"
+head -1 /backend/.venv/bin/uvicorn
 
-# 尝试使用完整路径启动
-echo "🚀 启动 uvicorn..."
-/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+# 检查 python 是否存在
+echo "🔍 检查 python:"
+ls -la /backend/.venv/bin/python* 2>/dev/null || echo "❌ python 不存在"
+which python3
+
+# 尝试用 python -m 启动
+echo "🚀 启动 uvicorn (使用 python -m)..."
+python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
 
 # 等待后端启动
