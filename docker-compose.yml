@@ -7,10 +7,6 @@ services:
     container_name: jeikcha
     ports:
       - "89:80"
-    volumes:
-      - ./backend/config:/backend/config
-      - ./backend/agent/knowledges:/backend/agent/knowledges
-      - ./backend/agent/mcp:/backend/agent/mcp
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/backend

@@ -15,6 +15,8 @@ echo "📋 PYTHONPATH: $PYTHONPATH"
 echo "📂 当前目录: $(pwd)"
 echo "📂 目录内容:"
 ls -la /backend/
+echo "📂 config 目录内容:"
+ls -la /backend/config/
 
 uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
