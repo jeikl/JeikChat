@@ -1,12 +1,21 @@
+version: '3.8'
+
 services:
   jeikchat:
     build:
       context: .
       dockerfile: Dockerfile
     image: jeikchat:latest
-    container_name: jeikcha
+    container_name: jeikchat
     ports:
       - "89:80"
+    volumes:
+      # ✅ 使用命名卷（首次启动会自动复制容器内文件）
+      - jeikchat-config:/backend/config
+      - jeikchat-knowledges:/backend/agent/knowledges
+      - jeikchat-mcp:/backend/agent/mcp
+      # ✅ nginx 配置也用命名卷（可选，如果需要在宿主机修改 nginx 配置）
+      - jeikchat-nginx:/etc/nginx/sites-available
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/backend
@@ -17,3 +26,10 @@ services:
 networks:
   jeikchat-netw:
     driver: bridge
+
+# ✅ 声明命名卷（冒号右边留空即可，使用默认配置）
+volumes:
+  jeikchat-config:
+  jeikchat-knowledges:
+  jeikchat-mcp:
+  jeikchat-nginx:
