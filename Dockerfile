@@ -75,7 +75,7 @@ ENV PATH="/backend/.venv/bin:$PATH" \
     PYTHONPATH=/backend
 
 # Nginx 配置
-COPY frontend/nginx.conf /etc/nginx/sites-available/default
+COPY frontend/ngix.conf /etc/nginx/sites-available/default
 RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default && \
     nginx -t
 
