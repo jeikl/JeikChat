@@ -6,6 +6,10 @@ echo "🚀 启动 JeikChat..."
 # 启动后端服务（后台运行）
 echo "📡 启动后端服务..."
 cd /backend
+
+# 设置 PYTHONPATH 以正确加载模块
+export PYTHONPATH=/backend
+
 uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
 
