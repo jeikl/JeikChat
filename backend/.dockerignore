@@ -1,12 +1,17 @@
 # Python 虚拟环境和相关
+aichat.egg-info/
+.idea/
 .venv
+.venv/
 venv
+venv/
 env
 .env
 .env.*
 .venv*
 venv*
 __pycache__/
+__pycache__
 *.pyc
 *.pyo
 *.pyd

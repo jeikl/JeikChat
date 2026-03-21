@@ -194,6 +194,14 @@ workflow.add_node("validator", validate_node)
 
 </div>
 
+### 连续工具调用
+
+<div align="center">
+
+![连续工具调用](frontend/public/testimg/连续工具调用.png)
+
+</div>
+
 ---
 
 ## 🚀 快速开始

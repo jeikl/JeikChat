@@ -462,13 +462,30 @@ async def agent_stream1(
         history,
         should_stop: Optional[Callable[[], bool]] = None,
 ) -> AsyncGenerator[dict, None]:
-    """简化版代理流式响应"""
-    
+    """
+    简化版代理流式响应
+    已修复：兼容 Google Gemini 3 的 List[Dict] 格式内容，防止字符串拼接报错
+    """
+
+    # --- 内部工具函数：将各种格式（str, list, None）的内容统一转为纯字符串 ---
+    def _to_str(content) -> str:
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            # 处理 LangChain/Gemini 常见的 [{'type': 'text', 'text': '...'}] 格式
+            return "".join([
+                (item.get("text", "") if isinstance(item, dict) else str(item)) 
+                for item in content
+            ])
+        return str(content) if content is not None else ""
+
     yield {"reasoning": f"\n\n✅️ 消息发送成功\n\n"}
     
     # 提取选中的 MCP 工具ID
     selected_mcp_ids = [_get_toolid_from_config(c) for c in (tool_configs or []) if _get_toolid_from_config(c) and _get_mcp_from_config(c) == 1]
+    
     yield {"reasoning": f"✈️ 工具连接中...\n\n"}
+    
     # 获取工具
     mcp_client, mcp_tools = await _get_cached_mcp_client_and_tools(selected_mcp_ids if selected_mcp_ids else None)
     regular_tools = _get_regular_tools_dict()
@@ -476,30 +493,24 @@ async def agent_stream1(
     all_tools = mcp_tools + local_tools
     
     logger.info(f"[MCP] 工具: MCP={len(mcp_tools)}, 本地={len(local_tools)}, 总计={len(all_tools)}")
+    
     yield {"reasoning": f"✅️ 工具连接成功...\n\n"}
     yield {"reasoning": f"\n\n✈️ 正在初始化大模型: {llm}\n\n"}
-    print(DB_URL+"\n")
+    
     try:
         async with AsyncPostgresSaver.from_conn_string(DB_URL) as checkpoint:
-            print("开始初始化大模型\n")
             model = create_client(llm, thinking)
-            print("成功\n")
             workflow = StateGraph(MessagesState)
      
             # 绑定工具
             llm_with_tools = model.bind_tools(all_tools) if all_tools else model
+            tool_node = McpToolNode(all_tools, handle_tool_errors=True)
     
-            tool_node=McpToolNode(all_tools,handle_tool_errors=True)
-    
-    
-            
             async def call_model(state):
                 """调用模型，处理流式工具调用组装"""
                 response = await llm_with_tools.ainvoke(state["messages"])
-                
                 return {"messages": [response]}
     
-            
             workflow.add_node("agent", call_model)
             workflow.add_edge(START, "agent")
             
@@ -510,82 +521,76 @@ async def agent_stream1(
             else:
                 workflow.add_edge("agent", END)
             
-            
-            
             graph = workflow.compile(checkpointer=checkpoint)
             yield {"reasoning": f"🚀 大模型初始化成功 !\n\n"}
             yield {"reasoning": f"⌛ 正在思考中...\n\n"}
             
             try:
                 last = "reasoning"
-                hasContent=False
-                async for chunk in graph.astream(msg, config=history, stream_mode=["messages","custom"],version="v2"):
+                hasContent = False
+                
+                # 使用 version="v2" 进行流式输出
+                async for chunk in graph.astream(msg, config=history, stream_mode=["messages","custom"], version="v2"):
                     if should_stop and should_stop():
-                        #yield {"reasoning": f"\n\n⚠️ 检测到停止信号，大模型初始化已取消\n\n"}
                         break
     
-                    # 处理 tuple 格式的 chunk (stream_mode v2 返回格式)
+                    # 解析 chunk 数据
                     if isinstance(chunk, tuple):
                         chunk_type, chunk_data = chunk
                     else:
                         chunk_type = chunk.get("type")
                         chunk_data = chunk.get("data")
     
-    
-    
-    
-    
-                    if chunk_type == "custom":#自定义数据输出
-                        #print(f"自定义数据输出:{str(chunk_data)}")
+                    # 1. 自定义数据输出
+                    if chunk_type == "custom":
                         last = "reasoning"
-                        yield {"reasoning": str(chunk_data)}
+                        yield {"reasoning": _to_str(chunk_data)}
     
-                    # messages 流
+                    # 2. messages 流处理
                     if chunk_type == "messages":
                         message, meta = chunk_data
                         node = meta.get("langgraph_node")
 
                         if node == "agent":
+                            # 如果是工具调用块，跳过内容处理
                             if hasattr(message, "tool_calls") and message.tool_calls:
-                                # if hasattr(message, "content") and message.content:
-                                #     yield {"reasoning": message.content}
                                 continue
 
-                            # 提取推理内容 (Reasoning / Thinking)
-                            # 兼容 deepseek/qwen 等模型的思维链字段
+                            # --- 修复点：提取推理内容 (Reasoning) ---
                             if hasattr(message, "additional_kwargs"):
-                                reasoning = message.additional_kwargs.get("reasoning_content", "")
-                                if reasoning and "[完成]" not in reasoning:
-                                    if isinstance(reasoning, list):
-                                        reasoning = "".join(str(r) for r in reasoning)
-                                    else:
-                                        reasoning = str(reasoning)
-                                    yield {"reasoning": reasoning}
+                                raw_reasoning = message.additional_kwargs.get("reasoning_content", "")
+                                if raw_reasoning:
+                                    reasoning_str = _to_str(raw_reasoning)
+                                    if "[完成]" not in reasoning_str:
+                                        yield {"reasoning": reasoning_str}
 
+                            # --- 修复点：提取回答内容 (Content) ---
                             if message.content:
-                                if last == "reasoning":
-                                    # print("\n\n\n====开始内容======\n\n\n")
-                                    last = "content"
-                                hasContent=True
-                                yield {"content": message.content}
-    
+                                text_content = _to_str(message.content)
+                                if text_content:
+                                    if last == "reasoning":
+                                        last = "content"
+                                    hasContent = True
+                                    yield {"content": text_content}
     
                         elif node == "tools":
-                            if message.content and "[完成]" not in message.content:
+                            # --- 修复点：提取工具执行结果 ---
+                            tool_res = _to_str(message.content)
+                            if tool_res and "[完成]" not in tool_res:
                                 last = "reasoning"
-                                yield {"reasoning": f"{message.content}\n"}
+                                # 确保拼接到字符串时，tool_res 已经是字符串
+                                yield {"reasoning": f"🛠️ 工具输出: {tool_res}\n"}
     
             except Exception as e:
                 logger.error(f"[Agent] 推理过程发生异常: {e}", exc_info=True)
                 yield {"reasoning": f"推理发生错误: {str(e)}"}
             finally:
                 if not hasContent:
-                    # 如果有工具调用但没有内容输出（例如直接通过自定义消息返回了）
                     yield {"content": "✅ 已完成处理"}
                 
     except Exception as db_err:
         logger.error(f"数据库连接或大模型初始化异常: {db_err}", exc_info=True)
-        yield {"reasoning": f"系统内部错误，无法连接数据库: {str(db_err)}"}
+        yield {"reasoning": f"系统内部错误: {str(db_err)}"}
         return
        
 
