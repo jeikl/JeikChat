@@ -9,6 +9,12 @@ cd /backend
 
 # 设置 PYTHONPATH 以正确加载模块
 export PYTHONPATH=/backend
+echo "📋 PYTHONPATH: $PYTHONPATH"
+
+# 调试信息
+echo "📂 当前目录: $(pwd)"
+echo "📂 目录内容:"
+ls -la /backend/
 
 uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!

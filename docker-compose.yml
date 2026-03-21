@@ -8,7 +8,6 @@ services:
     ports:
       - "89:80"
     volumes:
-      # ✅ 修改这里：去掉绝对路径，直接使用相对路径
       - ./backend/config:/backend/config
       - ./backend/agent/knowledges:/backend/agent/knowledges
       - ./backend/agent/mcp:/backend/agent/mcp
@@ -17,8 +16,8 @@ services:
       - PYTHONPATH=/backend
     restart: unless-stopped
     networks:
-      - jeikchat-networke
+      - jeikchat-netw
 
 networks:
-  jeikchat-networke:
+  jeikchat-netw:
     driver: bridge
