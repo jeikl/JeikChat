@@ -35,7 +35,8 @@ if TEST_MODE:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    os.makedirs("./vector_store", exist_ok=True)
+    # 注意：向量库路径现在在 agent/knowledges/vector_store
+    # 由 VectorStoreManager 自动创建，不需要在这里预先创建
     
     # 初始化 MCP 工具缓存（已注释）
     # 如果缓存为空，warmup=True 会自动连接所有服务获取工具列表
